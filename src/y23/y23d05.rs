@@ -16,12 +16,28 @@ pub fn solve_task1(file_content: &str) -> usize {
 
 pub fn solve_task2(file_content: &str) -> usize {
     let (_, (seed_ranges, pipeline)) = task2_inputs(file_content).expect("failed to parse inputs");
-    seed_ranges
-        .into_iter()
-        .flat_map(|r| pipeline.map_range(r))
+
+    let mut min_location = seed_ranges
+        .iter()
         .map(|r| r.start)
+        .map(|s| pipeline.get(s))
         .min()
-        .expect("no location found")
+        .unwrap_or(usize::MAX);
+
+    for level in 0..pipeline.levels() {
+        for start in pipeline.maps[level].ranges_srcs() {
+            let src = pipeline.get_src(start, level);
+            if !seed_ranges.iter().any(|r| r.contains(&src)) {
+                continue;
+            }
+            let loc = pipeline.get_from_level(start, level);
+            if loc < min_location {
+                min_location = loc;
+            }
+        }
+    }
+
+    min_location
 }
 
 #[cfg(test)]

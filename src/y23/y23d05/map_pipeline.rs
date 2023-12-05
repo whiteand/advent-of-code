@@ -1,10 +1,8 @@
-use std::ops::Range;
-
 use super::int_map::IntMap;
 
 #[derive(Debug)]
 pub(super) struct MapPipeline {
-    maps: Vec<IntMap>,
+    pub(super) maps: Vec<IntMap>,
 }
 
 impl MapPipeline {
@@ -12,27 +10,25 @@ impl MapPipeline {
         Self { maps }
     }
 
-    pub(super) fn get(&self, seed: usize) -> usize {
-        let mut value = seed;
-        for m in &self.maps {
-            value = m.get(value);
+    pub(super) fn levels(&self) -> usize {
+        self.maps.len()
+    }
+
+    pub(super) fn get_src(&self, dst: usize, applied_maps_number: usize) -> usize {
+        let mut value = dst;
+        for m in self.maps.iter().take(applied_maps_number).rev() {
+            value = m.reverse_get(value);
         }
         value
     }
-    pub(super) fn map_range(
-        &self,
-        seed_range: Range<usize>,
-    ) -> impl Iterator<Item = Range<usize>> + '_ {
-        let mut src = Vec::new();
-        let mut dst = vec![seed_range];
 
-        for m in &self.maps {
-            (src, dst) = (dst, src);
-            dst.clear();
-            for r in &src {
-                dst.extend(m.map_range(r))
-            }
-        }
-        dst.into_iter()
+    pub(super) fn get(&self, seed: usize) -> usize {
+        self.maps.iter().fold(seed, |v, m| m.get(v))
+    }
+
+    pub(super) fn get_from_level(&self, src: usize, already_applied: usize) -> usize {
+        self.maps[already_applied..]
+            .iter()
+            .fold(src, |v, m| m.get(v))
     }
 }

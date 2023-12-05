@@ -23,7 +23,7 @@ fn range_map(input: &str) -> IResult<&str, RangeMap> {
     ))
 }
 
-fn int_map<'b>(input: &'b str) -> IResult<&'b str, IntMap> {
+fn int_map(input: &str) -> IResult<&str, IntMap> {
     map(separated_list0(newline, range_map), IntMap::new)(input)
 }
 
