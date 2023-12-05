@@ -1,5 +1,9 @@
+mod int_map;
+mod map_pipeline;
 mod range_map;
 
+use int_map::IntMap;
+use map_pipeline::MapPipeline;
 use range_map::RangeMap;
 use std::ops::Range;
 
@@ -31,105 +35,6 @@ pub fn solve_task2(file_content: &str) -> usize {
         .min_by_key(|r| r.start)
         .map(|r| r.start)
         .expect("no location found")
-}
-
-#[derive(Debug)]
-struct IntMap {
-    // sorted in src ascending order
-    ranges: Vec<RangeMap>,
-}
-
-fn populate_default_ranges(mut ranges: Vec<RangeMap>) -> Vec<RangeMap> {
-    ranges.sort_by_key(|r| r.src);
-    let mut res = Vec::new();
-    let mut number_ptr = 0;
-    let mut range_ptr = 0;
-    loop {
-        if range_ptr >= ranges.len() {
-            res.push(RangeMap::trivial(number_ptr, usize::MAX - number_ptr));
-            break;
-        }
-        let present_range = &ranges[range_ptr];
-        if number_ptr < present_range.src {
-            res.push(RangeMap::trivial(
-                number_ptr,
-                present_range.src - number_ptr,
-            ));
-            number_ptr = present_range.src;
-            continue;
-        }
-
-        res.push(present_range.clone());
-        number_ptr = present_range.src_end();
-        range_ptr += 1;
-    }
-    res
-}
-
-impl IntMap {
-    fn new(ranges: Vec<RangeMap>) -> Self {
-        Self {
-            ranges: populate_default_ranges(ranges),
-        }
-    }
-
-    fn get(&self, src: usize) -> usize {
-        self.ranges
-            .iter()
-            .find(|r| r.contains_src(src))
-            .expect("no range found")
-            .map(src)
-    }
-
-    fn map_range(&self, range: Range<usize>) -> Vec<Range<usize>> {
-        let mut current_map_range_index = 0;
-        let mut res = Vec::new();
-
-        let mut ptr = range.start;
-        let end = range.end;
-        while ptr < end {
-            let present_range = &self.ranges[current_map_range_index];
-            if present_range.contains_src(ptr) {
-                let next_ptr = present_range.src_end().min(end);
-                res.push(present_range.map(ptr)..(present_range.map(next_ptr - 1) + 1));
-                current_map_range_index += 1;
-                ptr = next_ptr;
-                continue;
-            }
-            current_map_range_index += 1;
-        }
-
-        res
-    }
-}
-
-#[derive(Debug)]
-struct MapPipeline {
-    maps: Vec<IntMap>,
-}
-
-impl MapPipeline {
-    fn new(maps: Vec<IntMap>) -> Self {
-        Self { maps }
-    }
-
-    fn get(&self, seed: usize) -> usize {
-        let mut value = seed;
-        for m in &self.maps {
-            value = m.get(value);
-        }
-        value
-    }
-    fn map_range(&self, seed_range: Range<usize>) -> impl Iterator<Item = Range<usize>> + '_ {
-        let mut ranges = vec![seed_range];
-        for m in &self.maps {
-            ranges = ranges
-                .into_iter()
-                .flat_map(|r| m.map_range(r))
-                .collect::<Vec<_>>();
-        }
-        ranges.into_iter()
-    }
 }
 
 fn range_map(input: &str) -> IResult<&str, RangeMap> {
