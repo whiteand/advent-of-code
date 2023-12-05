@@ -53,21 +53,22 @@ fn main() {
 
 fn generate_justfile(year: u32, day: u32, tasks: u32) {
     let justfile_path = Path::new("justfile");
-    let lib = format!("y{}d{:02}", year % 2000, day);
+    let year_short = format!("y{}", year % 2000);
+    let lib = format!("{year_short}d{:02}", day);
     let mut content = String::new();
     writeln!(&mut content, "bench-{lib}:").unwrap();
     writeln!(&mut content, "    cargo bench --bench {lib}").unwrap();
     writeln!(&mut content, "test-{lib}:").unwrap();
     writeln!(
         &mut content,
-        "    cargo watch -x 'test --package advent --lib -- {lib}::tests --nocapture'"
+        "    cargo watch -x 'test --package advent --lib -- {year_short}::{lib}::tests --nocapture'"
     )
     .unwrap();
     for i in 1..=tasks {
         writeln!(&mut content, "test-{lib}-task-{i}:").unwrap();
-        writeln!(&mut content, "    cargo watch -x 'test --package advent --lib -- {lib}::tests::test_task{i} --exact --nocapture'").unwrap();
+        writeln!(&mut content, "    cargo watch -x 'test --package advent --lib -- {year_short}::{lib}::tests::test_task{i} --exact --nocapture'").unwrap();
         writeln!(&mut content, "test-{lib}-task-{i}-actual:").unwrap();
-        writeln!(&mut content, "    cargo watch -x 'test --package advent --lib -- {lib}::tests::test_task{i}_actual --exact --nocapture'").unwrap();
+        writeln!(&mut content, "    cargo watch -x 'test --package advent --lib -- {year_short}::{lib}::tests::test_task{i}_actual --exact --nocapture'").unwrap();
     }
 
     let mut justfile = OpenOptions::new().append(true).open(justfile_path).unwrap();
