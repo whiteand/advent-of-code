@@ -68,9 +68,10 @@ impl IntMap {
                 current_map_range_index += 1;
                 if present_range.contains_src(ptr) {
                     let next_ptr = present_range.src_end().min(end);
-                    let value = present_range.map(ptr)..(present_range.map(next_ptr - 1) + 1);
+                    let dst_start = present_range.map(ptr);
+                    let dst_end = present_range.map(next_ptr - 1) + 1;
                     ptr = next_ptr;
-                    return Some(value);
+                    return Some(dst_start..dst_end);
                 }
             }
             None

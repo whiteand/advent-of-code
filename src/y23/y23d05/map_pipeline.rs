@@ -25,6 +25,7 @@ impl MapPipeline {
     ) -> impl Iterator<Item = Range<usize>> + '_ {
         let mut src = Vec::new();
         let mut dst = vec![seed_range];
+
         for m in &self.maps {
             (src, dst) = (dst, src);
             dst.clear();
