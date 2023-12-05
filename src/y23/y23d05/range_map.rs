@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub(super) struct RangeMap {
     pub(super) src: usize,
-    length: usize,
+    pub(super) length: usize,
     pub(super) dst: usize,
 }
 

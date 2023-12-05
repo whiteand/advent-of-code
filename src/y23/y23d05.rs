@@ -27,9 +27,9 @@ pub fn solve_task2(file_content: &str) -> usize {
             (0..pipeline.levels())
                 .map(|level| {
                     pipeline
-                        .ranges_srcs(level)
-                        .filter(|&start| {
-                            let src = pipeline.get_src(start, level);
+                        .key_points(level)
+                        .filter(|&value| {
+                            let src = pipeline.get_src(value, level);
                             seed_ranges.iter().any(|r| r.contains(&src))
                         })
                         .map(|start| pipeline.get_from_level(start, level))
@@ -45,6 +45,7 @@ pub fn solve_task2(file_content: &str) -> usize {
 mod tests {
     use super::*;
     const INPUT: &str = include_str!("./y23d05/example.txt");
+    const EXAMPLE_2: &str = include_str!("./y23d05/counter_example.txt");
     const ACTUAL: &str = include_str!("../../benches/y23/y23d05.txt");
     #[test]
     fn test_task1() {
@@ -59,6 +60,14 @@ mod tests {
     #[test]
     fn test_task2() {
         assert_eq!(format!("{}", solve_task2(INPUT)), "46");
+    }
+    #[test]
+    fn test_task1_counter_example() {
+        assert_eq!(format!("{}", solve_task1(EXAMPLE_2)), "100");
+    }
+    #[test]
+    fn test_task2_counter_example() {
+        assert_eq!(format!("{}", solve_task2(EXAMPLE_2)), "100");
     }
 
     #[test]

@@ -9,7 +9,7 @@ edition = "2021"
 criterion = "0.4.0"
 itertools = "0.10.5"
 md-5 = "0.10.5"
-nom = "7.1.1"
+nom = "7.1.3"
 rayon = "1.6.1"
 regex = "1"
 

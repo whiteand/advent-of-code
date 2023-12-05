@@ -28,7 +28,7 @@ fn int_map(input: &str) -> IResult<&str, IntMap> {
 }
 
 fn maps(input: &str) -> IResult<&str, MapPipeline> {
-    let (input, maps) = separated_list1(
+    let (input, maps) = separated_list0(
         tuple((newline, newline)),
         preceded(tuple((not_line_ending, newline)), int_map),
     )(input)?;

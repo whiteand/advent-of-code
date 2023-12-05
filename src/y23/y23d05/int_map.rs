@@ -19,8 +19,10 @@ impl IntMap {
         }
     }
 
-    pub(super) fn ranges_srcs(&self) -> impl Iterator<Item = usize> + '_ {
-        std::iter::once(0).chain(self.ranges.iter().map(|r| r.src))
+    pub(super) fn key_points(&self) -> impl Iterator<Item = usize> + '_ {
+        std::iter::once(0)
+            .chain(self.ranges.iter().flat_map(|r| [r.src, r.src + r.length]))
+            .chain(std::iter::once(usize::MAX))
     }
 
     pub(super) fn reverse_get(&self, dst: usize) -> usize {
