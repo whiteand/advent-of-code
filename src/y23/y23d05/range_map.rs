@@ -10,11 +10,7 @@ impl RangeMap {
         Self { src, length, dst }
     }
     pub fn trivial(src: usize, length: usize) -> Self {
-        Self {
-            src,
-            length,
-            dst: src,
-        }
+        Self::new(src, src, length)
     }
 
     #[inline]
@@ -23,7 +19,7 @@ impl RangeMap {
     }
     #[inline]
     pub(super) fn map(&self, src: usize) -> usize {
-        self.dst + (src - self.src)
+        self.dst + src - self.src
     }
     /// Exclusive end of the src range
     #[inline]
