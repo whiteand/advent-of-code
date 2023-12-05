@@ -26,6 +26,10 @@ impl MapPipeline {
         self.maps.iter().fold(seed, |v, m| m.get(v))
     }
 
+    pub(super) fn ranges_srcs(&self, map_index: usize) -> impl Iterator<Item = usize> + '_ {
+        self.maps[map_index].ranges_srcs()
+    }
+
     pub(super) fn get_from_level(&self, src: usize, already_applied: usize) -> usize {
         self.maps[already_applied..]
             .iter()
