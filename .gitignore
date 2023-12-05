@@ -1,1 +1,4 @@
 /target
+test.txt
+.DS_Store
+benches/**/y*d*.txt

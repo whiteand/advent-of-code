@@ -1,16 +1,148 @@
 [package]
-name = "advent_2022"
+name = "advent"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+criterion = "0.4.0"
+itertools = "0.10.5"
+md-5 = "0.10.5"
+nom = "7.1.1"
+rayon = "1.6.1"
+regex = "1"
 
-[[bin]]
-name="day1_p1"
-path="src/day1/part1.rs"
+[[bench]]
+name = "y22d3"
+path = "benches/y22/y22d3.rs"
+harness = false
 
-[[bin]]
-name="day1_p2"
-path="src/day1/part2.rs"
+[[bench]]
+name = "y22d4"
+path = "benches/y22/y22d4.rs"
+harness = false
+
+[[bench]]
+name = "y22d5"
+path = "benches/y22/y22d5.rs"
+harness = false
+
+[[bench]]
+name = "y22d6"
+path = "benches/y22/y22d6.rs"
+harness = false
+
+[[bench]]
+name = "y22d7"
+path = "benches/y22/y22d7.rs"
+harness = false
+
+[[bench]]
+name = "y22d8"
+path = "benches/y22/y22d8.rs"
+harness = false
+
+[[bench]]
+name = "y22d9"
+path = "benches/y22/y22d9.rs"
+harness = false
+
+[[bench]]
+name = "y22d10"
+path = "benches/y22/y22d10.rs"
+harness = false
+
+[[bench]]
+name = "y22d11"
+path = "benches/y22/y22d11.rs"
+harness = false
+
+[[bench]]
+name = "y22d12"
+path = "benches/y22/y22d12.rs"
+harness = false
+
+
+[[bench]]
+name = "y22d13"
+path = "benches/y22/y22d13.rs"
+harness = false
+
+[[bench]]
+name = "y15d01"
+path = "benches/y15/y15d01.rs"
+harness = false
+
+[[bench]]
+name = "y15d02"
+path = "benches/y15/y15d02.rs"
+harness = false
+
+[[bench]]
+name = "y15d03"
+path = "benches/y15/y15d03.rs"
+harness = false
+
+[[bench]]
+name = "y15d04"
+path = "benches/y15/y15d04.rs"
+harness = false
+
+
+[[bench]]
+name = "y22d14"
+path = "benches/y22/y22d14.rs"
+harness = false
+
+[[bench]]
+name = "y22d15"
+path = "benches/y22/y22d15.rs"
+harness = false
+
+[[bench]]
+name = "y22d16"
+path = "benches/y22/y22d16.rs"
+harness = false
+
+[[bench]]
+name = "y22d17"
+path = "benches/y22/y22d17.rs"
+harness = false
+
+[[bench]]
+name = "y22d18"
+path = "benches/y22/y22d18.rs"
+harness = false
+
+[[bench]]
+name = "y22d19"
+path = "benches/y22/y22d19.rs"
+harness = false
+
+
+[[bench]]
+name = "y23d01"
+path = "benches/y23/y23d01.rs"
+harness = false
+
+[[bench]]
+name = "y23d02"
+path = "benches/y23/y23d02.rs"
+harness = false
+
+[[bench]]
+name = "y23d03"
+path = "benches/y23/y23d03.rs"
+harness = false
+
+
+[[bench]]
+name = "y23d04"
+path = "benches/y23/y23d04.rs"
+harness = false
+
+[[bench]]
+name = "y23d05"
+path = "benches/y23/y23d05.rs"
+harness = false
