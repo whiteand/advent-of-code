@@ -1,10 +1,12 @@
+use std::ops::BitXor;
+
 pub fn solve_task1(file_content: &str) -> usize {
     let mut line_it = file_content.lines();
     let times = parse_ints(line_it.next().unwrap());
     let distances = parse_ints(line_it.next().unwrap());
     times
         .into_iter()
-        .zip(distances.into_iter())
+        .zip(distances)
         .map(|(time, distance)| get_possible_ways_to_win(time, distance))
         .product()
 }
@@ -23,28 +25,14 @@ pub fn solve_task2(file_content: &str) -> usize {
 }
 
 fn get_possible_ways_to_win(time: usize, distance: usize) -> usize {
-    let is_record = |x| ((time - x) * x > distance);
-    binary_search(time / 2, time, is_record) - binary_search(time / 2, 0, is_record) + 1
-}
+    let d = time * time - 4 * distance;
+    let sqrt_d = (d as f64).sqrt() as usize;
 
-fn binary_search(from: usize, to: usize, from_predicate: impl Fn(usize) -> bool) -> usize {
-    let mut l = from;
-    let mut r = to;
-    if from_predicate(r) {
-        return r;
+    if sqrt_d * sqrt_d == d {
+        sqrt_d - 1
+    } else {
+        sqrt_d + 1 - (time & 1).bitxor(sqrt_d & 1)
     }
-    if !from_predicate(l) {
-        return l;
-    }
-    while l.abs_diff(r) > 1 {
-        let mid = (l + r) / 2;
-        if from_predicate(mid) {
-            l = mid;
-        } else {
-            r = mid;
-        }
-    }
-    l
 }
 
 fn parse_ints(line: &str) -> Vec<usize> {
@@ -60,8 +48,27 @@ mod tests {
     const INPUT: &str = include_str!("./y23d06/example.txt");
     const ACTUAL: &str = include_str!("../../benches/y23/y23d06.txt");
 
+    fn slow(t: usize, d: usize) -> usize {
+        (0..t).filter(|&x| x * (t - x) > d).count()
+    }
+
     #[test]
     fn test_task1() {
+        let inputs = [(7, 9), (15, 40), (30, 200), (8, 12), (7, 10)];
+        for (t, d) in inputs {
+            let r = slow(t, d);
+            assert_eq!(
+                get_possible_ways_to_win(t, d),
+                r,
+                "invalid for {} and {}, expected {}",
+                t,
+                d,
+                r
+            );
+        }
+    }
+    #[test]
+    fn test_task1_example() {
         assert_eq!(format!("{}", solve_task1(INPUT)), "288");
     }
 
