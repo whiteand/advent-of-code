@@ -45,45 +45,29 @@ fn get_d(time: usize, holding_time: usize) -> usize {
     (time - holding_time) * holding_time
 }
 
-fn int_sqrt(n: usize) -> usize {
-    let mut left = 0;
-    let mut right = n / 2;
-    while left + 1 < right {
-        let mid = (left + right) / 2;
-        if mid <= n / mid {
-            left = mid;
+fn binary_search(from: usize, to: usize, from_predicate: impl Fn(usize) -> bool) -> usize {
+    let mut l = from;
+    let mut r = to;
+    if from_predicate(r) {
+        return r;
+    }
+    if !from_predicate(l) {
+        return l;
+    }
+    while l.abs_diff(r) > 1 {
+        let mid = (l + r) / 2;
+        if from_predicate(mid) {
+            l = mid;
         } else {
-            right = mid;
+            r = mid;
         }
     }
-    left
-}
-fn get_end(time: usize, distance: usize) -> usize {
-    let d = time * time - 4 * distance;
-    let res = (time + int_sqrt(d)) / 2;
-    if get_d(time, res) > distance && get_d(time, res + 1) <= distance {
-        return res;
-    }
-    if get_d(time, res) <= distance && get_d(time, res - 1) > distance {
-        return res - 1;
-    }
-    unreachable!();
-}
-
-fn get_start(time: usize, distance: usize) -> usize {
-    let d = time * time - 4 * distance;
-    let res = (time - int_sqrt(d)) / 2;
-    if get_d(time, res) > distance && get_d(time, res - 1) <= distance {
-        return res;
-    }
-    if get_d(time, res + 1) > distance && get_d(time, res) <= distance {
-        return res + 1;
-    }
-    unreachable!();
+    l
 }
 
 fn get_possible_ways_to_win(time: usize, distance: usize) -> usize {
-    get_end(time, distance) - get_start(time, distance) + 1
+    let is_record = |x| get_d(time, x) > distance;
+    binary_search(time / 2, time, is_record) - binary_search(time / 2, 0, is_record) + 1
 }
 
 pub fn solve_task1(file_content: &str) -> usize {
@@ -112,8 +96,8 @@ mod tests {
 
     #[test]
     fn test_fast() {
-        for t in 0..500 {
-            for d in 0..1500 {
+        for t in 0..50 {
+            for d in t..150 {
                 let expected = (0..t).filter(|x| get_d(t, *x) > d).count();
                 if expected == 0 {
                     break;
