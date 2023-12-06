@@ -1,48 +1,30 @@
-fn parse1(file_content: &str) -> (Vec<usize>, Vec<usize>) {
+pub fn solve_task1(file_content: &str) -> usize {
     let mut line_it = file_content.lines();
-    let times = line_it
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .map(|s| s.parse::<usize>().unwrap())
-        .collect::<Vec<_>>();
-    let distances = line_it
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .map(|s| s.parse::<usize>().unwrap())
-        .collect::<Vec<_>>();
+    let times = parse_ints(line_it.next().unwrap());
+    let distances = parse_ints(line_it.next().unwrap());
+    times
+        .into_iter()
+        .zip(distances.into_iter())
+        .map(|(time, distance)| get_possible_ways_to_win(time, distance))
+        .product()
+}
+pub fn solve_task2(file_content: &str) -> usize {
+    let mut nums = file_content.lines().map(|line| {
+        line.split_ascii_whitespace()
+            .skip(1)
+            .collect::<String>()
+            .parse()
+            .unwrap()
+    });
+    let time = nums.next().unwrap();
+    let distance = nums.next().unwrap();
 
-    (times, distances)
+    get_possible_ways_to_win(time, distance)
 }
 
-fn parse2(file_content: &str) -> (usize, usize) {
-    let mut line_it = file_content.lines();
-    let time = line_it
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .collect::<String>()
-        .parse::<usize>()
-        .unwrap();
-    let distance = line_it
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .skip(1)
-        .collect::<String>()
-        .parse::<usize>()
-        .unwrap();
-
-    (time, distance)
-}
-
-#[inline]
-fn get_d(time: usize, holding_time: usize) -> usize {
-    (time - holding_time) * holding_time
+fn get_possible_ways_to_win(time: usize, distance: usize) -> usize {
+    let is_record = |x| ((time - x) * x > distance);
+    binary_search(time / 2, time, is_record) - binary_search(time / 2, 0, is_record) + 1
 }
 
 fn binary_search(from: usize, to: usize, from_predicate: impl Fn(usize) -> bool) -> usize {
@@ -65,22 +47,11 @@ fn binary_search(from: usize, to: usize, from_predicate: impl Fn(usize) -> bool)
     l
 }
 
-fn get_possible_ways_to_win(time: usize, distance: usize) -> usize {
-    let is_record = |x| get_d(time, x) > distance;
-    binary_search(time / 2, time, is_record) - binary_search(time / 2, 0, is_record) + 1
-}
-
-pub fn solve_task1(file_content: &str) -> usize {
-    let (times, distances) = parse1(file_content);
-    times
-        .into_iter()
-        .enumerate()
-        .map(|(game_ind, time)| get_possible_ways_to_win(time, distances[game_ind]))
-        .product()
-}
-pub fn solve_task2(file_content: &str) -> usize {
-    let (time, distance) = parse2(file_content);
-    get_possible_ways_to_win(time, distance)
+fn parse_ints(line: &str) -> Vec<usize> {
+    line.split_ascii_whitespace()
+        .skip(1)
+        .map(|s| s.parse().unwrap())
+        .collect()
 }
 
 #[cfg(test)]
@@ -98,7 +69,7 @@ mod tests {
     fn test_fast() {
         for t in 0..50 {
             for d in t..150 {
-                let expected = (0..t).filter(|x| get_d(t, *x) > d).count();
+                let expected = (0..t).filter(|&x| x * (t - x) > d).count();
                 if expected == 0 {
                     break;
                 }
