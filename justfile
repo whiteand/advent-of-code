@@ -1,5 +1,8 @@
-generate:
-    cargo run --bin generate
+
+generate year day:
+    cargo run --bin generate {{year}} {{day}};
+    nu fetch.nu {{year}} {{day}};
+    
 bench-23d02:
     cargo bench --bench y23d02
 test-23d02-task-1:
@@ -76,3 +79,17 @@ test-y23d07-task-2:
     cargo watch -x 'test --package advent --lib -- y23::y23d07::tests::test_task2 --exact --nocapture'
 test-y23d07-task-2-actual:
     cargo watch -x 'test --package advent --lib -- y23::y23d07::tests::test_task2_actual --exact --nocapture'
+
+
+bench-y24d01:
+    cargo bench --bench y24d01
+test-y24d01:
+    cargo watch -x 'test --package advent --lib -- y24::y24d01::tests --nocapture'
+test-y24d01-task-1:
+    cargo watch -x 'test --package advent --lib -- y24::y24d01::tests::test_task1 --exact --nocapture'
+test-y24d01-task-1-actual:
+    cargo watch -x 'test --package advent --lib -- y24::y24d01::tests::test_task1_actual --exact --nocapture'
+test-y24d01-task-2:
+    cargo watch -x 'test --package advent --lib -- y24::y24d01::tests::test_task2 --exact --nocapture'
+test-y24d01-task-2-actual:
+    cargo watch -x 'test --package advent --lib -- y24::y24d01::tests::test_task2_actual --exact --nocapture'

@@ -6,6 +6,7 @@ use std::{
     str::FromStr,
 };
 
+use itertools::Itertools;
 use regex::Regex;
 
 fn read_line(request: &str) -> String {
@@ -44,11 +45,19 @@ where
 }
 
 fn main() {
-    let year: u32 = read_valid("Enter year", 2023);
-    let day: u32 = read_valid("Enter day number", 1);
-    let tasks: u32 = read_valid("Enter task number", 2);
+    match std::env::args()
+        .flat_map(|x| x.parse::<u32>().ok())
+        .collect_tuple()
+    {
+        Some((year, day)) => generate(year, day, 2),
+        None => {
+            let year: u32 = read_valid("Enter year", 2023);
+            let day: u32 = read_valid("Enter day number", 8);
+            let tasks: u32 = read_valid("Enter task number", 2);
 
-    generate(year, day, tasks)
+            generate(year, day, tasks)
+        }
+    }
 }
 
 fn generate_justfile(year: u32, day: u32, tasks: u32) {
