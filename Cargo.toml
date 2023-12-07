@@ -13,10 +13,6 @@ nom = "7.1.3"
 rayon = "1.6.1"
 regex = "1"
 
-[[bench]]
-name = "y22d3"
-path = "benches/y22/y22d3.rs"
-harness = false
 
 [[bench]]
 name = "y22d4"
@@ -116,12 +112,6 @@ path = "benches/y22/y22d18.rs"
 harness = false
 
 [[bench]]
-name = "y22d19"
-path = "benches/y22/y22d19.rs"
-harness = false
-
-
-[[bench]]
 name = "y23d01"
 path = "benches/y23/y23d01.rs"
 harness = false
@@ -161,4 +151,9 @@ harness = false
 [[bench]]
 name = "y24d01"
 path = "benches/y24/y24d01.rs"
+harness = false
+
+[[bench]]
+name = "y22d19"
+path = "benches/y22/y22d19.rs"
 harness = false
