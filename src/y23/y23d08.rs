@@ -264,16 +264,6 @@ pub fn solve_task2(file_content: &str) -> usize {
         .map(|p| get_position_info(&turns, &network, p))
         .collect::<Vec<_>>();
 
-    dbg!(&position_infos);
-    let matrix = vec![vec![0; position_infos.len()]; position_infos.len()]];
-    for p in position_infos.iter() {
-        assert_eq!(p.endings.len(), 1);
-        let end = &p.endings[0];
-        let k = (p.loop_reset_cycle - p.loop_start_cycle) * turns_per_cycle;
-        let b = end.cycle * turns_per_cycle + end.turn_index;
-    }
-    todo!("not implemented yet");
-
     let mut carets = position_infos
         .into_iter()
         .map(|p| p.into_iter())
@@ -283,13 +273,14 @@ pub fn solve_task2(file_content: &str) -> usize {
         c.next().unwrap();
     }
 
+    let mut i = 0;
+
     loop {
         let mut min_time = usize::MAX;
         let mut max_time = 0;
         let mut min_time_index = 0;
         for (i, c) in carets.iter().enumerate() {
             let t = c.time(turns_per_cycle);
-            print!("{}\t", t);
             if t < min_time {
                 min_time = t;
                 min_time_index = i;
@@ -298,11 +289,13 @@ pub fn solve_task2(file_content: &str) -> usize {
                 max_time = t
             }
         }
-        println!();
+        i += 1;
+        if i % 10000 == 0 {
+            println!("{}: {}", i, max_time - min_time);
+        }
         if min_time == max_time {
             return min_time + 1;
         } else {
-            println!("{} {}", min_time, max_time);
             carets[min_time_index].next().unwrap();
         }
     }
