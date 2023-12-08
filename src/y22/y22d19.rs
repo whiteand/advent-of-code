@@ -1,7 +1,7 @@
-pub fn solve_task1(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_task1(_file_content: &str) -> impl std::fmt::Display {
     0
 }
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_task2(_file_content: &str) -> impl std::fmt::Display {
     0
 }
 #[cfg(test)]

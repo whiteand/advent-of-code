@@ -157,3 +157,9 @@ harness = false
 name = "y22d19"
 path = "benches/y22/y22d19.rs"
 harness = false
+
+
+[[bench]]
+name = "y23d08"
+path = "benches/y23/y23d08.rs"
+harness = false
