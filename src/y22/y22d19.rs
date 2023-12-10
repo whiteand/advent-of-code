@@ -1,6 +1,6 @@
 use nom::{
     bytes::complete::tag,
-    character::complete::{multispace0, newline, space1},
+    character::complete::{multispace0, newline},
     multi::separated_list1,
     sequence::{delimited, separated_pair, tuple},
     IResult, Parser,
