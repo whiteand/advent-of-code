@@ -147,3 +147,16 @@ test-y23d10-task-2:
     cargo watch -x 'test --package advent --lib -- y23::y23d10::tests::test_task2 --exact --nocapture'
 test-y23d10-task-2-actual:
     cargo watch -x 'test --package advent --lib -- y23::y23d10::tests::test_task2_actual --exact --nocapture'
+
+bench-y23d11:
+    cargo bench --bench y23d11
+test-y23d11:
+    cargo watch -x 'test --package advent --lib -- y23::y23d11::tests --nocapture'
+test-y23d11-task-1:
+    cargo watch -x 'test --package advent --lib -- y23::y23d11::tests::test_task1 --exact --nocapture'
+test-y23d11-task-1-actual:
+    cargo watch -x 'test --package advent --lib -- y23::y23d11::tests::test_task1_actual --exact --nocapture'
+test-y23d11-task-2:
+    cargo watch -x 'test --package advent --lib -- y23::y23d11::tests::test_task2 --exact --nocapture'
+test-y23d11-task-2-actual:
+    cargo watch -x 'test --package advent --lib -- y23::y23d11::tests::test_task2_actual --exact --nocapture'
