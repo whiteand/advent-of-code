@@ -94,7 +94,9 @@ impl Row {
     }
 
     fn is_operational(&self, i: usize) -> Option<bool> {
-        debug_assert!(i < self.len, "There is no pipe with index {i}");
+        if i >= self.len {
+            return Some(false);
+        }
         if self.operational.is_set(i) {
             return Some(true);
         }
@@ -107,12 +109,46 @@ impl Row {
     fn with_super_position(&self, i: usize) -> (Self, Self) {
         (self.with_operational(i), self.with_damaged(i))
     }
-    fn skip(&self, from: usize) -> Self {
-        Self {
-            operational: self.operational.slice(from, self.len),
-            damaged: self.damaged.slice(from, self.len),
-            len: self.len - from,
+    fn with_skip(&self, i: usize) -> Self {
+        let mut res = self.clone();
+        res.skip(i);
+        res
+    }
+
+    fn skip(&mut self, from: usize) {
+        if from >= self.len {
+            self.operational = Bitmask::new();
+            self.damaged = Bitmask::new();
+            self.len = 0;
+            return;
         }
+        self.operational = self.operational.slice(from, self.len);
+        self.damaged = self.damaged.slice(from, self.len);
+        self.len -= from;
+    }
+    fn skip_last(&mut self, n: usize) {
+        if n == 0 {
+            return;
+        }
+        if n >= self.len {
+            self.operational = Bitmask::new();
+            self.damaged = Bitmask::new();
+            self.len = 0;
+            return;
+        }
+        self.operational = self.operational.slice(0, self.len - n);
+        self.damaged = self.damaged.slice(0, self.len - n);
+        self.len -= n;
+    }
+
+    fn starts_with_damaged(&self, n: usize) -> bool {
+        self.operational.slice(0, n).is_empty()
+    }
+    fn ends_with_damaged(&self, n: usize) -> bool {
+        if n > self.len {
+            return false;
+        }
+        self.operational.slice(self.len - n, self.len).is_empty()
     }
 
     fn new() -> Self {
@@ -124,7 +160,105 @@ impl Row {
     }
 }
 
-fn get_arrangements_number(states: Row, damaged_ranges: Vec<usize>) -> usize {
+fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
+    loop {
+        // println!("\nr = {:?}, d = {:?}", row, damaged_ranges);
+        if damaged_ranges.is_empty() {
+            if row.has_damaged() {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+
+        while row.len > 0 && row.is_operational(0).unwrap_or(false) {
+            row.skip(1)
+        }
+        while row.len > 0 && row.is_operational(row.len - 1).unwrap_or(false) {
+            row.skip_last(1)
+        }
+
+        let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
+        if row.len < min_len {
+            return 0;
+        }
+
+        if row.len <= 0 {
+            break;
+        }
+        if let Some(false) = row.is_operational(0) {
+            let expected = damaged_ranges[0];
+            if !row.starts_with_damaged(expected) {
+                return 0;
+            }
+            damaged_ranges = &damaged_ranges[1..];
+            row.skip(expected);
+
+            if damaged_ranges.is_empty() {
+                if row.has_damaged() {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+
+            match row.is_operational(0) {
+                Some(false) => {
+                    return 0;
+                }
+                _ => {
+                    row.skip(1);
+                }
+            }
+        }
+
+        if row.len > 0 {
+            if let Some(false) = row.is_operational(row.len - 1) {
+                let expected = damaged_ranges[damaged_ranges.len() - 1];
+                if !row.ends_with_damaged(expected) {
+                    return 0;
+                }
+                damaged_ranges = &damaged_ranges[..damaged_ranges.len() - 1];
+                row.skip_last(expected);
+
+                if damaged_ranges.is_empty() {
+                    if row.has_damaged() {
+                        return 0;
+                    } else {
+                        return 1;
+                    }
+                }
+
+                match row.is_operational(row.len - 1) {
+                    Some(false) => {
+                        return 0;
+                    }
+                    _ => {
+                        row.skip_last(1);
+                    }
+                }
+            }
+        }
+
+        if row.is_operational(0).is_none() {
+            break;
+        }
+    }
+
+    // println!("r = {:?}, d = {:?}", row, damaged_ranges);
+
+    let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
+    if row.len < min_len {
+        return 0;
+    }
+
+    let (operational, damaged) = row.with_super_position(0);
+
+    return get_arrangements_number(operational, damaged_ranges)
+        + get_arrangements_number(damaged, damaged_ranges);
+}
+
+fn get_arrangements_number(states: Row, damaged_ranges: &[usize]) -> usize {
     let mut tasks = vec![(states, 0)];
     let mut res = 0;
     'to_next_task: while let Some((mut row, damaged_range_index)) = tasks.pop() {
@@ -152,13 +286,13 @@ fn get_arrangements_number(states: Row, damaged_ranges: Vec<usize>) -> usize {
             match row.is_operational(i) {
                 Some(true) => {
                     if damaged_count == 0 {
-                        tasks.push((row.skip(i + 1), damaged_range_index));
+                        tasks.push((row.with_skip(i + 1), damaged_range_index));
                         continue 'to_next_task;
                     }
                     if damaged_count != expected_len {
                         continue 'to_next_task;
                     }
-                    tasks.push((row.skip(i + 1), damaged_range_index + 1));
+                    tasks.push((row.with_skip(i + 1), damaged_range_index + 1));
                     continue 'to_next_task;
                 }
                 Some(false) => {
@@ -173,7 +307,7 @@ fn get_arrangements_number(states: Row, damaged_ranges: Vec<usize>) -> usize {
                         continue 'to_next_task;
                     }
                     if damaged_count == expected_len {
-                        tasks.push((row.skip(i + 1), damaged_range_index + 1));
+                        tasks.push((row.with_skip(i + 1), damaged_range_index + 1));
                         continue 'to_next_task;
                     }
                     if damaged_count > 0 {
@@ -220,7 +354,7 @@ pub fn solve_task1(file_content: &str) -> usize {
     file_content
         .lines()
         .map(parse_line)
-        .map(|(states, ranges)| get_arrangements_number(states, ranges))
+        .map(|(states, ranges)| get_arrangements_number_fast(states, &ranges))
         .sum()
 }
 
@@ -241,7 +375,7 @@ pub fn solve_task2(file_content: &str) -> usize {
         .enumerate()
         .map(|(i, (states, ranges))| {
             println!("{i}");
-            get_arrangements_number(states, ranges)
+            get_arrangements_number_fast(states, &ranges)
         })
         .sum()
 }
@@ -255,7 +389,9 @@ mod tests {
     fn test_task1() {
         for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
             let (row, ranges) = parse_line(line);
-            let calculated = get_arrangements_number(row, ranges);
+            let calculated = get_arrangements_number(row, &ranges);
+            let calculated_fast = get_arrangements_number_fast(row, &ranges);
+            assert_eq!(calculated_fast, expected, "Line:\n  {line}");
             assert_eq!(calculated, expected, "Line:\n  {line}")
         }
     }
@@ -263,6 +399,12 @@ mod tests {
     #[test]
     fn test_task1_actual() {
         assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
+        for line in ACTUAL.lines() {
+            let (row, ranges) = parse_line(line);
+            let calculated = get_arrangements_number(row, &ranges);
+            let calculated_fast = get_arrangements_number_fast(row, &ranges);
+            assert_eq!(calculated_fast, calculated, "Line:\n  {line}");
+        }
     }
 
     #[test]
@@ -270,8 +412,10 @@ mod tests {
         for (line, expected) in INPUT.lines().zip([1, 16384, 1, 16, 2500, 506250usize]) {
             let unfolded = unfold_line(line);
             let (row, ranges) = parse_line(&unfolded);
-            let calculated = get_arrangements_number(row, ranges);
-            assert_eq!(calculated, expected, "Line:\n  {line}")
+            let calculated = get_arrangements_number(row, &ranges);
+            let calculated_fast = get_arrangements_number_fast(row, &ranges);
+            assert_eq!(calculated_fast, expected, "Line:\n  {line}");
+            assert_eq!(calculated, expected, "Line:\n  {line}");
         }
     }
 
