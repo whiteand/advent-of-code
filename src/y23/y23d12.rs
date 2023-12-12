@@ -166,13 +166,13 @@ impl Row {
     }
 
     fn starts_with_damaged(&self, n: usize) -> bool {
-        self.operational.slice(0, n).is_empty()
+        self.operational.bits & ((1 << n) - 1) == 0
     }
     fn ends_with_damaged(&self, n: usize) -> bool {
         if n > self.len {
             return false;
         }
-        self.operational.slice(self.len - n, self.len).is_empty()
+        self.operational.bits >> (self.len - n) == 0
     }
 
     fn new() -> Self {
@@ -268,7 +268,9 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
         }
         let n = (0..(row.len))
             .take_while(|i| row.operational.is_set(*i))
-            .count();
+            .last()
+            .map(|x| x + 1)
+            .unwrap_or(0);
         row.skip(n);
         let n = (0..(row.len))
             .rev()
