@@ -165,6 +165,18 @@ impl Row {
 
         res
     }
+
+    fn get_damaged_prefix_len(&self) -> usize {
+        (0..(self.len))
+            .take_while(|i| self.damaged.is_set(*i))
+            .count()
+    }
+    fn get_damaged_sufix_len(&self) -> usize {
+        (0..(self.len))
+            .rev()
+            .take_while(|i| self.damaged.is_set(*i))
+            .count()
+    }
 }
 
 fn get_min_len(ranges: &[usize]) -> usize {
@@ -194,8 +206,12 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
 }
 
 // fn get_arrangements_number_fast(row: Row, damaged_ranges: &[usize]) -> usize {
-//     let res = _get_arrangements_number_fast(row, damaged_ranges);
 //     let expected = get_arrangements_number(row, damaged_ranges);
+//     println!(
+//         "get_arrangements_number_fast({:?}, {:?}) ?= {expected}",
+//         row, damaged_ranges
+//     );
+//     let res = _get_arrangements_number_fast(row, damaged_ranges);
 //     assert_eq!(
 //         res, expected,
 //         "Fast and slow algorithms should match:n=\n  \"{row:?}\", {damaged_ranges:?}  \n"
@@ -209,11 +225,7 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
 fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
     loop {
         if damaged_ranges.is_empty() {
-            if row.has_damaged() {
-                return 0;
-            } else {
-                return 1;
-            }
+            return if row.has_damaged() { 0 } else { 1 };
         }
 
         while row.len > 0 && row.is_operational(0).unwrap_or(false) {
@@ -248,6 +260,45 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
             debug_assert_eq!(row.len, 0, "Full row should be consumed");
             debug_assert_eq!(damaged_ranges.len(), 0, "Full row should be consumed");
             return 1;
+        }
+
+        let damaged_prefix_len = row.get_damaged_prefix_len();
+
+        if damaged_prefix_len > 0 {
+            let first_range = damaged_ranges[0];
+            if damaged_prefix_len > first_range {
+                return 0;
+            }
+            if !row.starts_with_damaged(first_range) {
+                return 0;
+            }
+            if let Some(false) = row.is_operational(first_range) {
+                return 0;
+            }
+            row.skip(first_range + 1);
+            damaged_ranges = &damaged_ranges[1..];
+            if damaged_ranges.is_empty() {
+                return if row.has_damaged() { 0 } else { 1 };
+            }
+        }
+
+        let damaged_suffix_len = row.get_damaged_sufix_len();
+        if damaged_suffix_len > 0 {
+            let last_range = damaged_ranges[damaged_ranges.len() - 1];
+            if damaged_suffix_len > last_range {
+                return 0;
+            }
+            if !row.ends_with_damaged(last_range) {
+                return 0;
+            }
+            if let Some(false) = row.is_operational(row.len - last_range - 1) {
+                return 0;
+            }
+            row.skip_last(last_range + 1);
+            damaged_ranges = &damaged_ranges[..damaged_ranges.len() - 1];
+            if damaged_ranges.is_empty() {
+                return if row.has_damaged() { 0 } else { 1 };
+            }
         }
 
         if let Some(false) = row.is_operational(0) {
@@ -338,8 +389,8 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
         return res;
     }
 
-    let next_is_operational = row.is_operational(unknown_cnt).unwrap_or(false);
-    if next_is_operational {
+    let next_damaged = row.with_skip(unknown_cnt).get_damaged_prefix_len();
+    if next_damaged == 0 {
         let mut res = 0;
         for i in 0..=damaged_ranges.len() {
             let arrangements = count_all_arrangements(unknown_cnt, &damaged_ranges[..i]);
@@ -512,7 +563,7 @@ mod tests {
 
     #[test]
     fn temporal_test() {
-        let line = "..##????#? 4,1,1";
+        let line = "????..???###?#. 1,1,7";
         let (row, ranges) = parse_line(line);
         let calculated = get_arrangements_number(row, &ranges);
         let calculated_fast = get_arrangements_number_fast(row, &ranges);
@@ -526,7 +577,7 @@ mod tests {
     #[test]
     fn test_task1_actual() {
         for line in ACTUAL.lines() {
-            println!("\n{line}\n");
+            // println!("\n{line}\n");
             let (row, ranges) = parse_line(line);
             let calculated = get_arrangements_number(row, &ranges);
             let calculated_fast = get_arrangements_number_fast(row, &ranges);
@@ -548,6 +599,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_task2_actual() {
         assert_eq!(format!("{}", solve_task2(ACTUAL)), "0");
     }
