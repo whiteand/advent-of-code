@@ -1,35 +1,21 @@
 use std::{cmp::Ordering, ops::Range};
 
+use itertools::Itertools;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct Bitmask {
-    bits: usize,
-    len: usize,
+    bits: u128,
 }
 impl std::ops::Deref for Bitmask {
-    type Target = usize;
+    type Target = u128;
     fn deref(&self) -> &Self::Target {
         &self.bits
     }
 }
-impl std::fmt::Debug for Bitmask {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..self.len {
-            if self.is_set(i as usize) {
-                write!(f, "1")?;
-            } else {
-                write!(f, "0")?;
-            }
-            if i % 4 == 3 {
-                write!(f, " ")?;
-            }
-        }
-        Ok(())
-    }
-}
 
 impl Bitmask {
-    fn new(len: usize) -> Self {
-        Self { bits: 0, len }
+    fn new() -> Self {
+        Self { bits: 0 }
     }
     fn set(&mut self, bit: usize) {
         self.bits |= 1 << bit;
@@ -43,10 +29,13 @@ impl Bitmask {
     fn count(&self) -> usize {
         self.bits.count_ones() as usize
     }
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.bits.count_ones() == 0
+    }
     fn slice(&self, from: usize, to: usize) -> Self {
         Self {
             bits: (self.bits >> from) & (1 << (to - from)) - 1,
-            len: to - from,
         }
     }
     fn with_set(&self, bit: usize) -> Self {
@@ -65,7 +54,7 @@ struct Row {
 
 impl std::fmt::Debug for Row {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..len {
+        for i in 0..self.len {
             if self.operational.is_set(i) {
                 write!(f, ".")?;
             } else if self.damaged.is_set(i) {
@@ -81,209 +70,143 @@ impl std::fmt::Debug for Row {
 impl Row {
     fn with_operational(&self, i: usize) -> Self {
         let mut res = self.clone();
+        res.len = res.len.max(i + 1);
         res.operational.set(i);
         res
     }
     fn with_damaged(&self, i: usize) -> Self {
         let mut res = self.clone();
+        res.len = res.len.max(i + 1);
         res.damaged.set(i);
         res
     }
-    fn super_position(&self, i: usize) -> (Self, Self) {
+    fn with_unknown(&self, i: usize) -> Self {
+        let mut res = self.clone();
+        res.len = res.len.max(i + 1);
+        res.damaged.unset(i);
+        res.operational.unset(i);
+        res
+    }
+
+    #[inline]
+    fn has_damaged(&self) -> bool {
+        !self.damaged.is_empty()
+    }
+
+    fn is_operational(&self, i: usize) -> Option<bool> {
+        debug_assert!(i < self.len, "There is no pipe with index {i}");
+        if self.operational.is_set(i) {
+            return Some(true);
+        }
+        if self.damaged.is_set(i) {
+            return Some(false);
+        }
+        return None;
+    }
+
+    fn with_super_position(&self, i: usize) -> (Self, Self) {
         (self.with_operational(i), self.with_damaged(i))
+    }
+    fn skip(&self, from: usize) -> Self {
+        Self {
+            operational: self.operational.slice(from, self.len),
+            damaged: self.damaged.slice(from, self.len),
+            len: self.len - from,
+        }
+    }
+
+    fn new() -> Self {
+        Self {
+            len: 0,
+            operational: Bitmask::new(),
+            damaged: Bitmask::new(),
+        }
     }
 }
 
-#[derive(Debug)]
-struct Task {
-    states_range: Range<usize>,
-    ranges_range: Range<usize>,
-    is_broken: Bitmask,
-    is_operational: Bitmask,
-}
-
-fn get_arangements_number(states: Vec<State>, damaged_ranges: Vec<usize>) -> usize {
-    let mut tasks = vec![Task {
-        states_range: 0..states.len(),
-        ranges_range: 0..damaged_ranges.len(),
-        is_broken: Bitmask::new(states.len()),
-        is_operational: Bitmask::new(states.len()),
-    }];
+fn get_arrangements_number(states: Row, damaged_ranges: Vec<usize>) -> usize {
+    let mut tasks = vec![(states, 0)];
     let mut res = 0;
-
-    'to_next_task: while let Some(Task {
-        states_range,
-        ranges_range,
-        mut is_broken,
-        mut is_operational,
-    }) = tasks.pop()
-    {
-        // This macro takes formatted
-        macro_rules! not_finished {
-            ($($arg:tt)*) => {
-                todo!(
-                    "\n{:?}\n{:?}\n{:#?}\n  Cannot handle state: {:?}",
-                    states,
-                    damaged_ranges,
-                    Task {
-                        states_range: states_range.clone(),
-                        ranges_range: ranges_range.clone(),
-                        is_broken: is_broken,
-                        is_operational: is_operational,
-                    },
-                    format!($($arg)*)
-                )
-            };
-        }
-        macro_rules! pr {
-            ($($arg:tt)*) => {
-                println!(
-                    "\n{:?}\n{:?}\n{:?}\n{:#?}\n  {:?}",
-                    states.clone().into_iter().enumerate().filter(|(i, _)| states_range.contains(i))
-                        .map(|(_, s)| s).collect::<Vec<_>>(),
-                    states.clone().into_iter()
-                        .enumerate().filter(|(i, _)| states_range.contains(i)).map(|(i, v)| if is_broken.is_set(i) {
-                            State::Damaged
-                        } else if is_operational.is_set(i) {
-                            State::Operational
-                        } else {
-                            v
-                        }).collect::<Vec<_>>(),
-                    damaged_ranges.clone().into_iter().enumerate().filter(|(i, _)| ranges_range.contains(i)).map(|(_, v)| v).collect::<Vec<_>>(),
-                    Task {
-                        states_range: states_range.clone(),
-                        ranges_range: ranges_range.clone(),
-                        is_broken: is_broken,
-                        is_operational: is_operational,
-                    },
-                    format!($($arg)*)
-                )
-            };
-        }
-        pr!("New task");
-        if states_range.len() == 0 && ranges_range.len() == 0 {
+    'to_next_task: while let Some((mut row, damaged_range_index)) = tasks.pop() {
+        if damaged_range_index >= damaged_ranges.len() {
+            if row.has_damaged() {
+                continue 'to_next_task;
+            }
             res += 1;
-            continue;
-        } else if states_range.len() == 0 {
-            continue;
-        } else if ranges_range.len() == 0 {
-            not_finished!("ranges_range.len() == 0")
+            continue 'to_next_task;
         }
-        let mut current_streak = 0;
-        let current_damage_range = damaged_ranges.get(ranges_range.start);
-        for i in states_range.clone() {
-            let state = match (is_broken.is_set(i), is_operational.is_set(i), states[i]) {
-                (true, true, State::Unknown) => unreachable!(),
-                (true, false, State::Unknown) => State::Damaged,
-                (false, true, State::Unknown) => State::Operational,
-                (false, false, State::Unknown) => State::Unknown,
-                (_, true, State::Damaged) => continue 'to_next_task,
-                (true, _, State::Operational) => unreachable!(),
-                (_, _, v) => v,
-            };
-            println!("State {state:?}. Current Streak: {current_streak}. Current Range: {current_damage_range:?}");
-            match state {
-                State::Operational => {
-                    if current_streak > 0 {
-                        match current_damage_range {
-                            Some(&r) => {
-                                if current_streak == r {
-                                    tasks.push(Task {
-                                        states_range: (i + 1)..states_range.end,
-                                        ranges_range: (ranges_range.start + 1)..ranges_range.end,
-                                        is_broken: is_broken,
-                                        is_operational: is_operational,
-                                    });
-                                    continue 'to_next_task;
-                                }
-                                if current_streak < r {
-                                    continue 'to_next_task;
-                                }
-                                not_finished!(
-                                    "i: {i}\ncurrent_streak > 0: {current_streak}\n  with current range {r}"
-                                )
-                            }
-                            None => continue 'to_next_task,
-                        }
-                    }
-                    current_streak = 0;
-                }
-                State::Damaged => match current_damage_range {
-                    Some(r) => {
-                        if *r <= current_streak {
-                            continue 'to_next_task;
-                        }
-                        current_streak += 1;
-                    }
-                    None => {
+
+        let mut damaged_count = 0;
+        let mut expected_len = damaged_ranges[damaged_range_index];
+        let min_len = &damaged_ranges[damaged_range_index..]
+            .into_iter()
+            .map(|v| v + 1)
+            .sum::<usize>()
+            - 1;
+
+        if row.len < min_len {
+            continue 'to_next_task;
+        }
+
+        for i in 0..row.len {
+            match row.is_operational(i) {
+                Some(true) => {
+                    if damaged_count == 0 {
+                        tasks.push((row.skip(i + 1), damaged_range_index));
                         continue 'to_next_task;
                     }
-                },
-                State::Unknown => match current_damage_range {
-                    Some(r) => match current_streak.cmp(r) {
-                        Ordering::Less => {
-                            if current_streak > 0 {
-                                is_broken.set(i);
-                                continue;
-                            }
-                            tasks.push(Task {
-                                states_range: states_range.clone(),
-                                ranges_range: ranges_range.clone(),
-                                is_broken: is_broken,
-                                is_operational: is_operational.with_set(i),
-                            });
-                            tasks.push(Task {
-                                states_range: states_range.clone(),
-                                ranges_range: ranges_range.clone(),
-                                is_broken: is_broken.with_set(i),
-                                is_operational: is_operational,
-                            });
-                            continue 'to_next_task;
-                        }
-                        Ordering::Equal => {
-                            tasks.push(Task {
-                                states_range: i..states_range.end,
-                                ranges_range: (ranges_range.start + 1)..ranges_range.end,
-                                is_broken: is_broken,
-                                is_operational: is_operational.with_set(i),
-                            });
-                            continue 'to_next_task;
-                        }
-                        Ordering::Greater => {
-                            not_finished!("current_streak > current_damage_range",)
-                        }
-                    },
-                    None => {
-                        not_finished!("Current damage range does not exists")
+                    if damaged_count != expected_len {
+                        continue 'to_next_task;
                     }
-                },
+                    tasks.push((row.skip(i + 1), damaged_range_index + 1));
+                    continue 'to_next_task;
+                }
+                Some(false) => {
+                    if damaged_count >= expected_len {
+                        continue 'to_next_task;
+                    }
+                    damaged_count += 1;
+                    continue;
+                }
+                None => {
+                    if damaged_count > expected_len {
+                        continue 'to_next_task;
+                    }
+                    if damaged_count == expected_len {
+                        tasks.push((row.skip(i + 1), damaged_range_index + 1));
+                        continue 'to_next_task;
+                    }
+                    if damaged_count > 0 {
+                        row = row.with_damaged(i);
+                        damaged_count += 1;
+                        continue;
+                    }
+                    let (operational, damaged) = row.with_super_position(i);
+                    tasks.push((operational, damaged_range_index));
+                    tasks.push((damaged, damaged_range_index));
+                    continue 'to_next_task;
+                }
             }
         }
-        match (current_streak.cmp(&0), current_damage_range) {
-            (Ordering::Greater, Some(&r)) if r == current_streak => {
-                res += 1;
-                continue 'to_next_task;
-            }
-            (Ordering::Greater, Some(&r)) if r > current_streak => {
-                continue 'to_next_task;
-            }
-            v => not_finished!("current streak: {current_streak}\n{v:?}"),
+        if damaged_count != expected_len {
+            continue 'to_next_task;
         }
+        res += 1;
     }
     res
 }
 
-fn parse_line(line: &str) -> (Vec<State>, Vec<usize>) {
+fn parse_line(line: &str) -> (Row, Vec<usize>) {
     let (left, right) = line.split_once(' ').unwrap();
-    let states = left
-        .chars()
-        .map(|c| match c {
-            '#' => State::Damaged,
-            '.' => State::Operational,
-            '?' => State::Unknown,
+    let states = left.chars().enumerate().fold(Row::new(), |r, (i, c)| {
+        debug_assert!(i < 128, "bit mask is too short to store all states");
+        match c {
+            '#' => r.with_damaged(i),
+            '.' => r.with_operational(i),
+            '?' => r.with_unknown(i),
             v => unreachable!("There is no such state as {v}"),
-        })
-        .collect::<Vec<_>>();
+        }
+    });
 
     let ranges = right
         .split(',')
@@ -297,11 +220,30 @@ pub fn solve_task1(file_content: &str) -> usize {
     file_content
         .lines()
         .map(parse_line)
-        .map(|(states, ranges)| get_arangements_number(states, ranges))
+        .map(|(states, ranges)| get_arrangements_number(states, ranges))
         .sum()
 }
-pub fn solve_task2(_file_content: &str) -> usize {
-    0
+
+pub fn unfold_line(line: &str) -> String {
+    let (states, ranges) = line.split_once(' ').unwrap();
+    format!(
+        "{} {}",
+        (0..5).map(|f| states).join("?"),
+        (0..5).map(|f| ranges).join(",")
+    )
+}
+
+pub fn solve_task2(file_content: &str) -> usize {
+    file_content
+        .lines()
+        .map(unfold_line)
+        .map(|s| parse_line(&s))
+        .enumerate()
+        .map(|(i, (states, ranges))| {
+            println!("{i}");
+            get_arrangements_number(states, ranges)
+        })
+        .sum()
 }
 #[cfg(test)]
 mod tests {
@@ -311,24 +253,26 @@ mod tests {
 
     #[test]
     fn test_task1() {
-        let (states, ranges) = parse_line("?#?#?#?#?#?#?#? 1,3,1,6");
-        let calculated = get_arangements_number(states, ranges);
-        assert_eq!(calculated, 1);
-        // for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
-        //     let (states, ranges) = parse_line(line);
-        //     let calculated = get_arangements_number(states, ranges);
-        //     assert_eq!(calculated, expected, "Line:\n  {line}")
-        // }
+        for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
+            let (row, ranges) = parse_line(line);
+            let calculated = get_arrangements_number(row, ranges);
+            assert_eq!(calculated, expected, "Line:\n  {line}")
+        }
     }
 
     #[test]
     fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
     }
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "0");
+        for (line, expected) in INPUT.lines().zip([1, 16384, 1, 16, 2500, 506250usize]) {
+            let unfolded = unfold_line(line);
+            let (row, ranges) = parse_line(&unfolded);
+            let calculated = get_arrangements_number(row, ranges);
+            assert_eq!(calculated, expected, "Line:\n  {line}")
+        }
     }
 
     #[test]
