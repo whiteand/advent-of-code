@@ -150,6 +150,15 @@ impl Row {
         self.damaged = self.damaged.slice(from, self.len);
         self.len -= from;
     }
+    fn operational_prefix_len(&self) -> usize {
+        let mut b = self.operational.bits;
+        let mut n = 0;
+        while b % 2 != 0 {
+            b >>= 1;
+            n += 1;
+        }
+        n
+    }
     fn skip_last(&mut self, n: usize) {
         if n == 0 {
             return;
@@ -205,6 +214,12 @@ impl Row {
         (0..(self.len))
             .rev()
             .take_while(|i| self.damaged.is_set(*i))
+            .count()
+    }
+
+    fn operational_suffix_len(&self) -> usize {
+        std::iter::successors(Some(1 << (self.len - 1)), |&succ| Some(succ >> 1))
+            .take_while(|c| self.operational.bits & c != 0)
             .count()
     }
 }
@@ -266,16 +281,9 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
         if damaged_ranges.is_empty() {
             return if row.has_damaged() { 0 } else { 1 };
         }
-        let n = (0..(row.len))
-            .take_while(|i| row.operational.is_set(*i))
-            .last()
-            .map(|x| x + 1)
-            .unwrap_or(0);
+        let n = row.operational_prefix_len();
         row.skip(n);
-        let n = (0..(row.len))
-            .rev()
-            .take_while(|i| row.operational.is_set(*i))
-            .count();
+        let n = row.operational_suffix_len();
         row.skip_last(n);
 
         if row.len < min_len {
