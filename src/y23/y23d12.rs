@@ -218,6 +218,9 @@ impl Row {
     }
 
     fn operational_suffix_len(&self) -> usize {
+        if self.len <= 0 {
+            return 0;
+        }
         std::iter::successors(Some(1 << (self.len - 1)), |&succ| Some(succ >> 1))
             .take_while(|c| self.operational.bits & c != 0)
             .count()
