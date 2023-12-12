@@ -137,6 +137,9 @@ impl Row {
     }
 
     fn skip(&mut self, from: usize) {
+        if from == 0 {
+            return;
+        }
         if from >= self.len {
             self.operational = Bitmask::new();
             self.damaged = Bitmask::new();
@@ -258,19 +261,21 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
 }
 
 fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
+    let mut min_len = get_min_len(&damaged_ranges);
     loop {
         if damaged_ranges.is_empty() {
             return if row.has_damaged() { 0 } else { 1 };
         }
+        let n = (0..(row.len))
+            .take_while(|i| row.operational.is_set(*i))
+            .count();
+        row.skip(n);
+        let n = (0..(row.len))
+            .rev()
+            .take_while(|i| row.operational.is_set(*i))
+            .count();
+        row.skip_last(n);
 
-        while row.len > 0 && row.is_operational(0).unwrap_or(false) {
-            row.skip(1)
-        }
-        while row.len > 0 && row.is_operational(row.len - 1).unwrap_or(false) {
-            row.skip_last(1)
-        }
-
-        let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
         if row.len < min_len {
             return 0;
         }
@@ -312,6 +317,7 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
             }
             row.skip(first_range + 1);
             damaged_ranges = &damaged_ranges[1..];
+            min_len = get_min_len(damaged_ranges);
             if damaged_ranges.is_empty() {
                 return if row.has_damaged() { 0 } else { 1 };
             }
@@ -331,6 +337,7 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
             }
             row.skip_last(last_range + 1);
             damaged_ranges = &damaged_ranges[..damaged_ranges.len() - 1];
+            min_len = get_min_len(damaged_ranges);
             if damaged_ranges.is_empty() {
                 return if row.has_damaged() { 0 } else { 1 };
             }
