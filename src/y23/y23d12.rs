@@ -1,5 +1,3 @@
-use std::{cmp::Ordering, ops::Range};
-
 use itertools::Itertools;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -26,9 +24,6 @@ impl Bitmask {
     fn is_set(&self, bit: usize) -> bool {
         self.bits & (1 << bit) != 0
     }
-    fn count(&self) -> usize {
-        self.bits.count_ones() as usize
-    }
     #[inline]
     fn is_empty(&self) -> bool {
         self.bits.count_ones() == 0
@@ -37,11 +32,6 @@ impl Bitmask {
         Self {
             bits: (self.bits >> from) & (1 << (to - from)) - 1,
         }
-    }
-    fn with_set(&self, bit: usize) -> Self {
-        let mut res = *self;
-        res.set(bit);
-        res
     }
 }
 
@@ -158,11 +148,66 @@ impl Row {
             damaged: Bitmask::new(),
         }
     }
+
+    fn get_max_damaged_slice_len(&self) -> usize {
+        let mut res = 0;
+        let mut cur = 0;
+        for i in 0..self.len {
+            if let Some(false) = self.is_operational(i) {
+                cur += 1;
+                if cur > res {
+                    res = cur;
+                }
+            } else {
+                cur = 0;
+            }
+        }
+
+        res
+    }
 }
 
+fn get_min_len(ranges: &[usize]) -> usize {
+    if ranges.is_empty() {
+        return 0;
+    }
+    ranges.iter().map(|r| r + 1).sum::<usize>() - 1
+}
+
+fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
+    if ranges.is_empty() {
+        return 1;
+    }
+    if get_min_len(ranges) > row_len {
+        return 0;
+    }
+    if ranges.len() == 1 {
+        return row_len - ranges[0] + 1;
+    }
+    let rest_min_len = get_min_len(&ranges[1..]) + 1;
+
+    let free_positions = row_len + 1 - rest_min_len - ranges[0] + 1;
+
+    return (0..free_positions)
+        .map(|i| count_all_arrangements(row_len - i - 1 - ranges[0], &ranges[1..]))
+        .sum();
+}
+
+// fn get_arrangements_number_fast(row: Row, damaged_ranges: &[usize]) -> usize {
+//     let res = _get_arrangements_number_fast(row, damaged_ranges);
+//     let expected = get_arrangements_number(row, damaged_ranges);
+//     assert_eq!(
+//         res, expected,
+//         "Fast and slow algorithms should match:n=\n  \"{row:?}\", {damaged_ranges:?}  \n"
+//     );
+//     // println!(
+//     //     "get_arrangements_number_fast({:?}, {:?}) = {}",
+//     //     row, damaged_ranges, res
+//     // );
+//     res
+// }
 fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
     loop {
-        // println!("\nr = {:?}, d = {:?}", row, damaged_ranges);
         if damaged_ranges.is_empty() {
             if row.has_damaged() {
                 return 0;
@@ -183,9 +228,28 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
             return 0;
         }
 
-        if row.len <= 0 {
-            break;
+        if row.len == min_len {
+            while row.len > 0 && !damaged_ranges.is_empty() {
+                let expected = damaged_ranges[0];
+                if !row.starts_with_damaged(expected) {
+                    return 0;
+                }
+                damaged_ranges = &damaged_ranges[1..];
+                row.skip(expected);
+                if damaged_ranges.is_empty() && row.len <= 0 {
+                    break;
+                }
+                if let Some(false) = row.is_operational(0) {
+                    return 0;
+                } else {
+                    row.skip(1);
+                }
+            }
+            debug_assert_eq!(row.len, 0, "Full row should be consumed");
+            debug_assert_eq!(damaged_ranges.len(), 0, "Full row should be consumed");
+            return 1;
         }
+
         if let Some(false) = row.is_operational(0) {
             let expected = damaged_ranges[0];
             if !row.starts_with_damaged(expected) {
@@ -252,10 +316,60 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
         return 0;
     }
 
-    let (operational, damaged) = row.with_super_position(0);
+    let unknown_cnt = (0..(row.len))
+        .into_iter()
+        .take_while(|i| row.is_operational(*i).is_none())
+        .count();
 
-    return get_arrangements_number(operational, damaged_ranges)
-        + get_arrangements_number(damaged, damaged_ranges);
+    debug_assert!(
+        unknown_cnt > 0,
+        "at least the first element should be unknown"
+    );
+
+    if unknown_cnt == 1 {
+        let (operational, damaged) = row.with_super_position(0);
+
+        return get_arrangements_number_fast(operational, damaged_ranges)
+            + get_arrangements_number_fast(damaged, damaged_ranges);
+    }
+
+    if unknown_cnt == row.len {
+        let res = count_all_arrangements(unknown_cnt, damaged_ranges);
+        return res;
+    }
+
+    let next_is_operational = row.is_operational(unknown_cnt).unwrap_or(false);
+    if next_is_operational {
+        let mut res = 0;
+        for i in 0..=damaged_ranges.len() {
+            let arrangements = count_all_arrangements(unknown_cnt, &damaged_ranges[..i]);
+            if arrangements == 0 {
+                break;
+            }
+            // println!(
+            //     "{:?} in {}  arrangements = {}",
+            //     &damaged_ranges[..i],
+            //     "?".repeat(unknown_cnt),
+            //     arrangements
+            // );
+            res += arrangements
+                * get_arrangements_number_fast(
+                    row.with_skip(unknown_cnt + 1),
+                    &damaged_ranges[i..],
+                );
+        }
+        return res;
+    }
+
+    let max_r = damaged_ranges.iter().max().copied().unwrap();
+    let max_damaged = row.get_max_damaged_slice_len();
+    if max_damaged > max_r {
+        return 0;
+    }
+
+    let (operational, damaged) = row.with_super_position(unknown_cnt - 1);
+    return get_arrangements_number_fast(operational, &damaged_ranges)
+        + get_arrangements_number_fast(damaged, &damaged_ranges);
 }
 
 fn get_arrangements_number(states: Row, damaged_ranges: &[usize]) -> usize {
@@ -271,7 +385,7 @@ fn get_arrangements_number(states: Row, damaged_ranges: &[usize]) -> usize {
         }
 
         let mut damaged_count = 0;
-        let mut expected_len = damaged_ranges[damaged_range_index];
+        let expected_len = damaged_ranges[damaged_range_index];
         let min_len = &damaged_ranges[damaged_range_index..]
             .into_iter()
             .map(|v| v + 1)
@@ -362,8 +476,8 @@ pub fn unfold_line(line: &str) -> String {
     let (states, ranges) = line.split_once(' ').unwrap();
     format!(
         "{} {}",
-        (0..5).map(|f| states).join("?"),
-        (0..5).map(|f| ranges).join(",")
+        (0..5).map(|_| states).join("?"),
+        (0..5).map(|_| ranges).join(",")
     )
 }
 
@@ -397,14 +511,28 @@ mod tests {
     }
 
     #[test]
+    fn temporal_test() {
+        let line = "..##????#? 4,1,1";
+        let (row, ranges) = parse_line(line);
+        let calculated = get_arrangements_number(row, &ranges);
+        let calculated_fast = get_arrangements_number_fast(row, &ranges);
+        assert_eq!(calculated, calculated_fast, "Line:\n  {line}");
+    }
+
+    #[test]
+    fn test_get_all_arrangements() {
+        assert_eq!(count_all_arrangements(6, &[1, 2, 1]), 1)
+    }
+    #[test]
     fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
         for line in ACTUAL.lines() {
+            println!("\n{line}\n");
             let (row, ranges) = parse_line(line);
             let calculated = get_arrangements_number(row, &ranges);
             let calculated_fast = get_arrangements_number_fast(row, &ranges);
             assert_eq!(calculated_fast, calculated, "Line:\n  {line}");
         }
+        assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
     }
 
     #[test]
