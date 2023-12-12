@@ -301,61 +301,7 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
             }
         }
 
-        if let Some(false) = row.is_operational(0) {
-            let expected = damaged_ranges[0];
-            if !row.starts_with_damaged(expected) {
-                return 0;
-            }
-            damaged_ranges = &damaged_ranges[1..];
-            row.skip(expected);
-
-            if damaged_ranges.is_empty() {
-                if row.has_damaged() {
-                    return 0;
-                } else {
-                    return 1;
-                }
-            }
-
-            match row.is_operational(0) {
-                Some(false) => {
-                    return 0;
-                }
-                _ => {
-                    row.skip(1);
-                }
-            }
-        }
-
-        if row.len > 0 {
-            if let Some(false) = row.is_operational(row.len - 1) {
-                let expected = damaged_ranges[damaged_ranges.len() - 1];
-                if !row.ends_with_damaged(expected) {
-                    return 0;
-                }
-                damaged_ranges = &damaged_ranges[..damaged_ranges.len() - 1];
-                row.skip_last(expected);
-
-                if damaged_ranges.is_empty() {
-                    if row.has_damaged() {
-                        return 0;
-                    } else {
-                        return 1;
-                    }
-                }
-
-                match row.is_operational(row.len - 1) {
-                    Some(false) => {
-                        return 0;
-                    }
-                    _ => {
-                        row.skip_last(1);
-                    }
-                }
-            }
-        }
-
-        if row.is_operational(0).is_none() {
+        if row.is_operational(0).is_none() && row.is_operational(row.len - 1).is_none() {
             break;
         }
     }
