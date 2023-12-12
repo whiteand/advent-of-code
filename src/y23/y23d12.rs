@@ -544,8 +544,6 @@ mod tests {
         for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
             let (row, ranges) = parse_line(line);
             let calculated = get_arrangements_number(row, &ranges);
-            let calculated_fast = get_arrangements_number(row, &ranges);
-            assert_eq!(calculated_fast, expected, "Line:\n  {line}");
             assert_eq!(calculated, expected, "Line:\n  {line}")
         }
     }
@@ -564,12 +562,6 @@ mod tests {
     }
     #[test]
     fn test_task1_actual() {
-        for line in ACTUAL.lines() {
-            let (row, ranges) = parse_line(line);
-            let calculated = get_arrangements_number(row, &ranges);
-            let calculated_fast = get_arrangements_number(row, &ranges);
-            assert_eq!(calculated_fast, calculated, "Line:\n  {line}");
-        }
         assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
     }
 
@@ -578,10 +570,8 @@ mod tests {
         for (line, expected) in INPUT.lines().zip([1, 16384, 1, 16, 2500, 506250usize]) {
             let unfolded = unfold_line(line);
             let (row, ranges) = parse_line(&unfolded);
-            let calculated = get_arrangements_number(row, &ranges);
             let calculated_fast = get_arrangements_number(row, &ranges);
             assert_eq!(calculated_fast, expected, "Line:\n  {line}");
-            assert_eq!(calculated, expected, "Line:\n  {line}");
         }
     }
 
