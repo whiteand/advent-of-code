@@ -52,7 +52,7 @@ impl Bitmask {
     }
     #[inline]
     fn is_empty(&self) -> bool {
-        self.bits.count_ones() == 0
+        self.bits == 0
     }
     fn slice(&self, from: usize, to: usize) -> Self {
         Self {
@@ -281,25 +281,15 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
         }
 
         if row.len == min_len {
-            while row.len > 0 && !damaged_ranges.is_empty() {
-                let expected = damaged_ranges[0];
-                if !row.starts_with_damaged(expected) {
-                    return 0;
-                }
-                damaged_ranges = &damaged_ranges[1..];
-                row.skip(expected);
-                if damaged_ranges.is_empty() && row.len <= 0 {
-                    break;
-                }
-                if let Some(false) = row.is_operational(0) {
-                    return 0;
-                } else {
-                    row.skip(1);
-                }
-            }
-            debug_assert_eq!(row.len, 0, "Full row should be consumed");
-            debug_assert_eq!(damaged_ranges.len(), 0, "Full row should be consumed");
-            return 1;
+            let mask = damaged_ranges
+                .iter()
+                .rev()
+                .fold(0, |acc, r| (acc << (r + 1)) | ((1 << r) - 1));
+            return if (row.operational.bits & mask) | (row.damaged.bits & !mask) == 0 {
+                1
+            } else {
+                0
+            };
         }
 
         let damaged_prefix_len = row.get_damaged_prefix_len();
