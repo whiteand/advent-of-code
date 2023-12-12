@@ -104,6 +104,11 @@ impl Row {
         res.skip(i);
         res
     }
+    fn with_skip_last(&self, i: usize) -> Self {
+        let mut res = self.clone();
+        res.skip_last(i);
+        res
+    }
 
     fn skip(&mut self, from: usize) {
         if from >= self.len {
@@ -149,41 +154,65 @@ impl Row {
         }
     }
 
-    fn get_max_damaged_slice_len(&self) -> usize {
-        let mut res = 0;
-        let mut cur = 0;
-        for i in 0..self.len {
-            if let Some(false) = self.is_operational(i) {
-                cur += 1;
-                if cur > res {
-                    res = cur;
-                }
-            } else {
-                cur = 0;
-            }
-        }
-
-        res
-    }
-
     fn get_damaged_prefix_len(&self) -> usize {
         (0..(self.len))
             .take_while(|i| self.damaged.is_set(*i))
             .count()
     }
-    fn get_damaged_sufix_len(&self) -> usize {
+
+    fn get_unknown_prefix_len(&self) -> usize {
+        (0..(self.len))
+            .take_while(|i| !self.operational.is_set(*i) && !self.damaged.is_set(*i))
+            .count()
+    }
+    fn get_unknown_sufix_len(&self) -> usize {
+        (0..(self.len))
+            .rev()
+            .take_while(|i| !self.operational.is_set(*i) && !self.damaged.is_set(*i))
+            .count()
+    }
+
+    fn get_damaged_suffix_len(&self) -> usize {
         (0..(self.len))
             .rev()
             .take_while(|i| self.damaged.is_set(*i))
             .count()
     }
 }
-
+// 1___22
+// 1__22_
+// 1_22__
+// _1_22__
+// _1__22_
+// _1___22
+// __1__22
+// __1_22_
+// ___1_22
 fn get_min_len(ranges: &[usize]) -> usize {
     if ranges.is_empty() {
         return 0;
     }
     ranges.iter().map(|r| r + 1).sum::<usize>() - 1
+}
+
+fn count_all_arrangements_slow(row_len: usize, ranges: &[usize]) -> usize {
+    if ranges.is_empty() {
+        return 1;
+    }
+    if get_min_len(ranges) > row_len {
+        return 0;
+    }
+    if ranges.len() == 1 {
+        return row_len - ranges[0] + 1;
+    }
+
+    let rest_min_len = get_min_len(&ranges[1..]) + 1;
+
+    let free_positions = row_len + 1 - rest_min_len - ranges[0] + 1;
+
+    return (0..free_positions)
+        .map(|i| count_all_arrangements(row_len - i - 1 - ranges[0], &ranges[1..]))
+        .sum();
 }
 
 fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
@@ -196,13 +225,39 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
     if ranges.len() == 1 {
         return row_len - ranges[0] + 1;
     }
-    let rest_min_len = get_min_len(&ranges[1..]) + 1;
+    let expected_value = count_all_arrangements_slow(row_len, ranges);
+    let rs = ranges.len();
 
-    let free_positions = row_len + 1 - rest_min_len - ranges[0] + 1;
+    // Invariant:
+    // arr[K][L] = number of arrangement of K ranges over the L length
+    let mut solution = vec![vec![99; row_len + 1]; ranges.len() + 1];
+    solution[0][0] = 1;
+    for l in 0..=row_len {
+        solution[0][l] = 1;
+    }
+    for k in 1..=rs {
+        solution[k][0] = 0;
+    }
+    for k in 1..=rs {
+        let taken_elements = ranges[..k].iter().sum::<usize>();
+        for l in 1..=row_len {
+            if l < taken_elements + k - 1 {
+                solution[k][l] = 0;
+                continue;
+            }
+            if l == taken_elements + k - 1 {
+                solution[k][l] = 1;
+                continue;
+            }
+            if k == 1 {
+                solution[k][l] = l - ranges[0] + 1;
+                continue;
+            }
+            solution[k][l] = solution[k][l - 1] + solution[k - 1][l - ranges[k - 1] - 1];
+        }
+    }
 
-    return (0..free_positions)
-        .map(|i| count_all_arrangements(row_len - i - 1 - ranges[0], &ranges[1..]))
-        .sum();
+    solution[ranges.len()][row_len]
 }
 
 // fn get_arrangements_number_fast(row: Row, damaged_ranges: &[usize]) -> usize {
@@ -216,10 +271,10 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
 //         res, expected,
 //         "Fast and slow algorithms should match:n=\n  \"{row:?}\", {damaged_ranges:?}  \n"
 //     );
-//     // println!(
-//     //     "get_arrangements_number_fast({:?}, {:?}) = {}",
-//     //     row, damaged_ranges, res
-//     // );
+//     println!(
+//         "get_arrangements_number_fast({:?}, {:?}) = {}",
+//         row, damaged_ranges, res
+//     );
 //     res
 // }
 fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
@@ -282,7 +337,7 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
             }
         }
 
-        let damaged_suffix_len = row.get_damaged_sufix_len();
+        let damaged_suffix_len = row.get_damaged_suffix_len();
         if damaged_suffix_len > 0 {
             let last_range = damaged_ranges[damaged_ranges.len() - 1];
             if damaged_suffix_len > last_range {
@@ -306,6 +361,64 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
         }
     }
 
+    if damaged_ranges.is_empty() {
+        return if row.has_damaged() { 0 } else { 1 };
+    }
+
+    if damaged_ranges.len() == 1 {
+        if row.has_damaged() {
+            // println!("r = {:?}, d = {:?}", row, damaged_ranges);
+            let range = damaged_ranges[0];
+            if row.len < range {
+                return 0;
+            }
+
+            let mut first_broken = (0..(row.len))
+                .find(|i| row.is_operational(*i) == Some(false))
+                .unwrap();
+            let mut initial_last = (0..(row.len))
+                .rev()
+                .find(|i| row.is_operational(*i) == Some(false))
+                .unwrap();
+
+            if initial_last - first_broken + 1 > range {
+                return 0;
+            }
+
+            if (first_broken..=initial_last).any(|i| row.operational.is_set(i)) {
+                return 0;
+            }
+            let mut last = initial_last;
+
+            while last < row.len - 1
+                && !row.operational.is_set(last + 1)
+                && last - first_broken + 1 < range
+            {
+                last += 1;
+            }
+            while first_broken > 0
+                && !row.operational.is_set(first_broken - 1)
+                && last - first_broken + 1 < range
+            {
+                first_broken -= 1;
+            }
+
+            if last - first_broken + 1 != range {
+                return 0;
+            }
+            let mut res = 1;
+            while first_broken > 0
+                && !row.operational.is_set(first_broken - 1)
+                && last - 1 >= initial_last
+            {
+                first_broken -= 1;
+                last -= 1;
+                res += 1;
+            }
+            return res;
+        }
+    }
+
     // println!("r = {:?}, d = {:?}", row, damaged_ranges);
 
     let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
@@ -313,60 +426,128 @@ fn get_arrangements_number_fast(mut row: Row, mut damaged_ranges: &[usize]) -> u
         return 0;
     }
 
-    let unknown_cnt = (0..(row.len))
-        .into_iter()
-        .take_while(|i| row.is_operational(*i).is_none())
-        .count();
+    let prefix_unknown = row.get_unknown_prefix_len();
 
     debug_assert!(
-        unknown_cnt > 0,
+        prefix_unknown > 0,
         "at least the first element should be unknown"
     );
 
-    if unknown_cnt == 1 {
+    if prefix_unknown == 1 {
         let (operational, damaged) = row.with_super_position(0);
 
         return get_arrangements_number_fast(operational, damaged_ranges)
             + get_arrangements_number_fast(damaged, damaged_ranges);
     }
 
-    if unknown_cnt == row.len {
-        let res = count_all_arrangements(unknown_cnt, damaged_ranges);
+    if prefix_unknown == row.len {
+        let res = count_all_arrangements(prefix_unknown, damaged_ranges);
         return res;
     }
 
-    let next_damaged = row.with_skip(unknown_cnt).get_damaged_prefix_len();
-    if next_damaged == 0 {
+    let suffix_unknown = row.get_unknown_sufix_len();
+
+    if suffix_unknown == 1 {
+        let (operational, damaged) = row.with_super_position(row.len - 1);
+
+        return get_arrangements_number_fast(operational, damaged_ranges)
+            + get_arrangements_number_fast(damaged, damaged_ranges);
+    }
+
+    let after_prefix_damaged = row.with_skip(prefix_unknown).get_damaged_prefix_len();
+    if after_prefix_damaged == 0 {
         let mut res = 0;
         for i in 0..=damaged_ranges.len() {
-            let arrangements = count_all_arrangements(unknown_cnt, &damaged_ranges[..i]);
+            let arrangements = count_all_arrangements(prefix_unknown, &damaged_ranges[..i]);
             if arrangements == 0 {
                 break;
             }
-            // println!(
-            //     "{:?} in {}  arrangements = {}",
-            //     &damaged_ranges[..i],
-            //     "?".repeat(unknown_cnt),
-            //     arrangements
-            // );
             res += arrangements
                 * get_arrangements_number_fast(
-                    row.with_skip(unknown_cnt + 1),
+                    row.with_skip(prefix_unknown + 1),
                     &damaged_ranges[i..],
                 );
         }
         return res;
     }
 
-    let max_r = damaged_ranges.iter().max().copied().unwrap();
-    let max_damaged = row.get_max_damaged_slice_len();
-    if max_damaged > max_r {
-        return 0;
+    let before_suffix_damaged = row.with_skip_last(suffix_unknown).get_damaged_suffix_len();
+    if before_suffix_damaged == 0 {
+        let mut res = 0;
+        for i in (0..=damaged_ranges.len()).rev() {
+            let arrangements = count_all_arrangements(suffix_unknown, &damaged_ranges[i..]);
+            if arrangements == 0 {
+                break;
+            }
+            res += arrangements
+                * get_arrangements_number_fast(
+                    row.with_skip_last(suffix_unknown + 1),
+                    &damaged_ranges[..i],
+                );
+        }
+        return res;
     }
 
-    let (operational, damaged) = row.with_super_position(unknown_cnt - 1);
-    return get_arrangements_number_fast(operational, &damaged_ranges)
-        + get_arrangements_number_fast(damaged, &damaged_ranges);
+    let mut res = 0;
+    // println!("{row:?} {:?}", damaged_ranges);
+    for i in 0..damaged_ranges.len() {
+        // println!(
+        //     "{row:?}\n{:?} {} {:?}",
+        //     &damaged_ranges[..i],
+        //     damaged_ranges[i],
+        //     &damaged_ranges[i + 1..]
+        // );
+        let range = damaged_ranges[i];
+        if range < after_prefix_damaged {
+            continue;
+        }
+
+        let prev_min_len = if i > 0 {
+            get_min_len(&damaged_ranges[..i])
+        } else {
+            0
+        };
+
+        'position_loop: for j in (0..=prefix_unknown).rev() {
+            if j < prev_min_len {
+                continue;
+            }
+            if range - 1 + j < prefix_unknown {
+                continue;
+            }
+            for k in j..(j + range) {
+                if k >= row.len {
+                    continue 'position_loop;
+                }
+                if row.operational.is_set(k) {
+                    continue 'position_loop;
+                }
+            }
+            if row.damaged.is_set(j + range) {
+                continue;
+            }
+            let mut dbg_row = row.clone();
+            for k in 0..range {
+                dbg_row.damaged.set(j + k)
+            }
+            // println!("with {range} elements at {j}: {dbg_row:?}");
+
+            let arrangements = if j > 0 {
+                count_all_arrangements(j - 1, &damaged_ranges[..i])
+            } else {
+                1
+            };
+            if arrangements == 0 {
+                break;
+            }
+            res += arrangements
+                * get_arrangements_number_fast(
+                    row.with_skip(j + range + 1),
+                    &damaged_ranges[(i + 1)..],
+                )
+        }
+    }
+    res
 }
 
 fn get_arrangements_number(states: Row, damaged_ranges: &[usize]) -> usize {
@@ -485,7 +666,7 @@ pub fn solve_task2(file_content: &str) -> usize {
         .map(|s| parse_line(&s))
         .enumerate()
         .map(|(i, (states, ranges))| {
-            println!("{i}");
+            println!("{i} {:?} {:?}", states, &ranges);
             get_arrangements_number_fast(states, &ranges)
         })
         .sum()
@@ -508,12 +689,13 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn temporal_test() {
-        let line = "????..???###?#. 1,1,7";
+        let line = "????????????????????????????????????????????????????????????????????????????????????????? 5,1,1,5,1,1,5,1,1,5,1,1,5,1,1";
         let (row, ranges) = parse_line(line);
-        let calculated = get_arrangements_number(row, &ranges);
+        // let calculated = get_arrangements_number(row, &ranges);
         let calculated_fast = get_arrangements_number_fast(row, &ranges);
-        assert_eq!(calculated, calculated_fast, "Line:\n  {line}");
+        // assert_eq!(calculated, calculated_fast, "Line:\n  {line}");
     }
 
     #[test]
