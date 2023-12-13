@@ -65,22 +65,14 @@ struct Row {
     len: usize,
 }
 
-impl std::fmt::Debug for Row {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in 0..self.len {
-            if self.operational.is_set(i) {
-                write!(f, ".")?;
-            } else if self.damaged.is_set(i) {
-                write!(f, "#")?;
-            } else {
-                write!(f, "?")?;
-            }
-        }
-        Ok(())
-    }
-}
-
 impl Row {
+    fn new() -> Self {
+        Self {
+            len: 0,
+            operational: Bitmask::new(),
+            damaged: Bitmask::new(),
+        }
+    }
     fn with_operational(&self, i: usize) -> Self {
         let mut res = *self;
         res.len = res.len.max(i + 1);
@@ -98,52 +90,33 @@ impl Row {
         res.len = res.len.max(i + 1);
         res
     }
-
-    fn is_operational(&self, i: usize) -> Option<bool> {
-        if i >= self.len {
-            return Some(false);
-        }
-        if self.operational.is_set(i) {
-            return Some(true);
-        }
-        if self.damaged.is_set(i) {
-            return Some(false);
-        }
-        None
-    }
-
-    fn new() -> Self {
-        Self {
-            len: 0,
-            operational: Bitmask::new(),
-            damaged: Bitmask::new(),
-        }
-    }
-}
-
-fn get_min_len(ranges: &[usize]) -> usize {
-    if ranges.is_empty() {
-        return 0;
-    }
-    ranges.iter().map(|r| r + 1).sum::<usize>() - 1
 }
 
 fn get_arrangements_number(row: Row, damaged_ranges: &[usize]) -> usize {
     let ranges_number = damaged_ranges.len();
     let len = row.len;
     let mut s = vec![vec![usize::MAX; len + 1]; ranges_number + 1];
-    for i in 0..=len {
-        s[0][i] = if row.damaged.slice(0, i).is_empty() {
-            1
-        } else {
-            0
-        };
-    }
-    for r in 1..=ranges_number {
-        let min_len = get_min_len(&damaged_ranges[..r]);
-        for i in 0..min_len {
-            s[r][i] = 0;
+
+    s[0][0] = 1;
+    match (1..=len).find(|i| row.damaged.is_set(*i - 1)) {
+        Some(i) => {
+            for j in 0..i {
+                s[0][j] = 1;
+            }
+            for j in i..=len {
+                s[0][j] = 0;
+            }
         }
+        None => {
+            for j in 0..=len {
+                s[0][j] = 1;
+            }
+        }
+    };
+
+    for r in 1..=ranges_number {
+        let min_len = damaged_ranges[..r].iter().sum::<usize>() + r - 1;
+        s[r][..min_len].fill(0);
 
         let mask = &damaged_ranges[..r]
             .iter()
@@ -166,35 +139,19 @@ fn get_arrangements_number(row: Row, damaged_ranges: &[usize]) -> usize {
                 continue;
             }
             let last_range = damaged_ranges[ranges_to_place - 1];
-            let new_pos_is_damaged = row.is_operational(l - 1);
-            match new_pos_is_damaged {
-                None => {
-                    let mut r = s[ranges_to_place][l - 1];
+            let mut r = 0;
 
-                    if row.operational.slice(l - last_range, l).is_empty()
-                        && !row.damaged.is_set(l - last_range - 1)
-                    {
-                        r += s[ranges_to_place - 1][l - last_range - 1];
-                    }
-
-                    s[ranges_to_place][l] = r;
-                    continue;
-                }
-                Some(true) => {
-                    s[ranges_to_place][l] = s[ranges_to_place][l - 1];
-                    continue;
-                }
-                Some(false) => {
-                    let mut r = 0;
-                    if row.operational.slice(l - last_range, l).is_empty()
-                        && !row.damaged.is_set(l - last_range - 1)
-                    {
-                        r += s[ranges_to_place - 1][l - last_range - 1];
-                    }
-                    s[ranges_to_place][l] = r;
-                    continue;
-                }
+            if !row.damaged.is_set(l - 1) {
+                r += s[ranges_to_place][l - 1];
             }
+            if !row.operational.is_set(l - 1)
+                && !row.damaged.is_set(l - last_range - 1)
+                && row.operational.slice(l - last_range, l).is_empty()
+            {
+                r += s[ranges_to_place - 1][l - last_range - 1];
+            }
+
+            s[ranges_to_place][l] = r;
         }
     }
 
