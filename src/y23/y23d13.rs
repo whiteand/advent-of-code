@@ -219,7 +219,7 @@ impl Pattern {
         }
     }
 
-    fn fix_smudge(&mut self) {
+    fn fix_smudge(&mut self) -> Option<Symmetry> {
         let symmetry = self
             .get_symmetry()
             .expect("some symmetry should be present");
@@ -230,36 +230,32 @@ impl Pattern {
                 for r in self.get_mirrored_row() {
                     match symmetry {
                         Symmetry::Row(row) if r != row => {
-                            return;
+                            return Some(Symmetry::Row(r));
                         }
-                        Symmetry::Col(_) => return,
+                        Symmetry::Col(_) => {
+                            return Some(Symmetry::Row(r));
+                        }
                         _ => {}
                     };
                 }
 
-                let mut found = false;
                 self.transpose();
                 for c in self.get_mirrored_row() {
                     match symmetry {
                         Symmetry::Row(_) => {
-                            found = true;
-                            break;
+                            return Some(Symmetry::Col(c));
                         }
                         Symmetry::Col(col) if col != c => {
-                            found = true;
-                            break;
+                            return Some(Symmetry::Col(c));
                         }
                         _ => {}
                     };
                 }
                 self.transpose();
-                if found {
-                    return;
-                }
-                self.flip(i, j);
+                self.flip(i, j)
             }
         }
-        unreachable!("Smudge does not exists: {}", self)
+        None
     }
 }
 
@@ -279,9 +275,8 @@ pub fn solve_task1(file_content: &str) -> usize {
 pub fn solve_task2(file_content: &str) -> usize {
     parse_patterns(file_content)
         .map(|mut pattern| {
-            pattern.fix_smudge();
             match pattern
-                .get_symmetry()
+                .fix_smudge()
                 .expect("There should be at least one mirrored row or col")
             {
                 Symmetry::Row(row) => (row + 1) * 100,
@@ -332,7 +327,6 @@ mod tests {
 
     #[test]
     fn test_task2_actual() {
-        assert_ne!(format!("{}", solve_task2(ACTUAL)), "40692");
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_task2(ACTUAL)), "32312");
     }
 }
