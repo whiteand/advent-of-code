@@ -56,7 +56,7 @@ impl Bitmask {
     }
     fn slice(&self, from: usize, to: usize) -> Self {
         Self {
-            bits: (self.bits >> from) & (1 << (to - from)) - 1,
+            bits: (self.bits >> from) & ((1 << (to - from)) - 1),
         }
     }
 }
@@ -85,19 +85,19 @@ impl std::fmt::Debug for Row {
 
 impl Row {
     fn with_operational(&self, i: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.len = res.len.max(i + 1);
         res.operational.set(i);
         res
     }
     fn with_damaged(&self, i: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.len = res.len.max(i + 1);
         res.damaged.set(i);
         res
     }
     fn with_unknown(&self, i: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.len = res.len.max(i + 1);
         res.damaged.unset(i);
         res.operational.unset(i);
@@ -119,19 +119,19 @@ impl Row {
         if self.damaged.is_set(i) {
             return Some(false);
         }
-        return None;
+        None
     }
 
     fn with_super_position(&self, i: usize) -> (Self, Self) {
         (self.with_operational(i), self.with_damaged(i))
     }
     fn with_skip(&self, i: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.skip(i);
         res
     }
     fn with_skip_last(&self, i: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.skip_last(i);
         res
     }
@@ -218,7 +218,7 @@ impl Row {
     }
 
     fn operational_suffix_len(&self) -> usize {
-        if self.len <= 0 {
+        if self.len == 0 {
             return 0;
         }
         std::iter::successors(Some(1 << (self.len - 1)), |&succ| Some(succ >> 1))
@@ -253,8 +253,8 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
     for l in 0..=row_len {
         solution[0][l] = 1;
     }
-    for k in 1..=rs {
-        solution[k][0] = 0;
+    for row in &mut solution {
+        row[0] = 0;
     }
     for k in 1..=rs {
         let taken_elements = ranges[..k].iter().sum::<usize>();
@@ -279,7 +279,7 @@ fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
 }
 
 fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
-    let mut min_len = get_min_len(&damaged_ranges);
+    let mut min_len = get_min_len(damaged_ranges);
     loop {
         if damaged_ranges.is_empty() {
             return if row.has_damaged() { 0 } else { 1 };
@@ -355,57 +355,52 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
         return if row.has_damaged() { 0 } else { 1 };
     }
 
-    if damaged_ranges.len() == 1 {
-        if row.has_damaged() {
-            let range = damaged_ranges[0];
-            if row.len < range {
-                return 0;
-            }
-
-            let mut first_broken = (0..(row.len))
-                .find(|i| row.is_operational(*i) == Some(false))
-                .unwrap();
-            let initial_last = (0..(row.len))
-                .rev()
-                .find(|i| row.is_operational(*i) == Some(false))
-                .unwrap();
-
-            if initial_last - first_broken + 1 > range {
-                return 0;
-            }
-
-            if (first_broken..=initial_last).any(|i| row.operational.is_set(i)) {
-                return 0;
-            }
-            let mut last = initial_last;
-
-            while last < row.len - 1
-                && !row.operational.is_set(last + 1)
-                && last - first_broken + 1 < range
-            {
-                last += 1;
-            }
-            while first_broken > 0
-                && !row.operational.is_set(first_broken - 1)
-                && last - first_broken + 1 < range
-            {
-                first_broken -= 1;
-            }
-
-            if last - first_broken + 1 != range {
-                return 0;
-            }
-            let mut res = 1;
-            while first_broken > 0
-                && !row.operational.is_set(first_broken - 1)
-                && last - 1 >= initial_last
-            {
-                first_broken -= 1;
-                last -= 1;
-                res += 1;
-            }
-            return res;
+    if damaged_ranges.len() == 1 && row.has_damaged() {
+        let range = damaged_ranges[0];
+        if row.len < range {
+            return 0;
         }
+
+        let mut first_broken = (0..(row.len))
+            .find(|i| row.is_operational(*i) == Some(false))
+            .unwrap();
+        let initial_last = (0..(row.len))
+            .rev()
+            .find(|i| row.is_operational(*i) == Some(false))
+            .unwrap();
+
+        if initial_last - first_broken + 1 > range {
+            return 0;
+        }
+
+        if (first_broken..=initial_last).any(|i| row.operational.is_set(i)) {
+            return 0;
+        }
+        let mut last = initial_last;
+
+        while last < row.len - 1
+            && !row.operational.is_set(last + 1)
+            && last - first_broken + 1 < range
+        {
+            last += 1;
+        }
+        while first_broken > 0
+            && !row.operational.is_set(first_broken - 1)
+            && last - first_broken + 1 < range
+        {
+            first_broken -= 1;
+        }
+
+        if last - first_broken + 1 != range {
+            return 0;
+        }
+        let mut res = 1;
+        while first_broken > 0 && !row.operational.is_set(first_broken - 1) && last > initial_last {
+            first_broken -= 1;
+            last -= 1;
+            res += 1;
+        }
+        return res;
     }
 
     let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
@@ -503,7 +498,7 @@ fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize 
             if row.damaged.is_set(j + range) {
                 continue;
             }
-            let mut dbg_row = row.clone();
+            let mut dbg_row = row;
             for k in 0..range {
                 dbg_row.damaged.set(j + k)
             }

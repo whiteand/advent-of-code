@@ -155,11 +155,11 @@ impl Pattern {
             suffix_row_col_product_sum[row] = suffix_row_col_product_sum[row + 1] + row_col_product;
         }
 
-        return (0..(self.rows() - 1)).filter_map(move |mr| {
+        (0..(self.rows() - 1)).filter(move |&mr| {
             if mr * 2 + 2 == self.rows() {
                 let n = prefix_rocks_sum[self.rows() - 1];
                 if n % 2 != 0 {
-                    return None;
+                    return false;
                 }
                 let top_part_sum = prefix_row_col_product_sum[mr];
                 let bottom_part_sum = suffix_row_col_product_sum[mr + 1];
@@ -167,7 +167,7 @@ impl Pattern {
                 let coef_sum = prefix_row_coef_sum[self.rows() - 1];
                 let target = (mr * 2 + 3) * coef_sum / 2;
                 if s == target && self.is_symmetry(mr) {
-                    return Some(mr);
+                    return true;
                 }
             }
 
@@ -176,7 +176,7 @@ impl Pattern {
             if mr < self.rows() / 2 {
                 let n = prefix_rocks_sum[2 * mr + 1];
                 if n % 2 != 0 {
-                    return None;
+                    return false;
                 }
                 let coef_sum = prefix_row_coef_sum[2 * mr + 1];
 
@@ -187,13 +187,13 @@ impl Pattern {
                 let s = top_part_sum + bottom_part_sum;
                 let target = (mr * 2 + 3) * coef_sum / 2;
                 if s == target && self.is_symmetry(mr) {
-                    return Some(mr);
+                    return true;
                 }
             } else {
                 // only bottom part is reflecting
                 let n = suffix_rocks_sum[2 + 2 * mr - self.rows()];
                 if n % 2 != 0 {
-                    return None;
+                    return false;
                 }
 
                 let top_part_sum = prefix_row_col_product_sum[mr]
@@ -204,11 +204,11 @@ impl Pattern {
                 let target = (mr * 2 + 3) * coef_sum / 2;
 
                 if s == target && self.is_symmetry(mr) {
-                    return Some(mr);
+                    return true;
                 }
             }
-            return None;
-        });
+            false
+        })
     }
 
     fn flip(&mut self, r: usize, c: usize) {
