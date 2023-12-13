@@ -44,9 +44,6 @@ impl Bitmask {
     fn set(&mut self, bit: usize) {
         self.bits |= 1 << bit;
     }
-    fn unset(&mut self, bit: usize) {
-        self.bits &= !(1 << bit);
-    }
     fn is_set(&self, bit: usize) -> bool {
         self.bits & (1 << bit) != 0
     }
@@ -99,14 +96,7 @@ impl Row {
     fn with_unknown(&self, i: usize) -> Self {
         let mut res = *self;
         res.len = res.len.max(i + 1);
-        res.damaged.unset(i);
-        res.operational.unset(i);
         res
-    }
-
-    #[inline]
-    fn has_damaged(&self) -> bool {
-        !self.damaged.is_empty()
     }
 
     fn is_operational(&self, i: usize) -> Option<bool> {
@@ -122,108 +112,12 @@ impl Row {
         None
     }
 
-    fn with_super_position(&self, i: usize) -> (Self, Self) {
-        (self.with_operational(i), self.with_damaged(i))
-    }
-    fn with_skip(&self, i: usize) -> Self {
-        let mut res = *self;
-        res.skip(i);
-        res
-    }
-    fn with_skip_last(&self, i: usize) -> Self {
-        let mut res = *self;
-        res.skip_last(i);
-        res
-    }
-
-    fn skip(&mut self, from: usize) {
-        if from == 0 {
-            return;
-        }
-        if from >= self.len {
-            self.operational = Bitmask::new();
-            self.damaged = Bitmask::new();
-            self.len = 0;
-            return;
-        }
-        self.operational = self.operational.slice(from, self.len);
-        self.damaged = self.damaged.slice(from, self.len);
-        self.len -= from;
-    }
-    fn operational_prefix_len(&self) -> usize {
-        let mut b = self.operational.bits;
-        let mut n = 0;
-        while b % 2 != 0 {
-            b >>= 1;
-            n += 1;
-        }
-        n
-    }
-    fn skip_last(&mut self, n: usize) {
-        if n == 0 {
-            return;
-        }
-        if n >= self.len {
-            self.operational = Bitmask::new();
-            self.damaged = Bitmask::new();
-            self.len = 0;
-            return;
-        }
-        self.operational = self.operational.slice(0, self.len - n);
-        self.damaged = self.damaged.slice(0, self.len - n);
-        self.len -= n;
-    }
-
-    fn starts_with_damaged(&self, n: usize) -> bool {
-        self.operational.bits & ((1 << n) - 1) == 0
-    }
-    fn ends_with_damaged(&self, n: usize) -> bool {
-        if n > self.len {
-            return false;
-        }
-        self.operational.bits >> (self.len - n) == 0
-    }
-
     fn new() -> Self {
         Self {
             len: 0,
             operational: Bitmask::new(),
             damaged: Bitmask::new(),
         }
-    }
-
-    fn get_damaged_prefix_len(&self) -> usize {
-        (0..(self.len))
-            .take_while(|i| self.damaged.is_set(*i))
-            .count()
-    }
-
-    fn get_unknown_prefix_len(&self) -> usize {
-        (0..(self.len))
-            .take_while(|i| !self.operational.is_set(*i) && !self.damaged.is_set(*i))
-            .count()
-    }
-    fn get_unknown_sufix_len(&self) -> usize {
-        (0..(self.len))
-            .rev()
-            .take_while(|i| !self.operational.is_set(*i) && !self.damaged.is_set(*i))
-            .count()
-    }
-
-    fn get_damaged_suffix_len(&self) -> usize {
-        (0..(self.len))
-            .rev()
-            .take_while(|i| self.damaged.is_set(*i))
-            .count()
-    }
-
-    fn operational_suffix_len(&self) -> usize {
-        if self.len == 0 {
-            return 0;
-        }
-        std::iter::successors(Some(1 << (self.len - 1)), |&succ| Some(succ >> 1))
-            .take_while(|c| self.operational.bits & c != 0)
-            .count()
     }
 }
 
@@ -234,288 +128,77 @@ fn get_min_len(ranges: &[usize]) -> usize {
     ranges.iter().map(|r| r + 1).sum::<usize>() - 1
 }
 
-fn count_all_arrangements(row_len: usize, ranges: &[usize]) -> usize {
-    if ranges.is_empty() {
-        return 1;
-    }
-    if get_min_len(ranges) > row_len {
-        return 0;
-    }
-    if ranges.len() == 1 {
-        return row_len - ranges[0] + 1;
-    }
-    let rs = ranges.len();
-
-    // Invariant:
-    // arr[K][L] = number of arrangement of K ranges over the L length
-    let mut solution = vec![vec![99; row_len + 1]; ranges.len() + 1];
-    solution[0][0] = 1;
-    for l in 0..=row_len {
-        solution[0][l] = 1;
-    }
-    for row in &mut solution {
-        row[0] = 0;
-    }
-    for k in 1..=rs {
-        let taken_elements = ranges[..k].iter().sum::<usize>();
-        for l in 1..=row_len {
-            if l < taken_elements + k - 1 {
-                solution[k][l] = 0;
-                continue;
-            }
-            if l == taken_elements + k - 1 {
-                solution[k][l] = 1;
-                continue;
-            }
-            if k == 1 {
-                solution[k][l] = l - ranges[0] + 1;
-                continue;
-            }
-            solution[k][l] = solution[k][l - 1] + solution[k - 1][l - ranges[k - 1] - 1];
-        }
-    }
-
-    solution[ranges.len()][row_len]
-}
-
-fn get_arrangements_number(mut row: Row, mut damaged_ranges: &[usize]) -> usize {
-    let mut min_len = get_min_len(damaged_ranges);
-    loop {
-        if damaged_ranges.is_empty() {
-            return if row.has_damaged() { 0 } else { 1 };
-        }
-        let n = row.operational_prefix_len();
-        row.skip(n);
-        let n = row.operational_suffix_len();
-        row.skip_last(n);
-
-        if row.len < min_len {
-            return 0;
-        }
-
-        if row.len == min_len {
-            let mask = damaged_ranges
-                .iter()
-                .rev()
-                .fold(0, |acc, r| (acc << (r + 1)) | ((1 << r) - 1));
-            return if (row.operational.bits & mask) | (row.damaged.bits & !mask) == 0 {
-                1
-            } else {
-                0
-            };
-        }
-
-        let damaged_prefix_len = row.get_damaged_prefix_len();
-
-        if damaged_prefix_len > 0 {
-            let first_range = damaged_ranges[0];
-            if damaged_prefix_len > first_range {
-                return 0;
-            }
-            if !row.starts_with_damaged(first_range) {
-                return 0;
-            }
-            if let Some(false) = row.is_operational(first_range) {
-                return 0;
-            }
-            row.skip(first_range + 1);
-            damaged_ranges = &damaged_ranges[1..];
-            min_len = get_min_len(damaged_ranges);
-            if damaged_ranges.is_empty() {
-                return if row.has_damaged() { 0 } else { 1 };
-            }
-        }
-
-        let damaged_suffix_len = row.get_damaged_suffix_len();
-        if damaged_suffix_len > 0 {
-            let last_range = damaged_ranges[damaged_ranges.len() - 1];
-            if damaged_suffix_len > last_range {
-                return 0;
-            }
-            if !row.ends_with_damaged(last_range) {
-                return 0;
-            }
-            if let Some(false) = row.is_operational(row.len - last_range - 1) {
-                return 0;
-            }
-            row.skip_last(last_range + 1);
-            damaged_ranges = &damaged_ranges[..damaged_ranges.len() - 1];
-            min_len = get_min_len(damaged_ranges);
-            if damaged_ranges.is_empty() {
-                return if row.has_damaged() { 0 } else { 1 };
-            }
-        }
-
-        if row.is_operational(0).is_none() && row.is_operational(row.len - 1).is_none() {
-            break;
-        }
-    }
-
-    if damaged_ranges.is_empty() {
-        return if row.has_damaged() { 0 } else { 1 };
-    }
-
-    if damaged_ranges.len() == 1 && row.has_damaged() {
-        let range = damaged_ranges[0];
-        if row.len < range {
-            return 0;
-        }
-
-        let mut first_broken = (0..(row.len))
-            .find(|i| row.is_operational(*i) == Some(false))
-            .unwrap();
-        let initial_last = (0..(row.len))
-            .rev()
-            .find(|i| row.is_operational(*i) == Some(false))
-            .unwrap();
-
-        if initial_last - first_broken + 1 > range {
-            return 0;
-        }
-
-        if (first_broken..=initial_last).any(|i| row.operational.is_set(i)) {
-            return 0;
-        }
-        let mut last = initial_last;
-
-        while last < row.len - 1
-            && !row.operational.is_set(last + 1)
-            && last - first_broken + 1 < range
-        {
-            last += 1;
-        }
-        while first_broken > 0
-            && !row.operational.is_set(first_broken - 1)
-            && last - first_broken + 1 < range
-        {
-            first_broken -= 1;
-        }
-
-        if last - first_broken + 1 != range {
-            return 0;
-        }
-        let mut res = 1;
-        while first_broken > 0 && !row.operational.is_set(first_broken - 1) && last > initial_last {
-            first_broken -= 1;
-            last -= 1;
-            res += 1;
-        }
-        return res;
-    }
-
-    let min_len = damaged_ranges.iter().map(|r| r + 1).sum::<usize>() - 1;
-    if row.len < min_len {
-        return 0;
-    }
-
-    let prefix_unknown = row.get_unknown_prefix_len();
-
-    debug_assert!(
-        prefix_unknown > 0,
-        "at least the first element should be unknown"
-    );
-
-    if prefix_unknown == 1 {
-        let (operational, damaged) = row.with_super_position(0);
-
-        return get_arrangements_number(operational, damaged_ranges)
-            + get_arrangements_number(damaged, damaged_ranges);
-    }
-
-    if prefix_unknown == row.len {
-        let res = count_all_arrangements(prefix_unknown, damaged_ranges);
-        return res;
-    }
-
-    let suffix_unknown = row.get_unknown_sufix_len();
-
-    if suffix_unknown == 1 {
-        let (operational, damaged) = row.with_super_position(row.len - 1);
-
-        return get_arrangements_number(operational, damaged_ranges)
-            + get_arrangements_number(damaged, damaged_ranges);
-    }
-
-    let after_prefix_damaged = row.with_skip(prefix_unknown).get_damaged_prefix_len();
-    if after_prefix_damaged == 0 {
-        let mut res = 0;
-        for i in 0..=damaged_ranges.len() {
-            let arrangements = count_all_arrangements(prefix_unknown, &damaged_ranges[..i]);
-            if arrangements == 0 {
-                break;
-            }
-            res += arrangements
-                * get_arrangements_number(row.with_skip(prefix_unknown + 1), &damaged_ranges[i..]);
-        }
-        return res;
-    }
-
-    let before_suffix_damaged = row.with_skip_last(suffix_unknown).get_damaged_suffix_len();
-    if before_suffix_damaged == 0 {
-        let mut res = 0;
-        for i in (0..=damaged_ranges.len()).rev() {
-            let arrangements = count_all_arrangements(suffix_unknown, &damaged_ranges[i..]);
-            if arrangements == 0 {
-                break;
-            }
-            res += arrangements
-                * get_arrangements_number(
-                    row.with_skip_last(suffix_unknown + 1),
-                    &damaged_ranges[..i],
-                );
-        }
-        return res;
-    }
-
-    let mut res = 0;
-    for i in 0..damaged_ranges.len() {
-        let range = damaged_ranges[i];
-        if range < after_prefix_damaged {
-            continue;
-        }
-
-        let prev_min_len = if i > 0 {
-            get_min_len(&damaged_ranges[..i])
+fn get_arrangements_number(row: Row, damaged_ranges: &[usize]) -> usize {
+    let ranges_number = damaged_ranges.len();
+    let len = row.len;
+    let mut s = vec![vec![usize::MAX; len + 1]; ranges_number + 1];
+    for i in 0..=len {
+        s[0][i] = if row.damaged.slice(0, i).is_empty() {
+            1
         } else {
             0
         };
+    }
+    for r in 1..=ranges_number {
+        let min_len = get_min_len(&damaged_ranges[..r]);
+        for i in 0..min_len {
+            s[r][i] = 0;
+        }
 
-        'position_loop: for j in (0..=prefix_unknown).rev() {
-            if j < prev_min_len {
-                continue;
-            }
-            if range - 1 + j < prefix_unknown {
-                continue;
-            }
-            for k in j..(j + range) {
-                if k >= row.len {
-                    continue 'position_loop;
-                }
-                if row.operational.is_set(k) {
-                    continue 'position_loop;
-                }
-            }
-            if row.damaged.is_set(j + range) {
-                continue;
-            }
-            let mut dbg_row = row;
-            for k in 0..range {
-                dbg_row.damaged.set(j + k)
-            }
+        let mask = &damaged_ranges[..r]
+            .iter()
+            .rev()
+            .fold(0, |acc, r| (acc << (r + 1)) | ((1 << r) - 1));
+        if row.operational.slice(0, min_len).bits & mask != 0 {
+            s[r][min_len] = 0;
+            continue;
+        }
+        if row.damaged.slice(0, min_len).bits & !mask != 0 {
+            s[r][min_len] = 0;
+            continue;
+        }
+        s[r][min_len] = 1;
+    }
 
-            let arrangements = if j > 0 {
-                count_all_arrangements(j - 1, &damaged_ranges[..i])
-            } else {
-                1
-            };
-            if arrangements == 0 {
-                break;
+    for ranges_to_place in 1..=ranges_number {
+        for l in 1..=len {
+            if s[ranges_to_place][l] != usize::MAX {
+                continue;
             }
-            res += arrangements
-                * get_arrangements_number(row.with_skip(j + range + 1), &damaged_ranges[(i + 1)..])
+            let last_range = damaged_ranges[ranges_to_place - 1];
+            let new_pos_is_damaged = row.is_operational(l - 1);
+            match new_pos_is_damaged {
+                None => {
+                    let mut r = s[ranges_to_place][l - 1];
+
+                    if row.operational.slice(l - last_range, l).is_empty()
+                        && !row.damaged.is_set(l - last_range - 1)
+                    {
+                        r += s[ranges_to_place - 1][l - last_range - 1];
+                    }
+
+                    s[ranges_to_place][l] = r;
+                    continue;
+                }
+                Some(true) => {
+                    s[ranges_to_place][l] = s[ranges_to_place][l - 1];
+                    continue;
+                }
+                Some(false) => {
+                    let mut r = 0;
+                    if row.operational.slice(l - last_range, l).is_empty()
+                        && !row.damaged.is_set(l - last_range - 1)
+                    {
+                        r += s[ranges_to_place - 1][l - last_range - 1];
+                    }
+                    s[ranges_to_place][l] = r;
+                    continue;
+                }
+            }
         }
     }
-    res
+
+    s[ranges_number][len]
 }
 
 fn parse_line(line: &str) -> (Row, Vec<usize>) {
@@ -549,7 +232,8 @@ mod tests {
         for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
             let (row, ranges) = parse_line(line);
             let calculated = get_arrangements_number(row, &ranges);
-            assert_eq!(calculated, expected, "Line:\n  {line}")
+
+            assert_eq!(calculated, expected, "Line:\n  {line}");
         }
     }
 
@@ -562,10 +246,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_all_arrangements() {
-        assert_eq!(count_all_arrangements(6, &[1, 2, 1]), 1)
-    }
-    #[test]
     fn test_task1_actual() {
         assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
     }
@@ -575,13 +255,12 @@ mod tests {
         for (line, expected) in INPUT.lines().zip([1, 16384, 1, 16, 2500, 506250usize]) {
             let unfolded = unfold_line(line);
             let (row, ranges) = parse_line(&unfolded);
-            let calculated_fast = get_arrangements_number(row, &ranges);
-            assert_eq!(calculated_fast, expected, "Line:\n  {line}");
+            let calculated = get_arrangements_number(row, &ranges);
+            assert_eq!(calculated, expected, "Line:\n  {line}");
         }
     }
 
     #[test]
-    #[ignore]
     fn test_task2_actual() {
         assert_eq!(format!("{}", solve_task2(ACTUAL)), "15454556629917");
     }
