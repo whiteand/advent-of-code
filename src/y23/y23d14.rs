@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
@@ -10,23 +8,24 @@ pub fn solve_task1(file_content: &str) -> usize {
 pub fn solve_task2(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
-    let mut visited: HashMap<Vec<(usize, usize)>, usize> = HashMap::new();
+    let mut visited: Vec<(Vec<(usize, usize)>, usize)> = Vec::new();
     let mut results: Vec<usize> = Vec::new();
     let mut first_duplication = 0;
     let mut loop_start = 0;
     const ITERS: usize = 1000000000;
-    for i in 0..ITERS {
+    'tilting: for i in 0..ITERS {
         grid.tilt::<North>(&mut coords);
         grid.tilt::<West>(&mut coords);
         grid.tilt::<South>(&mut coords);
         grid.tilt::<East>(&mut coords);
-        let key = coords.clone();
-        if visited.contains_key(&key) {
-            first_duplication = i;
-            loop_start = visited.get(&key).copied().expect("Key not found");
-            break;
+        for (c, it) in visited.iter() {
+            if c == &coords {
+                first_duplication = i;
+                loop_start = *it;
+                break 'tilting;
+            }
         }
-        visited.insert(key, i);
+        visited.push((coords.clone(), i));
         results.push(grid.get_value(&coords));
     }
     let loop_len = first_duplication - loop_start;
@@ -180,7 +179,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_task2_actual() {
         assert_eq!(format!("{}", solve_task2(ACTUAL)), "99641");
     }
