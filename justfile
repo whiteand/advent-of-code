@@ -2,6 +2,9 @@
 generate year day:
     cargo run --bin generate {{year}} {{day}};
     nu fetch.nu {{year}} {{day}};
+
+clippy:
+    cargo watch -x clippy
     
 bench-23d02:
     cargo bench --bench y23d02
