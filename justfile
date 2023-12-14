@@ -202,3 +202,6 @@ test-y23d14-task-2:
     cargo watch -x 'test --package advent --lib -- y23::y23d14::tests::test_task2 --exact --nocapture'
 test-y23d14-task-2-actual:
     cargo watch -x 'test --package advent --lib -- y23::y23d14::tests::test_task2_actual --exact --nocapture'
+
+work:
+    nu work.nu
