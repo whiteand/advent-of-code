@@ -7,7 +7,7 @@ pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
     grid.tilt::<North>(&mut coords);
-    grid.get_value()
+    grid.get_value(&coords)
 }
 
 pub fn solve_task2(file_content: &str) -> usize {
@@ -30,7 +30,7 @@ pub fn solve_task2(file_content: &str) -> usize {
             break;
         }
         visited.insert(key, i);
-        results.push(grid.get_value());
+        results.push(grid.get_value(&coords));
     }
     let loop_len = first_duplication - loop_start;
     let ind = (ITERS - 1 - loop_start) % loop_len + loop_start;
@@ -86,14 +86,8 @@ impl Grid {
             }
         }
     }
-    fn get_value(&self) -> usize {
-        self.map
-            .iter()
-            .map(|((row, _), rock)| match rock {
-                Rock::Round => self.rows - *row,
-                Rock::Square => 0,
-            })
-            .sum()
+    fn get_value(&self, coords: &[(usize, usize)]) -> usize {
+        self.rows * coords.len() - coords.iter().map(|(r, _)| r).sum::<usize>()
     }
 }
 
