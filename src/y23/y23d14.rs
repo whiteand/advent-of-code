@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
@@ -35,36 +35,42 @@ pub fn solve_task2(file_content: &str) -> usize {
 }
 
 fn parse_grid(file_content: &str) -> Grid {
-    file_content
+    let map = file_content
         .lines()
-        .enumerate()
-        .flat_map(|(row, line)| {
+        .map(|line| {
             line.chars()
-                .enumerate()
-                .flat_map(move |(col, char)| match char {
-                    '#' => Some((row, col, Rock::Square)),
-                    'O' => Some((row, col, Rock::Round)),
+                .map(move |char| match char {
+                    '#' => Some(Rock::Square),
+                    'O' => Some(Rock::Round),
                     '.' => None,
                     _ => panic!("Invalid char"),
                 })
+                .collect::<Vec<_>>()
         })
-        .collect()
+        .collect::<Vec<_>>();
+
+    let rows = map.len();
+    let cols = map[0].len();
+    Grid { map, rows, cols }
 }
 
 struct Grid {
-    map: BTreeMap<(usize, usize), Rock>,
+    map: Vec<Vec<Option<Rock>>>,
     rows: usize,
     cols: usize,
 }
 
 impl Grid {
-    fn new(rows: usize, cols: usize, map: BTreeMap<(usize, usize), Rock>) -> Self {
-        Self { rows, cols, map }
-    }
     fn round_rocks_coords(&self) -> Vec<(usize, usize)> {
-        self.keys()
-            .copied()
-            .filter(|(r, c)| matches!(self.map.get(&(*r, *c)), Some(Rock::Round)))
+        self.map
+            .iter()
+            .enumerate()
+            .flat_map(|(row, line)| {
+                line.iter().enumerate().filter_map(move |(col, rock)| {
+                    rock.as_ref()
+                        .and_then(|r| matches!(r, Rock::Round).then_some((row, col)))
+                })
+            })
             .collect::<Vec<_>>()
     }
     fn tilt<D: TiltDirection>(&mut self, coords: &mut [(usize, usize)]) {
@@ -72,39 +78,14 @@ impl Grid {
         for coord in coords {
             let next_position = D::next_pos(self, coord);
             if let Some((r, c)) = next_position {
-                self.map.remove(coord);
-                self.map.insert((r, c), Rock::Round);
+                let x = self.map[coord.0][coord.1].take();
+                self.map[r][c] = x;
                 *coord = (r, c);
             }
         }
     }
     fn get_value(&self, coords: &[(usize, usize)]) -> usize {
         self.rows * coords.len() - coords.iter().map(|(r, _)| r).sum::<usize>()
-    }
-}
-
-impl FromIterator<(usize, usize, Rock)> for Grid {
-    fn from_iter<T: IntoIterator<Item = (usize, usize, Rock)>>(iter: T) -> Self {
-        let mut map = BTreeMap::new();
-        let mut rows = 0;
-        let mut cols = 0;
-        for (row, col, rock) in iter {
-            if row >= rows {
-                rows += 1
-            }
-            if col >= cols {
-                cols += 1
-            }
-            map.insert((row, col), rock);
-        }
-        Self::new(rows, cols, map)
-    }
-}
-
-impl std::ops::Deref for Grid {
-    type Target = BTreeMap<(usize, usize), Rock>;
-    fn deref(&self) -> &Self::Target {
-        &self.map
     }
 }
 
@@ -130,7 +111,7 @@ impl TiltDirection for North {
         (0..row)
             .rev()
             .map(|r| (r, col))
-            .take_while(|coord| !grid.contains_key(coord))
+            .take_while(|c| grid.map[c.0][c.1].is_none())
             .last()
     }
 }
@@ -145,7 +126,7 @@ impl TiltDirection for West {
         (0..col)
             .rev()
             .map(|c| (row, c))
-            .take_while(|c| !grid.contains_key(c))
+            .take_while(|c| grid.map[c.0][c.1].is_none())
             .last()
     }
 }
@@ -159,7 +140,7 @@ impl TiltDirection for South {
         let (row, col) = *coord;
         ((row + 1)..grid.rows)
             .map(|r| (r, col))
-            .take_while(|r| !grid.contains_key(r))
+            .take_while(|c| grid.map[c.0][c.1].is_none())
             .last()
     }
 }
@@ -173,7 +154,7 @@ impl TiltDirection for East {
         let (row, col) = *coord;
         ((col + 1)..grid.cols)
             .map(|c| (row, c))
-            .take_while(|c| !grid.contains_key(c))
+            .take_while(|c| grid.map[c.0][c.1].is_none())
             .last()
     }
 }
