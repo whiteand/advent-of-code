@@ -73,12 +73,6 @@ impl Grid {
     fn tilt<D: TiltDirection>(&mut self, coords: &mut [(usize, usize)]) {
         coords.sort_unstable_by(D::cmp);
         for coord in coords {
-            let rock = match self.get(coord).copied().expect("Rock not found") {
-                Rock::Round => Rock::Round,
-                Rock::Square => {
-                    continue;
-                }
-            };
             let next_position =
                 std::iter::successors(D::next_pos(self, coord.0, coord.1), |(r, c)| {
                     D::next_pos(self, *r, *c)
@@ -87,7 +81,7 @@ impl Grid {
                 .last();
             if let Some((r, c)) = next_position {
                 self.remove(coord);
-                self.insert((r, c), rock);
+                self.insert((r, c), Rock::Round);
                 *coord = (r, c);
             }
         }
