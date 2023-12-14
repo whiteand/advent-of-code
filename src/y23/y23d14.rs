@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt::Write,
-};
+use std::collections::{BTreeMap, HashMap};
 
 pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
@@ -73,15 +70,10 @@ impl Grid {
     fn tilt<D: TiltDirection>(&mut self, coords: &mut [(usize, usize)]) {
         coords.sort_unstable_by(D::cmp);
         for coord in coords {
-            let next_position =
-                std::iter::successors(D::next_pos(self, coord.0, coord.1), |(r, c)| {
-                    D::next_pos(self, *r, *c)
-                })
-                .take_while(|(r, c)| self.get(&(*r, *c)).is_none())
-                .last();
+            let next_position = D::next_pos(self, coord);
             if let Some((r, c)) = next_position {
-                self.remove(coord);
-                self.insert((r, c), Rock::Round);
+                self.map.remove(coord);
+                self.map.insert((r, c), Rock::Round);
                 *coord = (r, c);
             }
         }
@@ -116,92 +108,74 @@ impl std::ops::Deref for Grid {
     }
 }
 
-impl std::ops::DerefMut for Grid {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.map
-    }
-}
-
-impl std::fmt::Display for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in 0..self.rows {
-            for col in 0..self.cols {
-                let ch = self.get(&(row, col)).map(|r| char::from(*r)).unwrap_or('.');
-                f.write_char(ch)?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-impl std::fmt::Debug for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Grid({}x{})", self.rows, self.cols)?;
-        writeln!(f, "{}", self)
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum Rock {
     Round,
     Square,
 }
-impl From<Rock> for char {
-    fn from(rock: Rock) -> Self {
-        match rock {
-            Rock::Round => 'O',
-            Rock::Square => '#',
-        }
-    }
-}
-impl std::fmt::Display for Rock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_char(char::from(*self))
-    }
-}
 
 trait TiltDirection {
     fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering;
-    fn next_pos(grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)>;
+    fn next_pos(grid: &Grid, coord: &(usize, usize)) -> Option<(usize, usize)>;
 }
 
-macro_rules! direction {
-    ($name:ident, $cmp:expr, $next_pos:expr,) => {
-        struct $name;
-        impl TiltDirection for $name {
-            fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
-                #[allow(clippy::redundant_closure_call)]
-                $cmp(c1, c2)
-            }
-            fn next_pos(grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)> {
-                #[allow(clippy::redundant_closure_call)]
-                $next_pos(grid, row, col)
-            }
-        }
-    };
-}
+struct North;
 
-direction! {
-    North,
-    (|c1: &(usize, usize), c2: &(usize, usize)| c1.cmp(c2)),
-    (|_grid: &Grid, row: usize, col: usize| (row > 0).then(|| (row.saturating_sub(1), col))),
+impl TiltDirection for North {
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.cmp(c2)
+    }
+    fn next_pos(grid: &Grid, coord: &(usize, usize)) -> Option<(usize, usize)> {
+        let (row, col) = *coord;
+        (0..row)
+            .rev()
+            .map(|r| (r, col))
+            .take_while(|coord| !grid.contains_key(coord))
+            .last()
+    }
 }
-direction! {
-    West,
-    (|c1: &(usize, usize), c2: &(usize, usize)| c1.1.cmp(&c2.1)),
-    (|_grid: &Grid, row: usize, col: usize| (col > 0).then_some((row, col.saturating_sub(1)))),
+struct West;
+
+impl TiltDirection for West {
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.1.cmp(&c2.1)
+    }
+    fn next_pos(grid: &Grid, coord: &(usize, usize)) -> Option<(usize, usize)> {
+        let (row, col) = *coord;
+        (0..col)
+            .rev()
+            .map(|c| (row, c))
+            .take_while(|c| !grid.contains_key(c))
+            .last()
+    }
 }
-direction! {
-    South,
-    (|c1: &(usize, usize), c2: &(usize, usize)| c1.0.cmp(&c2.0).reverse()),
-    (|grid: &Grid, row: usize, col: usize| (row < grid.rows - 1).then_some((row + 1, col))),
+struct South;
+
+impl TiltDirection for South {
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.0.cmp(&c2.0).reverse()
+    }
+    fn next_pos(grid: &Grid, coord: &(usize, usize)) -> Option<(usize, usize)> {
+        let (row, col) = *coord;
+        ((row + 1)..grid.rows)
+            .map(|r| (r, col))
+            .take_while(|r| !grid.contains_key(r))
+            .last()
+    }
 }
-direction! {
-    East,
-    (|c1: &(usize, usize), c2: &(usize, usize)| c1.1.cmp(&c2.1).reverse()),
-    (|grid: &Grid, row: usize, col: usize|
-        (col < grid.cols - 1).then_some((row, col + 1))
-    ),
+struct East;
+
+impl TiltDirection for East {
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.1.cmp(&c2.1).reverse()
+    }
+    fn next_pos(grid: &Grid, coord: &(usize, usize)) -> Option<(usize, usize)> {
+        let (row, col) = *coord;
+        ((col + 1)..grid.cols)
+            .map(|c| (row, c))
+            .take_while(|c| !grid.contains_key(c))
+            .last()
+    }
 }
 
 #[cfg(test)]
