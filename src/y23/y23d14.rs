@@ -27,35 +27,27 @@ struct Grid {
     cols: usize,
 }
 trait TiltDirection {
-    fn get_coords(grid: &Grid) -> Vec<(usize, usize)>;
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering;
     fn next_pos(grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)>;
 }
 
 struct North;
 
 impl TiltDirection for North {
-    fn get_coords(grid: &Grid) -> Vec<(usize, usize)> {
-        grid.keys()
-            .filter(|(r, c)| *r > 0 && matches!(grid.get(&(*r, *c)), Some(Rock::Round)))
-            .copied()
-            .collect::<Vec<_>>()
-    }
     fn next_pos(_grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)> {
         (row > 0).then(|| (row.saturating_sub(1), col))
+    }
+
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.cmp(c2)
     }
 }
 
 struct West;
 
 impl TiltDirection for West {
-    fn get_coords(grid: &Grid) -> Vec<(usize, usize)> {
-        let mut res = grid
-            .keys()
-            .filter(|(r, c)| *c > 0 && matches!(grid.get(&(*r, *c)), Some(Rock::Round)))
-            .copied()
-            .collect::<Vec<_>>();
-        res.sort_by(|(_, c1), (_, c2)| c1.cmp(c2));
-        res
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.1.cmp(&c2.1)
     }
     fn next_pos(_grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)> {
         (col > 0).then_some((row, col.saturating_sub(1)))
@@ -65,14 +57,8 @@ impl TiltDirection for West {
 struct South;
 
 impl TiltDirection for South {
-    fn get_coords(grid: &Grid) -> Vec<(usize, usize)> {
-        let mut res = grid
-            .keys()
-            .filter(|(r, c)| *r < grid.rows - 1 && matches!(grid.get(&(*r, *c)), Some(Rock::Round)))
-            .copied()
-            .collect::<Vec<_>>();
-        res.sort_by(|(r1, _), (r2, _)| r1.cmp(r2).reverse());
-        res
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.0.cmp(&c2.0).reverse()
     }
     fn next_pos(grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)> {
         (row < grid.rows - 1).then_some((row + 1, col))
@@ -82,14 +68,8 @@ impl TiltDirection for South {
 struct East;
 
 impl TiltDirection for East {
-    fn get_coords(grid: &Grid) -> Vec<(usize, usize)> {
-        let mut res = grid
-            .keys()
-            .filter(|(r, c)| *c < grid.cols - 1 && matches!(grid.get(&(*r, *c)), Some(Rock::Round)))
-            .copied()
-            .collect::<Vec<_>>();
-        res.sort_by(|(_, c1), (_, c2)| c1.cmp(c2).reverse());
-        res
+    fn cmp(c1: &(usize, usize), c2: &(usize, usize)) -> std::cmp::Ordering {
+        c1.1.cmp(&c2.1).reverse()
     }
     fn next_pos(grid: &Grid, row: usize, col: usize) -> Option<(usize, usize)> {
         (col < grid.cols - 1).then_some((row, col + 1))
@@ -100,23 +80,36 @@ impl Grid {
     fn new(rows: usize, cols: usize, map: BTreeMap<(usize, usize), Rock>) -> Self {
         Self { rows, cols, map }
     }
-    fn tilt<D: TiltDirection>(&mut self) {
-        let coord = D::get_coords(self);
-        for (row, col) in coord {
+    fn round_rocks_coords(&self) -> Vec<(usize, usize)> {
+        self.keys()
+            .copied()
+            .filter(|(r, c)| matches!(self.map.get(&(*r, *c)), Some(Rock::Round)))
+            .collect::<Vec<_>>()
+    }
+    fn tilt<D: TiltDirection>(
+        &mut self,
+        coord: &mut [(usize, usize)],
+        next_coords: &mut [(usize, usize)],
+    ) {
+        coord.sort_by(D::cmp);
+        for (i, (row, col)) in &mut coord.iter().copied().enumerate() {
             let rock = match self.get(&(row, col)).copied().expect("Rock not found") {
                 Rock::Round => Rock::Round,
                 Rock::Square => {
                     continue;
                 }
             };
-            let next_position = std::iter::successors(D::next_pos(self, row, col), |(row, col)| {
-                D::next_pos(self, *row, *col)
+            let next_position = std::iter::successors(D::next_pos(self, row, col), |(r, c)| {
+                D::next_pos(self, *r, *c)
             })
             .take_while(|(r, c)| self.get(&(*r, *c)).is_none())
             .last();
             if let Some((r, c)) = next_position {
                 self.remove(&(row, col));
                 self.insert((r, c), rock);
+                next_coords[i] = (r, c);
+            } else {
+                next_coords[i] = (row, col);
             }
         }
     }
@@ -183,22 +176,29 @@ impl std::fmt::Debug for Grid {
 
 pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
-    grid.tilt::<North>();
+    let mut coords = grid.round_rocks_coords();
+    let mut next_coords = coords.clone();
+    grid.tilt::<North>(&mut coords, &mut next_coords);
     grid.get_value()
 }
 pub fn solve_task2(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
-
+    let mut coords = grid.round_rocks_coords();
+    let mut next_coords = coords.clone();
     let mut memory: BTreeMap<String, (usize, usize)> = BTreeMap::new();
     let mut first_duplication = 0;
     let mut loop_start = 0;
     const ITERS: usize = 1000000000;
     for i in 0..ITERS {
-        grid.tilt::<North>();
-        grid.tilt::<West>();
-        grid.tilt::<South>();
-        grid.tilt::<East>();
-        let key = format!("{grid}");
+        grid.tilt::<North>(&mut coords, &mut next_coords);
+        (coords, next_coords) = (next_coords, coords);
+        grid.tilt::<West>(&mut coords, &mut next_coords);
+        (coords, next_coords) = (next_coords, coords);
+        grid.tilt::<South>(&mut coords, &mut next_coords);
+        (coords, next_coords) = (next_coords, coords);
+        grid.tilt::<East>(&mut coords, &mut next_coords);
+        (coords, next_coords) = (next_coords, coords);
+        let key = format!("{}", grid);
         match memory.entry(key) {
             btree_map::Entry::Vacant(e) => {
                 e.insert((i, grid.get_value()));
