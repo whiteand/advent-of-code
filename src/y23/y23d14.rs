@@ -5,15 +5,14 @@ pub fn solve_task1(file_content: &str) -> usize {
     grid.get_value(&coords)
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_task2<const N: usize>(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
     let mut visited: Vec<(Vec<(usize, usize)>, usize)> = Vec::new();
     let mut results: Vec<usize> = Vec::new();
     let mut first_duplication = 0;
     let mut loop_start = 0;
-    const ITERS: usize = 1000000000;
-    'tilting: for i in 0..ITERS {
+    'tilting: for i in 0..N {
         grid.tilt::<North>(&mut coords);
         grid.tilt::<West>(&mut coords);
         grid.tilt::<South>(&mut coords);
@@ -29,7 +28,7 @@ pub fn solve_task2(file_content: &str) -> usize {
         results.push(grid.get_value(&coords));
     }
     let loop_len = first_duplication - loop_start;
-    let ind = (ITERS - 1 - loop_start) % loop_len + loop_start;
+    let ind = (N - 1 - loop_start) % loop_len + loop_start;
     results[ind]
 }
 
@@ -175,11 +174,11 @@ mod tests {
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "64");
+        assert_eq!(format!("{}", solve_task2::<1_000_000_000>(INPUT)), "64");
     }
 
     #[test]
     fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "99641");
+        assert_eq!(format!("{}", solve_task2::<1_000_000_000>(ACTUAL)), "99641");
     }
 }
