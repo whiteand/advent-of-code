@@ -1,5 +1,5 @@
 use std::{
-    collections::{btree_map, BTreeMap},
+    collections::{BTreeMap, HashMap},
     fmt::Write,
 };
 
@@ -86,30 +86,25 @@ impl Grid {
             .filter(|(r, c)| matches!(self.map.get(&(*r, *c)), Some(Rock::Round)))
             .collect::<Vec<_>>()
     }
-    fn tilt<D: TiltDirection>(
-        &mut self,
-        coord: &mut [(usize, usize)],
-        next_coords: &mut [(usize, usize)],
-    ) {
-        coord.sort_by(D::cmp);
-        for (i, (row, col)) in &mut coord.iter().copied().enumerate() {
-            let rock = match self.get(&(row, col)).copied().expect("Rock not found") {
+    fn tilt<D: TiltDirection>(&mut self, coords: &mut [(usize, usize)]) {
+        coords.sort_unstable_by(D::cmp);
+        for coord in coords {
+            let rock = match self.get(coord).copied().expect("Rock not found") {
                 Rock::Round => Rock::Round,
                 Rock::Square => {
                     continue;
                 }
             };
-            let next_position = std::iter::successors(D::next_pos(self, row, col), |(r, c)| {
-                D::next_pos(self, *r, *c)
-            })
-            .take_while(|(r, c)| self.get(&(*r, *c)).is_none())
-            .last();
+            let next_position =
+                std::iter::successors(D::next_pos(self, coord.0, coord.1), |(r, c)| {
+                    D::next_pos(self, *r, *c)
+                })
+                .take_while(|(r, c)| self.get(&(*r, *c)).is_none())
+                .last();
             if let Some((r, c)) = next_position {
-                self.remove(&(row, col));
+                self.remove(coord);
                 self.insert((r, c), rock);
-                next_coords[i] = (r, c);
-            } else {
-                next_coords[i] = (row, col);
+                *coord = (r, c);
             }
         }
     }
@@ -177,49 +172,34 @@ impl std::fmt::Debug for Grid {
 pub fn solve_task1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
-    let mut next_coords = coords.clone();
-    grid.tilt::<North>(&mut coords, &mut next_coords);
+    grid.tilt::<North>(&mut coords);
     grid.get_value()
 }
 pub fn solve_task2(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
-    let mut next_coords = coords.clone();
-    let mut memory: BTreeMap<String, (usize, usize)> = BTreeMap::new();
+    let mut visited: HashMap<Vec<(usize, usize)>, usize> = HashMap::new();
+    let mut results: Vec<usize> = Vec::new();
     let mut first_duplication = 0;
     let mut loop_start = 0;
     const ITERS: usize = 1000000000;
     for i in 0..ITERS {
-        grid.tilt::<North>(&mut coords, &mut next_coords);
-        (coords, next_coords) = (next_coords, coords);
-        grid.tilt::<West>(&mut coords, &mut next_coords);
-        (coords, next_coords) = (next_coords, coords);
-        grid.tilt::<South>(&mut coords, &mut next_coords);
-        (coords, next_coords) = (next_coords, coords);
-        grid.tilt::<East>(&mut coords, &mut next_coords);
-        (coords, next_coords) = (next_coords, coords);
-        let key = format!("{}", grid);
-        match memory.entry(key) {
-            btree_map::Entry::Vacant(e) => {
-                e.insert((i, grid.get_value()));
-            }
-            btree_map::Entry::Occupied(e) => {
-                loop_start = e.get().0;
-                first_duplication = i;
-                break;
-            }
+        grid.tilt::<North>(&mut coords);
+        grid.tilt::<West>(&mut coords);
+        grid.tilt::<South>(&mut coords);
+        grid.tilt::<East>(&mut coords);
+        let key = coords.clone();
+        if visited.contains_key(&key) {
+            first_duplication = i;
+            loop_start = visited.get(&key).copied().expect("Key not found");
+            break;
         }
+        visited.insert(key, i);
+        results.push(grid.get_value());
     }
     let loop_len = first_duplication - loop_start;
-    let mut loop_map = memory
-        .into_values()
-        .filter(|(i, _)| *i >= loop_start)
-        .map(|(i, v)| (i % loop_len, v))
-        .collect::<BTreeMap<_, _>>();
-
-    loop_map
-        .remove(&((ITERS - 1) % loop_len))
-        .expect("Not found")
+    let ind = (ITERS - 1 - loop_start) % loop_len + loop_start;
+    results[ind]
 }
 fn parse_grid(file_content: &str) -> Grid {
     file_content
