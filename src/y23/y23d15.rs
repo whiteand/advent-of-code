@@ -27,39 +27,38 @@ struct Lens {
 }
 
 pub fn solve_task2(file_content: &str) -> usize {
-    let lenses: Vec<Vec<Lens>> = vec![Vec::new(); 256];
-
     file_content
         .split(',')
         .map(|x| x.trim_matches('\n'))
-        .fold(lenses, |mut boxes, instruction| {
-            if instruction.ends_with('-') {
-                let label = &instruction[..(instruction.len() - 1)];
-                let ptr = hash_string(&label);
-                let ind = boxes[ptr as usize]
-                    .iter()
-                    .position(|x| x.label.deref().eq(label));
-                if let Some(ind) = ind {
-                    boxes[ptr as usize].remove(ind);
-                }
-                boxes
-            } else {
-                let (label, count_str) = instruction.split_once('=').expect("should be a pair");
-                let count = count_str.parse::<usize>().unwrap();
-                let ptr = hash_string(label);
-                for x in boxes[ptr].iter_mut() {
-                    if x.label.deref().eq(label) {
-                        x.strength = count;
-                        return boxes;
+        .fold(
+            vec![Vec::new(); 256],
+            |mut boxes: Vec<Vec<Lens>>, instruction| {
+                if instruction.ends_with('-') {
+                    let label = instruction.strip_suffix('-').unwrap();
+                    let ptr = hash_string(label);
+                    let ind = boxes[ptr].iter().position(|x| x.label.deref().eq(label));
+                    if let Some(ind) = ind {
+                        boxes[ptr].remove(ind);
                     }
+                    boxes
+                } else {
+                    let (label, count_str) = instruction.split_once('=').expect("should be a pair");
+                    let count = count_str.parse::<usize>().unwrap();
+                    let ptr = hash_string(label);
+                    for x in boxes[ptr].iter_mut() {
+                        if x.label.deref().eq(label) {
+                            x.strength = count;
+                            return boxes;
+                        }
+                    }
+                    boxes[ptr].push(Lens {
+                        label: Rc::from(label),
+                        strength: count,
+                    });
+                    boxes
                 }
-                boxes[ptr as usize].push(Lens {
-                    label: Rc::from(label),
-                    strength: count,
-                });
-                boxes
-            }
-        })
+            },
+        )
         .into_iter()
         .enumerate()
         .map(|(b, lenses)| {
