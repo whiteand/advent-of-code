@@ -1,66 +1,84 @@
-use std::fmt::Write;
+use std::{ops::Deref, rc::Rc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Hasher {
     current: u8,
 }
-
-impl Hasher {
-    fn new() -> Self {
-        Self { current: 0 }
+fn hash_string(text: &str) -> usize {
+    let mut current: u8 = 0;
+    for b in text.bytes() {
+        current = current.wrapping_add(b);
+        current = current.wrapping_shl(4).wrapping_add(current)
     }
-    fn write_byte(&mut self, b: u8) {
-        self.current = self.current.wrapping_add(b);
-        self.current = self.current.wrapping_mul(17)
-    }
-}
-
-// Determine the ASCII code for the current character of the string.
-// Increase the current value by the ASCII code you just determined.
-// Set the current value to itself multiplied by 17.
-// Set the current value to the remainder of dividing itself by 256.
-
-impl Write for Hasher {
-    fn write_str(&mut self, s: &str) -> std::fmt::Result {
-        for b in s.bytes() {
-            self.write_byte(b)
-        }
-        Ok(())
-    }
+    current as usize
 }
 
 pub fn solve_task1(file_content: &str) -> usize {
     file_content
         .split(',')
         .map(|x| x.trim_matches('\n'))
-        .map(|line| {
-            let mut hasher = Hasher::new();
-
-            write!(hasher, "{}", line).unwrap();
-            hasher.current as usize
-        })
+        .map(hash_string)
         .sum()
 }
-pub fn solve_task2(_file_content: &str) -> impl std::fmt::Display {
-    0
+#[derive(Debug, Clone)]
+struct Lens {
+    label: Rc<str>,
+    strength: usize,
+}
+
+pub fn solve_task2(file_content: &str) -> usize {
+    let lenses: Vec<Vec<Lens>> = vec![Vec::new(); 256];
+
+    file_content
+        .split(',')
+        .map(|x| x.trim_matches('\n'))
+        .fold(lenses, |mut boxes, instruction| {
+            if instruction.ends_with('-') {
+                let label = &instruction[..(instruction.len() - 1)];
+                let ptr = hash_string(&label);
+                let ind = boxes[ptr as usize]
+                    .iter()
+                    .position(|x| x.label.deref().eq(label));
+                if let Some(ind) = ind {
+                    boxes[ptr as usize].remove(ind);
+                }
+                boxes
+            } else {
+                let (label, count_str) = instruction.split_once('=').expect("should be a pair");
+                let count = count_str.parse::<usize>().unwrap();
+                let ptr = hash_string(label);
+                for x in boxes[ptr].iter_mut() {
+                    if x.label.deref().eq(label) {
+                        x.strength = count;
+                        return boxes;
+                    }
+                }
+                boxes[ptr as usize].push(Lens {
+                    label: Rc::from(label),
+                    strength: count,
+                });
+                boxes
+            }
+        })
+        .into_iter()
+        .enumerate()
+        .map(|(b, lenses)| {
+            if lenses.is_empty() {
+                return 0;
+            }
+            lenses
+                .into_iter()
+                .enumerate()
+                .map(|(slot, lens)| (b + 1) * (slot + 1) * lens.strength)
+                .sum::<usize>()
+        })
+        .sum::<usize>()
 }
 #[cfg(test)]
 mod tests {
     use super::*;
     const INPUT: &str = include_str!("./y23d15/example.txt");
     const ACTUAL: &str = include_str!("../../benches/y23/y23d15.txt");
-    #[test]
-    fn test_hasher() {
-        let mut hasher = Hasher::new();
-        hasher.write_byte(b'H');
-        assert_eq!(hasher.current, 200);
-        hasher.write_byte(b'A');
-        assert_eq!(hasher.current, 153);
-        hasher.write_byte(b'S');
-        assert_eq!(hasher.current, 172);
-        hasher.write_byte(b'H');
-        assert_eq!(hasher.current, 52);
-    }
 
     #[test]
     fn test_task1() {
@@ -74,11 +92,11 @@ mod tests {
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "0");
+        assert_eq!(format!("{}", solve_task2(INPUT)), "145");
     }
 
     #[test]
     fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_task2(ACTUAL)), "229349");
     }
 }
