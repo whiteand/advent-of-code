@@ -82,38 +82,36 @@ enum Direction {
     Right,
 }
 
-impl From<Direction> for usize {
+impl From<Direction> for u8 {
     fn from(d: Direction) -> Self {
         match d {
-            Direction::Up => 0,
-            Direction::Right => 1,
-            Direction::Down => 2,
-            Direction::Left => 3,
+            Direction::Up => 1,
+            Direction::Right => 2,
+            Direction::Down => 4,
+            Direction::Left => 8,
         }
     }
 }
 
 struct Visited {
-    visited: Vec<Vec<[bool; 4]>>,
+    visited: Vec<Vec<u8>>,
 }
 impl Visited {
     fn new(rows: usize, cols: usize) -> Self {
         Self {
-            visited: vec![vec![[false; 4]; cols]; rows],
+            visited: vec![vec![0; cols]; rows],
         }
     }
     fn clear(&mut self) {
         for r in self.visited.iter_mut() {
-            for c in r.iter_mut() {
-                c.fill(false);
-            }
+            r.fill(0);
         }
     }
     fn mark_as_visited(&mut self, row: usize, col: usize, dir: Direction) {
-        self.visited[row][col][usize::from(dir)] = true;
+        self.visited[row][col] |= u8::from(dir);
     }
     fn is_visited(&self, row: usize, col: usize, dir: Direction) -> bool {
-        self.visited[row][col][usize::from(dir)]
+        self.visited[row][col] & u8::from(dir) != 0
     }
 }
 
@@ -205,7 +203,7 @@ fn get_energized(
         .visited
         .iter()
         .flat_map(|row| row.iter())
-        .filter(|col| col.iter().any(|c| *c))
+        .filter(|col| **col > 0)
         .count()
 }
 
