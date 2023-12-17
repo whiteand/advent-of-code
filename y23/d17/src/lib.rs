@@ -1,14 +1,6 @@
 use std::collections::BinaryHeap;
 
-pub fn solve_task2(file_content: &str) -> usize {
-    solve::<4, 10>(file_content)
-}
-
-pub fn solve_task1(file_content: &str) -> usize {
-    solve::<1, 3>(file_content)
-}
-
-fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> usize {
+pub fn solve(file_content: &str, min_steps: usize, max_steps: usize) -> usize {
     let grid = parse_grid(file_content);
     let (rows, cols) = grid.dimensions();
 
@@ -25,8 +17,8 @@ fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> 
 
     let mut steps = BinaryHeap::new();
 
-    for d in 1..=MAX_STEPS {
-        if d < MIN_STEPS {
+    for d in 1..=max_steps {
+        if d < min_steps {
             continue;
         }
         // steps to the right
@@ -65,9 +57,9 @@ fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> 
 
         if !matches!(direction, Direction::Right | Direction::Left) {
             let mut collected_cost = cost;
-            for c in col + 1..cols.min(col + MAX_STEPS + 1) {
+            for c in col + 1..cols.min(col + max_steps + 1) {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                if c - col < MIN_STEPS {
+                if c - col < min_steps {
                     continue;
                 }
                 steps.push(Step {
@@ -80,9 +72,9 @@ fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> 
             }
 
             let mut collected_cost = cost;
-            for c in (col.saturating_sub(MAX_STEPS)..col).rev() {
+            for c in (col.saturating_sub(max_steps)..col).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                if col - c < MIN_STEPS {
+                if col - c < min_steps {
                     continue;
                 }
                 steps.push(Step {
@@ -97,9 +89,9 @@ fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> 
 
         if !matches!(direction, Direction::Down | Direction::Up) {
             let mut collected_cost = cost;
-            for r in (row + 1)..rows.min(row + MAX_STEPS + 1) {
+            for r in (row + 1)..rows.min(row + max_steps + 1) {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                if r - row < MIN_STEPS {
+                if r - row < min_steps {
                     continue;
                 }
                 steps.push(Step {
@@ -111,9 +103,9 @@ fn solve<const MIN_STEPS: usize, const MAX_STEPS: usize>(file_content: &str) -> 
                 })
             }
             let mut collected_cost = cost;
-            for r in (row.saturating_sub(MAX_STEPS)..row).rev() {
+            for r in (row.saturating_sub(max_steps)..row).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                if row - r < MIN_STEPS {
+                if row - r < min_steps {
                     continue;
                 }
                 steps.push(Step {
@@ -316,26 +308,26 @@ fn parse_grid(input: &str) -> Grid {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    const INPUT: &str = include_str!("./y23d17/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d17.txt");
+    use super::solve;
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "102");
+        assert_eq!(format!("{}", solve(INPUT, 1, 3)), "102");
     }
 
     #[test]
     fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "967");
+        assert_eq!(format!("{}", solve(ACTUAL, 1, 3)), "967");
     }
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "94");
+        assert_eq!(format!("{}", solve(INPUT, 4, 10)), "94");
     }
 
     #[test]
     fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "1101");
+        assert_eq!(format!("{}", solve(ACTUAL, 4, 10)), "1101");
     }
 }

@@ -5,11 +5,19 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
-criterion = "0.4.0"
+[workspace]
+members = ["y23/d17"]
+
+[workspace.dependencies]
 itertools = "0.10.5"
-md-5 = "0.10.5"
+criterion = "0.4.0"
 nom = "7.1.3"
+
+[dependencies]
+itertools.workspace = true
+nom.workspace = true
+criterion.workspace = true
+md-5 = "0.10.5"
 rayon = "1.6.1"
 regex = "1"
 
@@ -203,9 +211,4 @@ harness = false
 [[bench]]
 name = "y23d16"
 path = "benches/y23/y23d16.rs"
-harness = false
-
-[[bench]]
-name = "y23d17"
-path = "benches/y23/y23d17.rs"
 harness = false
