@@ -1,0 +1,8 @@
+[placeholders.year]
+type = "string"
+prompt = "What is the year?"
+default = "2023"
+
+[placeholders.day]
+type = "string"
+prompt = "What is the day?"
