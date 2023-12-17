@@ -1,7 +1,7 @@
 
 generate year day:
-    cargo generate --init --path ./template -d year {{year}} {{day}}
-    nu fetch.nu {{year}} {{day}};
+    cargo generate --init --path ./template -d year={{year}} -d day={{day}}
+    nu fetch.nu 20{{year}} {{day}};
 
 clippy:
     cargo watch -x clippy
@@ -239,3 +239,12 @@ y23d17-test:
     cargo test --package y23d17 --lib -- tests --nocapture
 y23d17-bench:
     cargo bench --package y23d17
+
+y18d01-solve:
+    cat ./y18/d01/input.txt | cargo run --package y18d01
+y18d01-example:
+    cat ./y18/d01/example.txt | cargo run --package y18d01
+y18d01-test:
+    cargo test --package y18d01 --lib -- tests --nocapture
+y18d01-bench:
+    cargo bench --package y18d01

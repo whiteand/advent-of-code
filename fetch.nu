@@ -1,10 +1,10 @@
 #!/usr/bin/env nu
 
-def main [y?: int, d?: int] {
+def main [y?: int, d?: string] {
     let current_year = (date now | date to-record | get year );
     let current_day = (date now | date to-record | get day );
     let year = ($y | default $current_year) ;
-    let day = ($d | default $current_day) ;
+    let day = ($d | default ($current_day | into string) | str replace  --all '^0+' '' | into int);
     let url = $"https://adventofcode.com/($year)/day/($day)/input";
     let cookie = ($env.AOC? | default "");
     
