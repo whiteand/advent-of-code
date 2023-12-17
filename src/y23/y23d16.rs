@@ -7,9 +7,7 @@ pub fn solve_task1(file_content: &str) -> usize {
 
     to_visit.start_with((0, 0, Direction::Right));
 
-    let energy = get_energized(&grid, &mut visited, &mut to_visit);
-
-    energy
+    get_energized(&grid, &mut visited, &mut to_visit)
 }
 pub fn solve_task2(file_content: &str) -> usize {
     let grid = parse_grid(file_content);

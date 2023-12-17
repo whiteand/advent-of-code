@@ -1,4 +1,4 @@
-use std::collections::{BinaryHeap, VecDeque};
+use std::collections::BinaryHeap;
 
 use itertools::Itertools;
 
@@ -161,7 +161,6 @@ fn print_steps<'t>(steps: impl Iterator<Item = &'t Step>, rows: usize, col: usiz
     let mut visited = Visited::new(rows, col);
     for step in steps {
         visited.set_min(step.row, step.col, step.direction, step.cost);
-        for d in Direction::iter() {}
     }
     println!("{:3?}", visited);
 }
@@ -194,40 +193,8 @@ pub fn solve_task1(file_content: &str) -> usize {
     let target_row = rows - 1;
     let target_col = cols - 1;
 
-    let mut discovered = 0;
-    let target_path_points = [
-        (0, 1, Direction::Right, 4),
-        (0, 2, Direction::Right, 5),
-        (1, 2, Direction::Down, 6),
-        (1, 3, Direction::Right, 11),
-        (1, 4, Direction::Right, 15),
-        (1, 5, Direction::Right, 20),
-        (0, 5, Direction::Up, 23),
-        (0, 6, Direction::Right, 25),
-        (0, 7, Direction::Right, 28),
-        (0, 8, Direction::Right, 29),
-        (1, 8, Direction::Down, 32),
-        (2, 8, Direction::Down, 37),
-        (2, 9, Direction::Right, 41),
-        (2, 10, Direction::Right, 43),
-        (3, 10, Direction::Down, 47),
-        (4, 10, Direction::Down, 52),
-        (4, 11, Direction::Right, 55),
-        (5, 11, Direction::Down, 60),
-        (6, 11, Direction::Down, 66),
-        (7, 11, Direction::Down, 71),
-        (7, 12, Direction::Right, 74),
-        (8, 12, Direction::Down, 81),
-        (9, 12, Direction::Down, 84),
-        (10, 12, Direction::Down, 87),
-        (10, 11, Direction::Left, 93),
-        (11, 11, Direction::Down, 96),
-        (12, 11, Direction::Down, 99),
-        (12, 12, Direction::Right, 102),
-    ];
-
     for d in Direction::iter() {
-        visited.set_min(start_row, start_col, d, grid.get(start_row, start_col));
+        visited.set_min(start_row, start_col, d, 0);
     }
 
     let mut steps = BinaryHeap::new();
@@ -237,7 +204,7 @@ pub fn solve_task1(file_content: &str) -> usize {
         steps.push(Step {
             row: start_row,
             col: start_col + d,
-            cost: (0..=(start_col + d)).map(|c| grid.get(start_row, c)).sum(),
+            cost: (1..=(start_col + d)).map(|c| grid.get(start_row, c)).sum(),
             direction: Direction::Right,
             h: manhattan(start_row, start_col + d, target_row, target_col),
         });
@@ -245,13 +212,13 @@ pub fn solve_task1(file_content: &str) -> usize {
         steps.push(Step {
             row: start_row + d,
             col: start_col,
-            cost: (0..=(start_row + d)).map(|r| grid.get(r, start_col)).sum(),
+            cost: (1..=(start_row + d)).map(|r| grid.get(r, start_col)).sum(),
             direction: Direction::Down,
             h: manhattan(start_row + d, start_col, target_row, target_col),
         });
     }
 
-    println!("{:#?}", steps);
+    print_steps(steps.iter(), rows, cols);
 
     while let Some(Step {
         row,
@@ -261,19 +228,15 @@ pub fn solve_task1(file_content: &str) -> usize {
         ..
     }) = steps.pop()
     {
-        if target_path_points.contains(&(row, col, direction)) {
-            println!(
-                "Found target at {row},{col}, last move {:?}. Cost = {cost}",
-                direction
-            );
-            println!();
-        }
-
         if !visited.set_min(row, col, direction, cost) {
             continue;
         }
 
-        if !matches!(direction, Direction::Right) {
+        if row == target_row && col == target_col {
+            break;
+        }
+
+        if !matches!(direction, Direction::Right | Direction::Left) {
             let mut collected_cost = cost;
             for c in col + 1..cols.min(col + 4) {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
@@ -287,7 +250,7 @@ pub fn solve_task1(file_content: &str) -> usize {
             }
         }
 
-        if !matches!(direction, Direction::Left) {
+        if !matches!(direction, Direction::Left | Direction::Right) {
             let mut collected_cost = cost;
             for c in (col.saturating_sub(3)..col).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
@@ -300,7 +263,7 @@ pub fn solve_task1(file_content: &str) -> usize {
                 })
             }
         }
-        if !matches!(direction, Direction::Down) {
+        if !matches!(direction, Direction::Down | Direction::Up) {
             let mut collected_cost = cost;
             for r in (row + 1)..rows.min(row + 4) {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
@@ -314,7 +277,7 @@ pub fn solve_task1(file_content: &str) -> usize {
             }
         }
 
-        if !matches!(direction, Direction::Up) {
+        if !matches!(direction, Direction::Up | Direction::Down) {
             let mut collected_cost = cost;
             for r in (row.saturating_sub(3)..row).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
@@ -326,18 +289,6 @@ pub fn solve_task1(file_content: &str) -> usize {
                     direction: Direction::Up,
                 })
             }
-        }
-
-        if target_path_points.contains(&(row, col, direction)) {
-            println!(
-                "Found target at {},{}, last move {:?}. Cost = {cost}",
-                row, col, direction
-            );
-            println!("Visited:");
-            print!("{:3?}", &visited);
-            println!("Steps:");
-            print_steps(steps.iter(), rows, cols);
-            println!();
         }
     }
     visited.get_min(rows - 1, cols - 1)
@@ -371,12 +322,12 @@ mod tests {
 
     #[test]
     fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_task1(ACTUAL)), "967");
     }
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "0");
+        assert_eq!(format!("{}", solve_task2(INPUT)), "94");
     }
 
     #[test]
