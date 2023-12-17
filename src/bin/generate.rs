@@ -169,7 +169,7 @@ fn get_day_lib_content(year: u32, day: u32, tasks: u32) -> String {
     let mut res = String::new();
     for task in 1..=tasks {
         let fun = format!(
-            "pub fn solve_task{}(_file_content: &str) -> impl std::fmt::Display {{
+            "pub fn solve_task{}(_file_content: &str) -> usize {{
     0
 }}",
             task
