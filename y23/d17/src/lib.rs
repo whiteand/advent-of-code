@@ -1,124 +1,99 @@
-use std::collections::BinaryHeap;
-
+use pathfinding::prelude::astar;
 pub fn solve(file_content: &str, min_steps: usize, max_steps: usize) -> usize {
     let grid = parse_grid(file_content);
     let (rows, cols) = grid.dimensions();
 
-    let mut visited = Visited::new(rows, cols);
+    let res = astar(
+        &Step {
+            col: 0,
+            direction: None,
+            row: 0,
+        },
+        |Step {
+             row,
+             col,
+             direction,
+             ..
+         }| {
+            let mut steps = Vec::new();
+            let row = *row;
+            let col = *col;
+            let direction = *direction;
 
-    let start_row = 0;
-    let start_col = 0;
-    let target_row = rows - 1;
-    let target_col = cols - 1;
-
-    for d in Direction::iter() {
-        visited.set_min(start_row, start_col, d, 0);
-    }
-
-    let mut steps = BinaryHeap::new();
-
-    for d in 1..=max_steps {
-        if d < min_steps {
-            continue;
-        }
-        // steps to the right
-        steps.push(Step {
-            row: start_row,
-            col: start_col + d,
-            cost: (1..=(start_col + d)).map(|c| grid.get(start_row, c)).sum(),
-            direction: Direction::Right,
-            h: manhattan(start_row, start_col + d, target_row, target_col),
-        });
-        // steps to the bottom
-        steps.push(Step {
-            row: start_row + d,
-            col: start_col,
-            cost: (1..=(start_row + d)).map(|r| grid.get(r, start_col)).sum(),
-            direction: Direction::Down,
-            h: manhattan(start_row + d, start_col, target_row, target_col),
-        });
-    }
-
-    while let Some(Step {
-        row,
-        col,
-        cost,
-        direction,
-        ..
-    }) = steps.pop()
-    {
-        if !visited.set_min(row, col, direction, cost) {
-            continue;
-        }
-
-        if row == target_row && col == target_col {
-            break;
-        }
-
-        if !matches!(direction, Direction::Right | Direction::Left) {
-            let mut collected_cost = cost;
-            for c in col + 1..cols.min(col + max_steps + 1) {
-                collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                if c - col < min_steps {
-                    continue;
+            if !matches!(direction, Some(Direction::Right | Direction::Left)) {
+                let mut collected_cost: usize = 0;
+                for c in col + 1..cols.min(col + max_steps + 1) {
+                    collected_cost = collected_cost.saturating_add(grid.get(row, c));
+                    if c - col < min_steps {
+                        continue;
+                    }
+                    steps.push((
+                        Step {
+                            row,
+                            col: c,
+                            direction: Some(Direction::Right),
+                        },
+                        collected_cost,
+                    ))
                 }
-                steps.push(Step {
-                    row,
-                    col: c,
-                    cost: collected_cost,
-                    h: manhattan(row, c, target_row, target_col),
-                    direction: Direction::Right,
-                })
+
+                let mut collected_cost = 0usize;
+                for c in (col.saturating_sub(max_steps)..col).rev() {
+                    collected_cost = collected_cost.saturating_add(grid.get(row, c));
+                    if col - c < min_steps {
+                        continue;
+                    }
+                    steps.push((
+                        Step {
+                            row,
+                            col: c,
+                            direction: Some(Direction::Left),
+                        },
+                        collected_cost,
+                    ))
+                }
             }
 
-            let mut collected_cost = cost;
-            for c in (col.saturating_sub(max_steps)..col).rev() {
-                collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                if col - c < min_steps {
-                    continue;
+            if !matches!(direction, Some(Direction::Down | Direction::Up)) {
+                let mut collected_cost = 0usize;
+                for r in (row + 1)..rows.min(row + max_steps + 1) {
+                    collected_cost = collected_cost.saturating_add(grid.get(r, col));
+                    if r - row < min_steps {
+                        continue;
+                    }
+                    steps.push((
+                        Step {
+                            row: r,
+                            col,
+                            direction: Some(Direction::Down),
+                        },
+                        collected_cost,
+                    ))
                 }
-                steps.push(Step {
-                    row,
-                    col: c,
-                    cost: collected_cost,
-                    h: manhattan(row, c, target_row, target_col),
-                    direction: Direction::Left,
-                })
+                let mut collected_cost = 0usize;
+                for r in (row.saturating_sub(max_steps)..row).rev() {
+                    collected_cost = collected_cost.saturating_add(grid.get(r, col));
+                    if row - r < min_steps {
+                        continue;
+                    }
+                    steps.push((
+                        Step {
+                            row: r,
+                            col,
+                            direction: Some(Direction::Up),
+                        },
+                        collected_cost,
+                    ))
+                }
             }
-        }
+            steps
+        },
+        |s| manhattan(s.row, s.col, rows - 1, cols - 1),
+        |s| s.row == rows - 1 && s.col == cols - 1,
+    );
 
-        if !matches!(direction, Direction::Down | Direction::Up) {
-            let mut collected_cost = cost;
-            for r in (row + 1)..rows.min(row + max_steps + 1) {
-                collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                if r - row < min_steps {
-                    continue;
-                }
-                steps.push(Step {
-                    row: r,
-                    col,
-                    h: manhattan(r, col, target_row, target_col),
-                    cost: collected_cost,
-                    direction: Direction::Down,
-                })
-            }
-            let mut collected_cost = cost;
-            for r in (row.saturating_sub(max_steps)..row).rev() {
-                collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                if row - r < min_steps {
-                    continue;
-                }
-                steps.push(Step {
-                    row: r,
-                    col,
-                    h: manhattan(r, col, target_row, target_col),
-                    cost: collected_cost,
-                    direction: Direction::Up,
-                })
-            }
-        }
-    }
-    visited.get_min(rows - 1, cols - 1)
+    res.map(|(_, cost)| cost)
+        .expect("There should be a solution")
 }
 
 struct Grid {
@@ -146,73 +121,7 @@ impl Grid {
     }
 }
 
-impl std::fmt::Display for Grid {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for row in &self.loses {
-            for col in row {
-                write!(f, "{}", col)?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-struct Visited {
-    visited: Vec<Vec<[usize; 4]>>,
-}
-impl Visited {
-    fn new(rows: usize, cols: usize) -> Self {
-        let visited = vec![vec![[usize::MAX; 4]; cols]; rows];
-        Self { visited }
-    }
-
-    fn set_min(&mut self, row: usize, col: usize, direction: Direction, cost: usize) -> bool {
-        if cost < self.get(row, col, direction) {
-            self.visited[row][col][usize::from(direction)] = cost;
-            true
-        } else {
-            false
-        }
-    }
-
-    fn get_min(&mut self, row: usize, col: usize) -> usize {
-        self.visited[row][col]
-            .iter()
-            .min()
-            .unwrap_or(&usize::MAX)
-            .to_owned()
-    }
-
-    fn get(&mut self, row: usize, col: usize, direction: Direction) -> usize {
-        self.visited[row][col][usize::from(direction)]
-    }
-}
-
-impl std::fmt::Debug for Visited {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let w = f.width().unwrap_or(3);
-        for row in &self.visited {
-            'cell: for cell in row {
-                let m = *cell.iter().min().unwrap_or(&usize::MAX);
-                for d in Direction::iter() {
-                    if cell[usize::from(d)] == m {
-                        if m == usize::MAX {
-                            write!(f, " {:<w$}", "X")?;
-                        } else {
-                            write!(f, "{}{:<w$}", d, m)?;
-                        }
-                        continue 'cell;
-                    }
-                }
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 enum Direction {
     Up,
     Right,
@@ -220,60 +129,11 @@ enum Direction {
     Left,
 }
 
-impl std::fmt::Display for Direction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Direction::Up => write!(f, "↑"),
-            Direction::Right => write!(f, "→"),
-            Direction::Down => write!(f, "↓"),
-            Direction::Left => write!(f, "←"),
-        }
-    }
-}
-
-impl Direction {
-    fn iter() -> impl Iterator<Item = Self> {
-        [
-            Direction::Up,
-            Direction::Right,
-            Direction::Down,
-            Direction::Left,
-        ]
-        .into_iter()
-    }
-}
-
-impl From<Direction> for usize {
-    fn from(value: Direction) -> Self {
-        match value {
-            Direction::Up => 0,
-            Direction::Right => 1,
-            Direction::Down => 2,
-            Direction::Left => 3,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Step {
     row: usize,
     col: usize,
-    cost: usize,
-    h: usize,
-    direction: Direction,
-}
-
-impl std::cmp::Ord for Step {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let sum = self.cost + self.h;
-        let other_sum = other.cost + other.h;
-        other_sum.cmp(&sum)
-    }
-}
-impl std::cmp::PartialOrd for Step {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
+    direction: Option<Direction>,
 }
 
 fn manhattan(row: usize, col: usize, target_row: usize, target_col: usize) -> usize {
