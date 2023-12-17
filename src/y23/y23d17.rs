@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{BinaryHeap, VecDeque};
 
 use itertools::Itertools;
 
@@ -135,12 +135,26 @@ impl From<Direction> for usize {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Step {
     row: usize,
     col: usize,
     cost: usize,
+    h: usize,
     direction: Direction,
+}
+
+impl std::cmp::Ord for Step {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let sum = self.cost + self.h;
+        let other_sum = other.cost + other.h;
+        other_sum.cmp(&sum)
+    }
+}
+impl std::cmp::PartialOrd for Step {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 fn print_steps<'t>(steps: impl Iterator<Item = &'t Step>, rows: usize, col: usize) {
@@ -152,6 +166,23 @@ fn print_steps<'t>(steps: impl Iterator<Item = &'t Step>, rows: usize, col: usiz
     println!("{:3?}", visited);
 }
 
+fn manhattan(row: usize, col: usize, target_row: usize, target_col: usize) -> usize {
+    let mut res = 0;
+    if row > target_row {
+        res += row - target_row;
+    } else {
+        res += target_row - row;
+    }
+
+    if col > target_col {
+        res += col - target_col;
+    } else {
+        res += target_col - col;
+    }
+
+    res
+}
+
 pub fn solve_task1(file_content: &str) -> usize {
     let grid = parse_grid(file_content);
     let (rows, cols) = grid.dimensions();
@@ -160,46 +191,63 @@ pub fn solve_task1(file_content: &str) -> usize {
 
     let start_row = 0;
     let start_col = 0;
+    let target_row = rows - 1;
+    let target_col = cols - 1;
 
     let mut discovered = 0;
     let target_path_points = [
-        (0, 2, Direction::Right),
-        (1, 2, Direction::Down),
-        (1, 5, Direction::Right),
-        (0, 5, Direction::Up),
-        (0, 8, Direction::Right),
-        (2, 8, Direction::Down),
-        (2, 10, Direction::Right),
-        (4, 10, Direction::Down),
-        (4, 11, Direction::Right),
-        (7, 11, Direction::Down),
-        (7, 12, Direction::Right),
-        (10, 12, Direction::Down),
-        (10, 11, Direction::Left),
-        (12, 11, Direction::Down),
-        (12, 12, Direction::Right),
+        (0, 1, Direction::Right, 4),
+        (0, 2, Direction::Right, 5),
+        (1, 2, Direction::Down, 6),
+        (1, 3, Direction::Right, 11),
+        (1, 4, Direction::Right, 15),
+        (1, 5, Direction::Right, 20),
+        (0, 5, Direction::Up, 23),
+        (0, 6, Direction::Right, 25),
+        (0, 7, Direction::Right, 28),
+        (0, 8, Direction::Right, 29),
+        (1, 8, Direction::Down, 32),
+        (2, 8, Direction::Down, 37),
+        (2, 9, Direction::Right, 41),
+        (2, 10, Direction::Right, 43),
+        (3, 10, Direction::Down, 47),
+        (4, 10, Direction::Down, 52),
+        (4, 11, Direction::Right, 55),
+        (5, 11, Direction::Down, 60),
+        (6, 11, Direction::Down, 66),
+        (7, 11, Direction::Down, 71),
+        (7, 12, Direction::Right, 74),
+        (8, 12, Direction::Down, 81),
+        (9, 12, Direction::Down, 84),
+        (10, 12, Direction::Down, 87),
+        (10, 11, Direction::Left, 93),
+        (11, 11, Direction::Down, 96),
+        (12, 11, Direction::Down, 99),
+        (12, 12, Direction::Right, 102),
     ];
 
     for d in Direction::iter() {
         visited.set_min(start_row, start_col, d, grid.get(start_row, start_col));
     }
 
-    let mut steps = VecDeque::new();
+    let mut steps = BinaryHeap::new();
 
     for d in 1..=3 {
         // steps to the right
-        steps.push_back(Step {
+        steps.push(Step {
             row: start_row,
             col: start_col + d,
             cost: (0..=(start_col + d)).map(|c| grid.get(start_row, c)).sum(),
             direction: Direction::Right,
+            h: manhattan(start_row, start_col + d, target_row, target_col),
         });
         // steps to the bottom
-        steps.push_back(Step {
+        steps.push(Step {
             row: start_row + d,
             col: start_col,
             cost: (0..=(start_row + d)).map(|r| grid.get(r, start_col)).sum(),
             direction: Direction::Down,
+            h: manhattan(start_row + d, start_col, target_row, target_col),
         });
     }
 
@@ -210,7 +258,8 @@ pub fn solve_task1(file_content: &str) -> usize {
         col,
         cost,
         direction,
-    }) = steps.pop_front()
+        ..
+    }) = steps.pop()
     {
         if target_path_points.contains(&(row, col, direction)) {
             println!(
@@ -224,16 +273,15 @@ pub fn solve_task1(file_content: &str) -> usize {
             continue;
         }
 
-        let initial_steps_n = steps.len();
-
         if !matches!(direction, Direction::Right) {
             let mut collected_cost = cost;
             for c in col + 1..cols.min(col + 4) {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                steps.push_back(Step {
+                steps.push(Step {
                     row,
                     col: c,
                     cost: collected_cost,
+                    h: manhattan(row, c, target_row, target_col),
                     direction: Direction::Right,
                 })
             }
@@ -243,10 +291,11 @@ pub fn solve_task1(file_content: &str) -> usize {
             let mut collected_cost = cost;
             for c in (col.saturating_sub(3)..col).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(row, c));
-                steps.push_back(Step {
+                steps.push(Step {
                     row,
                     col: c,
                     cost: collected_cost,
+                    h: manhattan(row, c, target_row, target_col),
                     direction: Direction::Left,
                 })
             }
@@ -255,9 +304,10 @@ pub fn solve_task1(file_content: &str) -> usize {
             let mut collected_cost = cost;
             for r in (row + 1)..rows.min(row + 4) {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                steps.push_back(Step {
+                steps.push(Step {
                     row: r,
                     col,
+                    h: manhattan(r, col, target_row, target_col),
                     cost: collected_cost,
                     direction: Direction::Down,
                 })
@@ -268,9 +318,10 @@ pub fn solve_task1(file_content: &str) -> usize {
             let mut collected_cost = cost;
             for r in (row.saturating_sub(3)..row).rev() {
                 collected_cost = collected_cost.saturating_add(grid.get(r, col));
-                steps.push_back(Step {
+                steps.push(Step {
                     row: r,
                     col,
+                    h: manhattan(r, col, target_row, target_col),
                     cost: collected_cost,
                     direction: Direction::Up,
                 })
@@ -285,7 +336,7 @@ pub fn solve_task1(file_content: &str) -> usize {
             println!("Visited:");
             print!("{:3?}", &visited);
             println!("Steps:");
-            print_steps(steps.iter().skip(initial_steps_n), rows, cols);
+            print_steps(steps.iter(), rows, cols);
             println!();
         }
     }
