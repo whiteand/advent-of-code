@@ -1,4 +1,4 @@
-use std::collections::BinaryHeap;
+use std::{collections::BinaryHeap, usize::MAX};
 
 use itertools::Itertools;
 
@@ -293,8 +293,133 @@ pub fn solve_task1(file_content: &str) -> usize {
     }
     visited.get_min(rows - 1, cols - 1)
 }
-pub fn solve_task2(_file_content: &str) -> usize {
-    0
+pub fn solve_task2(file_content: &str) -> usize {
+    const MIN_STEPS: usize = 4;
+    const MAX_STEPS: usize = 10;
+    let grid = parse_grid(file_content);
+    let (rows, cols) = grid.dimensions();
+
+    let mut visited = Visited::new(rows, cols);
+
+    let start_row = 0;
+    let start_col = 0;
+    let target_row = rows - 1;
+    let target_col = cols - 1;
+
+    for d in Direction::iter() {
+        visited.set_min(start_row, start_col, d, 0);
+    }
+
+    let mut steps = BinaryHeap::new();
+
+    for d in 1..=MAX_STEPS {
+        if d < MIN_STEPS {
+            continue;
+        }
+        // steps to the right
+        steps.push(Step {
+            row: start_row,
+            col: start_col + d,
+            cost: (1..=(start_col + d)).map(|c| grid.get(start_row, c)).sum(),
+            direction: Direction::Right,
+            h: manhattan(start_row, start_col + d, target_row, target_col),
+        });
+        // steps to the bottom
+        steps.push(Step {
+            row: start_row + d,
+            col: start_col,
+            cost: (1..=(start_row + d)).map(|r| grid.get(r, start_col)).sum(),
+            direction: Direction::Down,
+            h: manhattan(start_row + d, start_col, target_row, target_col),
+        });
+    }
+
+    print_steps(steps.iter(), rows, cols);
+
+    while let Some(Step {
+        row,
+        col,
+        cost,
+        direction,
+        ..
+    }) = steps.pop()
+    {
+        if !visited.set_min(row, col, direction, cost) {
+            continue;
+        }
+
+        if row == target_row && col == target_col {
+            break;
+        }
+
+        if !matches!(direction, Direction::Right | Direction::Left) {
+            let mut collected_cost = cost;
+            for c in col + 1..cols.min(col + MAX_STEPS + 1) {
+                collected_cost = collected_cost.saturating_add(grid.get(row, c));
+                if c - col < MIN_STEPS {
+                    continue;
+                }
+                steps.push(Step {
+                    row,
+                    col: c,
+                    cost: collected_cost,
+                    h: manhattan(row, c, target_row, target_col),
+                    direction: Direction::Right,
+                })
+            }
+        }
+
+        if !matches!(direction, Direction::Left | Direction::Right) {
+            let mut collected_cost = cost;
+            for c in (col.saturating_sub(MAX_STEPS)..col).rev() {
+                collected_cost = collected_cost.saturating_add(grid.get(row, c));
+                if col - c < MIN_STEPS {
+                    continue;
+                }
+                steps.push(Step {
+                    row,
+                    col: c,
+                    cost: collected_cost,
+                    h: manhattan(row, c, target_row, target_col),
+                    direction: Direction::Left,
+                })
+            }
+        }
+        if !matches!(direction, Direction::Down | Direction::Up) {
+            let mut collected_cost = cost;
+            for r in (row + 1)..rows.min(row + MAX_STEPS + 1) {
+                collected_cost = collected_cost.saturating_add(grid.get(r, col));
+                if r - row < MIN_STEPS {
+                    continue;
+                }
+                steps.push(Step {
+                    row: r,
+                    col,
+                    h: manhattan(r, col, target_row, target_col),
+                    cost: collected_cost,
+                    direction: Direction::Down,
+                })
+            }
+        }
+
+        if !matches!(direction, Direction::Up | Direction::Down) {
+            let mut collected_cost = cost;
+            for r in (row.saturating_sub(MAX_STEPS)..row).rev() {
+                collected_cost = collected_cost.saturating_add(grid.get(r, col));
+                if row - r < MIN_STEPS {
+                    continue;
+                }
+                steps.push(Step {
+                    row: r,
+                    col,
+                    h: manhattan(r, col, target_row, target_col),
+                    cost: collected_cost,
+                    direction: Direction::Up,
+                })
+            }
+        }
+    }
+    visited.get_min(rows - 1, cols - 1)
 }
 
 fn parse_grid(input: &str) -> Grid {
