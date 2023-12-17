@@ -1,7 +1,7 @@
 [placeholders.year]
 type = "string"
 prompt = "What is the year?"
-default = "2023"
+default = "23"
 
 [placeholders.day]
 type = "string"

@@ -1,6 +1,6 @@
 
 generate year day:
-    cargo run --bin generate {{year}} {{day}};
+    cargo generate --init --path ./template -d year {{year}} {{day}}
     nu fetch.nu {{year}} {{day}};
 
 clippy:
