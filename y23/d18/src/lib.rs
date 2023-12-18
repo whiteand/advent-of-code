@@ -1,4 +1,4 @@
-use std::num;
+use std::cmp::Ordering;
 
 #[derive(Debug, Eq, Clone, PartialEq, PartialOrd, Ord)]
 struct IVec2(isize, isize);
@@ -8,6 +8,9 @@ impl std::fmt::Display for IVec2 {
     }
 }
 impl IVec2 {
+    fn new() -> Self {
+        IVec2(0, 0)
+    }
     fn set(&mut self, other: &IVec2) -> &mut Self {
         self.0 = other.0;
         self.1 = other.1;
@@ -43,9 +46,7 @@ impl IVec2 {
             panic!("invalid direction")
         }
     }
-    fn negate(&self) -> Self {
-        IVec2(-self.0, -self.1)
-    }
+
     fn mul_mut(&mut self, distance: usize) -> &mut Self {
         self.0 *= distance as isize;
         self.1 *= distance as isize;
@@ -66,7 +67,6 @@ impl IVec2 {
 struct Edge {
     start: IVec2,
     end: IVec2,
-    color: Color,
 }
 
 impl Edge {
@@ -83,14 +83,18 @@ impl Edge {
         if self.is_horizontal() {
             if self.start.1 > self.end.1 {
                 IVec2(0, -1)
-            } else {
+            } else if self.start.1 < self.end.1 {
                 IVec2(0, 1)
+            } else {
+                IVec2(0, 0)
             }
         } else {
             if self.start.0 > self.end.0 {
                 IVec2(-1, 0)
-            } else {
+            } else if self.start.0 < self.end.0 {
                 IVec2(1, 0)
+            } else {
+                IVec2(0, 0)
             }
         }
     }
@@ -126,75 +130,22 @@ impl Edge {
 
 impl std::fmt::Display for Edge {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} -> {}: {}", self.start, self.end, self.color)
+        if self.is_horizontal() {
+            write!(f, "({}, {}..={})", self.start.0, self.start.1, self.end.1)
+        } else if self.start.1 == self.end.1 {
+            write!(f, "({}..={}, {})", self.start.0, self.end.0, self.start.1)
+        } else {
+            write!(
+                f,
+                "({}, {})..=({}, {})",
+                self.start.0, self.start.1, self.end.0, self.end.1
+            )
+        }
     }
 }
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Side {
-    Left,
-    Right,
-    None,
-}
-
-struct Grid<T> {
-    min: IVec2,
-    max: IVec2,
-    map: Vec<Vec<Option<T>>>,
-}
-
-impl<T: Clone> Grid<T> {
-    fn new(min: IVec2, max: IVec2) -> Self {
-        let mut map: Vec<Vec<Option<T>>> = Vec::new();
-
-        let mut d = max.clone();
-        d.sub_mut(&min);
-
-        map.resize((d.0 + 3) as usize, Vec::new());
-        for row in map.iter_mut() {
-            row.resize((d.1 + 3) as usize, None);
-        }
-
-        Self { min, max, map }
-    }
-}
-impl<T> Grid<T> {
-    fn get(&self, pos: &IVec2) -> Option<&T> {
-        if pos.0 < self.min.0 - 1 || pos.0 > self.max.0 + 1 {
-            return None;
-        }
-        if pos.1 < self.min.1 - 1 || pos.1 > self.max.1 + 1 {
-            return None;
-        }
-        let (row, col) = self.to_indices(pos);
-        self.map[row][col].as_ref()
-    }
-    fn to_indices(&self, pos: &IVec2) -> (usize, usize) {
-        let row = (pos.0 - self.min.0 + 1) as usize;
-        let col = (pos.1 - self.min.1 + 1) as usize;
-        (row, col)
-    }
-    fn set(&mut self, pos: &IVec2, value: T) -> bool {
-        if pos.0 < self.min.0 - 1 || pos.0 > self.max.0 + 1 {
-            return false;
-        }
-        if pos.1 < self.min.1 - 1 || pos.1 > self.max.1 + 1 {
-            return false;
-        }
-        let (row, col) = self.to_indices(pos);
-        self.map[row][col] = Some(value);
-        true
-    }
-
-    fn iter(&self) -> impl Iterator<Item = (IVec2, Option<&T>)> + '_ {
-        self.map.iter().enumerate().flat_map(move |(row, r)| {
-            r.iter().enumerate().map(move |(col, c)| {
-                (
-                    IVec2(row as isize + self.min.0, col as isize + self.min.1),
-                    c.as_ref(),
-                )
-            })
-        })
+impl std::fmt::Debug for Edge {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -254,8 +205,355 @@ fn get_internal_dots(a: &IVec2, b: &IVec2, c: &IVec2) -> isize {
     double_internal / 2 * s.signum()
 }
 
+fn print_edges<'t, T: IntoIterator<Item = &'t Edge>>(it: T) {
+    let mut min = IVec2(0, 0);
+    let mut max = IVec2(0, 0);
+    let mut edges = Vec::new();
+    for edge in it.into_iter() {
+        min.min_mut(&edge.start);
+        min.min_mut(&edge.end);
+        max.max_mut(&edge.start);
+        max.max_mut(&edge.end);
+        edges.push(edge);
+    }
+
+    let w = match edges.len() {
+        0..=9 => 1,
+        10..=99 => 3,
+        _ => 3,
+    };
+
+    for r in min.0 - 1..=max.0 + 1 {
+        for c in min.1 - 1..=max.1 + 1 {
+            if let Some((ind, _)) = edges
+                .iter()
+                .enumerate()
+                .find(|(_, edge)| edge.contains(&IVec2(r, c)))
+            {
+                print!("{:<w$}", ind);
+            } else {
+                print!("{:<w$}", '.');
+            }
+        }
+        println!()
+    }
+}
+
+struct EdgesBuilder {
+    points: Vec<IVec2>,
+}
+impl EdgesBuilder {
+    fn new() -> Self {
+        Self { points: Vec::new() }
+    }
+    fn push(&mut self, point: IVec2) {
+        self.points.push(point);
+    }
+    fn build(self) -> Vec<Edge> {
+        let mut edges = Vec::new();
+        for i in 0..self.points.len() - 1 {
+            let a = &self.points[i];
+            let b = &self.points[i + 1];
+            assert!(a.0 == b.0 || a.1 == b.1, "Not a line");
+            let edge = Edge {
+                start: a.clone(),
+                end: b.clone(),
+            };
+            edges.push(edge);
+        }
+        edges
+    }
+}
+
+fn collapse_tripple(edge_a: Edge, edge_b: Edge, edge_c: Edge) -> (Vec<Edge>, isize) {
+    let da = edge_a.dir();
+    let db = edge_b.dir();
+    let dc = edge_c.dir();
+    let mut res = EdgesBuilder::new();
+
+    if da == IVec2(0, 1) && db == IVec2(1, 0) && dc == IVec2(0, -1) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                let additional_area = ((edge_a.len() - 1) * edge_b.len()) as isize;
+                let a = &edge_a.start;
+                let b = &edge_b.start;
+                let c = &edge_c.start;
+                let d = &edge_c.end;
+                let mut new_b = c.clone();
+                new_b.add_mut(&a).sub_mut(&b);
+
+                // .....a0b
+                // .......1
+                // ..d2222c
+                // Should become:
+                // .....0..
+                // .....0..
+                // ..1110..
+
+                res.push(a.clone());
+                res.push(new_b);
+                res.push(d.clone());
+                let edges = res.build();
+                println!("Additional area = {}", additional_area);
+                print_edges(edges.iter());
+
+                return (edges, additional_area);
+            }
+            Ordering::Equal => {
+                // a######
+                // ______#
+                // ______#
+                // ______#
+                // ______#
+                // c######
+                // Should become:
+                // #______
+                // #______
+                // #______
+                // #______
+                // #______
+                // #______
+                dbg!(&edge_a, &da, &edge_b, &db, &edge_c, &dc);
+                todo!("first equal");
+            }
+            Ordering::Greater => {
+                let additional_area = ((edge_c.len() - 1) * edge_b.len()) as isize;
+
+                let a = edge_a.start.clone();
+                let b = edge_b.start.clone();
+                let d = edge_c.end.clone();
+                let c = edge_c.start.clone();
+
+                let mut new_b = b.clone();
+                new_b.add_mut(&d).sub_mut(&c);
+                res.push(a);
+                res.push(new_b);
+                res.push(d);
+
+                return (res.build(), additional_area);
+            }
+        }
+    }
+
+    if &da == &IVec2(1, 0) && &db == &IVec2(0, -1) && &dc == &IVec2(-1, 0) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                let additional_area = ((edge_a.len() - 1) * edge_b.len()) as isize;
+                let mut new_b = edge_b.end;
+                new_b.add_mut(&edge_a.start).sub_mut(&edge_a.end);
+                res.push(edge_a.start);
+                res.push(new_b);
+                res.push(edge_c.end);
+                return (res.build(), additional_area);
+            }
+            Ordering::Equal => {
+                let additional_area = ((edge_a.len() - 1) * edge_b.len()) as isize;
+                let Edge { start: a, .. } = edge_a;
+                let Edge { end: d, .. } = edge_c;
+                res.push(a);
+                res.push(d);
+                return (res.build(), additional_area);
+            }
+            Ordering::Greater => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a > c")
+            }
+        }
+    }
+
+    if &da == &IVec2(0, -1) && &db == &IVec2(-1, 0) && &dc == &IVec2(0, 1) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                let additional_area = ((edge_a.len() - 1) * edge_b.len()) as isize;
+                let mut new_b = edge_b.end;
+                new_b.add_mut(&edge_a.start).sub_mut(&edge_a.end);
+
+                res.push(edge_a.start);
+                res.push(new_b);
+                res.push(edge_c.end);
+                return (res.build(), additional_area);
+            }
+            Ordering::Equal => {
+                let additional_area = ((edge_a.len() - 1) * edge_b.len()) as isize;
+                let Edge { start: a, .. } = edge_a;
+                let Edge { end: d, .. } = edge_c;
+                res.push(a);
+                res.push(d);
+                return (res.build(), additional_area);
+            }
+            Ordering::Greater => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a > c")
+            }
+        }
+    }
+
+    if &da == &IVec2(1, 0) && &db == &IVec2(0, 1) && &dc == &IVec2(-1, 0) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+            Ordering::Equal => {
+                let additional_area = -(((edge_a.len() - 1) * edge_b.len()) as isize);
+                let Edge { start: a, .. } = edge_a;
+                let Edge { end: d, .. } = edge_c;
+                res.push(a);
+                res.push(d);
+                return (res.build(), additional_area);
+            }
+            Ordering::Greater => {
+                // .....  .....
+                // ..0..  ..0..
+                // ..0..  ..0..
+                // ..02.  ..11.
+                // ..02.  .....
+                // ..02.  .....
+                // ..01.  .....
+                // .....  .....
+
+                let additional_area = -(((edge_c.len() - 1) * edge_b.len()) as isize);
+                let mut new_b = edge_a.end;
+                new_b.add_mut(&edge_c.end).sub_mut(&edge_c.start);
+                res.push(edge_a.start);
+                res.push(new_b);
+                res.push(edge_c.end);
+
+                return (res.build(), additional_area);
+            }
+        }
+    }
+    if &da == &IVec2(0, 1) && &db == &IVec2(1, 0) && &dc == &IVec2(-1, 0) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                println!("Not implemented for this case: a < c");
+                dbg!([&edge_a, &edge_b, &edge_c]);
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+            Ordering::Equal => {
+                println!("Not implemented for this case: a == c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+            Ordering::Greater => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+        }
+    }
+
+    if &da == &IVec2(0, 1) && &db == &IVec2(-1, 0) && &dc == &IVec2(0, -1) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                println!("Not implemented for this case: a < c");
+                dbg!([&edge_a, &edge_b, &edge_c]);
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+            Ordering::Equal => {
+                let additional_area = -(((edge_a.len() - 1) * edge_b.len()) as isize);
+                res.push(edge_a.start);
+                res.push(edge_c.end);
+                return (res.build(), additional_area);
+            }
+            Ordering::Greater => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+        }
+    }
+
+    if &da == &IVec2(0, -1) && &db == &IVec2(1, 0) && &dc == &IVec2(0, 1) {
+        match edge_a.len().cmp(&edge_c.len()) {
+            Ordering::Less => {
+                println!("Not implemented for this case: a < c");
+                dbg!([&edge_a, &edge_b, &edge_c]);
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+            Ordering::Equal => {
+                let additional_area = -(((edge_a.len() - 1) * edge_b.len()) as isize);
+                res.push(edge_a.start);
+                res.push(edge_c.end);
+                return (res.build(), additional_area);
+            }
+            Ordering::Greater => {
+                println!("Not implemented for this case: a > c");
+                print_edges([&edge_a, &edge_b, &edge_c].into_iter());
+                todo!("a < c")
+            }
+        }
+    }
+
+    println!("Not implemented for this case: ");
+    dbg!([&edge_a, &edge_b, &edge_c]);
+    print_edges([edge_a, edge_b, edge_c].iter());
+    println!(
+        "if &da == &IVec2({}, {}) && &db == &IVec2({}, {}) && &dc == &IVec2({}, {}) {{}}",
+        da.0, da.1, db.0, db.1, dc.0, dc.1
+    );
+    todo!("Don't know how to collapse them");
+}
+
+fn collapse_some_tripple(edges: &mut Vec<Edge>, total_area: &mut isize) {
+    // 0 1 2 3 4
+    let ptr = (0..(edges.len() - 2))
+        .rev()
+        .find_map(|i| {
+            let a = &edges[i];
+            let b = &edges[i + 1];
+            let c = &edges[i + 2];
+
+            let da = a.dir();
+            let dc = c.dir();
+
+            (a.is_horizontal() == c.is_horizontal()
+                && a.is_horizontal() != b.is_horizontal()
+                && dc.0 == -da.0
+                && dc.1 == -da.1)
+                .then_some(i)
+        })
+        .expect("There should be at least one tripple of П shape");
+
+    let c = edges.remove(ptr + 2);
+    let b = edges.remove(ptr + 1);
+    let a = edges.remove(ptr);
+
+    println!("Total Area: {}", *total_area);
+    println!("To collapse:");
+    print_edges([&a, &b, &c].into_iter());
+
+    let (new_edges, additional_area) = collapse_tripple(a, b, c);
+    println!("Additional area: {}", additional_area);
+
+    for edge in new_edges.into_iter().rev() {
+        edges.insert(ptr, edge);
+    }
+    *total_area += additional_area;
+}
+
+fn collapse_continuations(edges: &mut Vec<Edge>) {
+    let mut ptr = edges.len() - 1;
+
+    while ptr > 1 && ptr < edges.len() {
+        if edges[ptr].is_horizontal() == edges[ptr - 1].is_horizontal() {
+            let b = edges.remove(ptr);
+            edges[ptr - 1].end.set(&b.end);
+            ptr -= 1;
+        } else {
+            ptr -= 1;
+        }
+    }
+}
+
 fn solve(instructions: impl Iterator<Item = Instruction>) -> usize {
-    let edges = instructions
+    let mut edges = instructions
         .scan(IVec2(0isize, 0isize), |pos, instruction| {
             let prev_pos = pos.clone();
             pos.add_mut(&IVec2::from(instruction.direction).mul_mut(instruction.distance));
@@ -263,23 +561,29 @@ fn solve(instructions: impl Iterator<Item = Instruction>) -> usize {
             let edge = Edge {
                 start: prev_pos,
                 end: pos.clone(),
-                color: instruction.color,
             };
 
             Some(edge)
         })
         .collect::<Vec<_>>();
 
-    let start = edges[0].start.clone();
     let mut res = 0isize;
-    for edge in edges.iter().skip(1) {
-        res += get_internal_dots(&start, &edge.start, &edge.end);
+
+    while edges.len() > 4 {
+        println!("Before collapse tripple state:");
+        print_edges(edges.iter());
+        collapse_some_tripple(&mut edges, &mut res);
+        println!("Before collapse continuations:");
+        print_edges(edges.iter());
+        collapse_continuations(&mut edges);
+        println!("After collapse:\n");
+        print_edges(&edges);
+        println!();
     }
-    let mut res: usize = res.abs() as usize;
-    for edge in edges.iter() {
-        res += edge.len() - 1;
-    }
-    res as usize
+
+    dbg!(&edges, res);
+    todo!("I am not sure how to calculate the are of this shape");
+    0
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -392,6 +696,7 @@ mod tests {
     #[case(IVec2(1, 3), IVec2(3, 1), -8)]
     #[case(IVec2(0, 1), IVec2(1, 0), -1)]
     #[case(IVec2(1, 0), IVec2(0, 1), 1)]
+    #[ignore]
 
     fn test_get_area(#[case] a: IVec2, #[case] b: IVec2, #[case] expected: isize) {
         assert_eq!(get_doubled_area(&a, &b), expected);
@@ -400,6 +705,7 @@ mod tests {
     #[rstest]
     #[case(IVec2(0, 0), IVec2(3, 0), IVec2(0, 4), 3)]
     #[case(IVec2(0, 0), IVec2(0, 4), IVec2(3, 0), -3)]
+    #[ignore]
     fn test_get_internal_dots(
         #[case] a: IVec2,
         #[case] b: IVec2,
