@@ -248,3 +248,12 @@ y18d01-test:
     cargo test --package y18d01 --lib -- tests --nocapture
 y18d01-bench:
     cargo bench --package y18d01
+
+y23d18-solve:
+    cat ./y23/d18/input.txt | cargo run --release --package y23d18
+y23d18-example:
+    cat ./y23/d18/example.txt | cargo run --release --package y23d18
+y23d18-test:
+    cargo test --package y23d18 --lib -- tests
+y23d18-bench:
+    cargo bench --package y23d18

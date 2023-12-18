@@ -14,11 +14,11 @@ members = [
 
 ```
 y{{year}}d{{day}}-solve:
-    cat ./y{{year}}/d{{day}}/input.txt | cargo run --package y{{year}}d{{day}}
+    cat ./y{{year}}/d{{day}}/input.txt | cargo run --release --package y{{year}}d{{day}}
 y{{year}}d{{day}}-example:
-    cat ./y{{year}}/d{{day}}/example.txt | cargo run --package y{{year}}d{{day}}
+    cat ./y{{year}}/d{{day}}/example.txt | cargo run --release --package y{{year}}d{{day}}
 y{{year}}d{{day}}-test:
-    cargo test --package y{{year}}d{{day}} --lib -- tests --nocapture
+    cargo test --package y{{year}}d{{day}} --lib -- tests
 y{{year}}d{{day}}-bench:
     cargo bench --package y{{year}}d{{day}}
 ```

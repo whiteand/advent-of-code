@@ -1,0 +1,17 @@
+[package]
+name = "y23d18"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+itertools.workspace = true
+criterion.workspace = true
+rstest = "0.18.2"
+
+
+[[bench]]
+name = "y23d18"
+path = "benches/y23d18.rs"
+harness = false
