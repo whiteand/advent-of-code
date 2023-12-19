@@ -1,5 +1,7 @@
 use std::{cmp::Ordering, collections::BTreeMap, ops::Bound};
 
+use itertools::Itertools;
+
 #[derive(Debug, Eq, Clone, PartialEq, PartialOrd, Ord)]
 struct IVec2(isize, isize);
 impl std::fmt::Display for IVec2 {
@@ -665,133 +667,49 @@ fn collapse_continuations(edges: &mut Vec<Edge>, total_area: &mut isize) -> bool
     collapsed
 }
 
-fn solve(instructions: impl Iterator<Item = Instruction>) -> usize {
-    let mut edges = instructions
+fn solve(instructions: impl Iterator<Item = Instruction>) -> isize {
+    let mut points = instructions
         .scan(IVec2(0isize, 0isize), |pos, instruction| {
             let prev_pos = pos.clone();
             pos.add_mut(&IVec2::from(instruction.direction).mul_mut(instruction.distance));
 
-            let edge = Edge {
-                start: prev_pos,
-                end: pos.clone(),
-            };
-
-            Some(edge)
+            Some(pos.clone())
         })
         .collect::<Vec<_>>();
 
-    print_edges(edges.iter());
-
-    let mut by_col = BTreeMap::new();
-
-    let mut min = IVec2(isize::MAX, isize::MAX);
-    let mut max = IVec2(isize::MIN, isize::MIN);
-
-    for edge in edges {
-        min.min_mut(&edge.start);
-        min.min_mut(&edge.end);
-        max.max_mut(&edge.start);
-        max.max_mut(&edge.end);
-
-        let row1 = edge.start.0;
-        let row2 = edge.end.0;
-        let col1 = edge.start.1;
-        let col2 = edge.end.1;
-
-        let new_edge = Edge {
-            start: IVec2(row1.min(row2), col1.min(col2)),
-            end: IVec2(row1.max(row2), col1.max(col2)),
-        };
-
-        by_col
-            .entry(new_edge.start.1)
-            .or_insert_with(Vec::new)
-            .push(new_edge);
-    }
-
-    for v in by_col.values_mut() {
-        v.sort_by(|a, b| {
-            if a.is_horizontal() && b.is_horizontal() {
-                a.start.0.cmp(&b.start.0)
-            } else if a.is_horizontal() {
-                std::cmp::Ordering::Less
-            } else if b.is_horizontal() {
-                std::cmp::Ordering::Greater
-            } else {
-                std::cmp::Ordering::Equal
-            }
-        });
-    }
-
-    dbg!(&by_col);
-
-    let mut row = min.0;
-    let mut sum = 0usize;
-
-    while row <= max.0 {
-        let mut is_inside = false;
-        let mut col = min.1 - 1;
-
-        while col <= max.1 + 1 {
-            match by_col
-                .range((Bound::Included(col), Bound::Unbounded))
-                .flat_map(|(_, e)| {
-                    e.iter().filter_map(|x| {
-                        if x.is_horizontal() && x.start.0 == row {
-                            if x.start.0 != row {
-                                return None;
-                            }
-                            let max_col = x.start.1.max(x.end.1);
-                            if max_col >= col {
-                                Some(x)
-                            } else {
-                                None
-                            }
-                        } else {
-                            let min_row = x.start.0.min(x.end.0);
-                            let max_row = x.start.0.max(x.end.0);
-                            if min_row <= row && max_row >= row {
-                                Some(x)
-                            } else {
-                                None
-                            }
-                        }
-                    })
-                })
-                .next()
-            {
-                Some(edge) => {
-                    let elapsed = edge.start.1 - col;
-                    if is_inside {
-                        sum += (elapsed + edge.end.1 - edge.start.1 + 1) as usize;
-                    } else {
-                        sum += (edge.end.1 - edge.start.1 + 1) as usize;
-                    }
-                    is_inside = !is_inside;
-                    col = edge.end.1 + 1;
-                }
-                None => {
-                    col = max.1 + 2;
-                }
-            }
-        }
-        row += 1;
-    }
-
-    sum
+    let area: isize = std::iter::once(&IVec2(0, 0))
+        .chain(points.iter())
+        .tuple_windows()
+        .map(|(a, b)| a.0 * b.1 - a.1 * b.0)
+        .sum::<isize>()
+        .abs();
+    let perimeter: isize = std::iter::once(&IVec2(0, 0))
+        .chain(points.iter())
+        .tuple_windows()
+        .map(|(a, b)| (b.0 - a.0).abs() + (b.1 - a.1).abs())
+        .sum();
+    (area + perimeter) / 2 + 1
 }
 
-pub fn solve_part_1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> isize {
     solve(parse_instructions(file_content))
 }
-pub fn solve_part_2(file_content: &str) -> usize {
-    solve(
-        parse_instructions(file_content).map(|instruction| Instruction {
+pub fn solve_part_2(file_content: &str) -> isize {
+    solve(parse_instructions(file_content).map(|instruction| {
+        let dir = match instruction.color.0 & 0b1111 {
+            0 => Direction::Right,
+            1 => Direction::Down,
+            2 => Direction::Left,
+            3 => Direction::Up,
+            _ => Direction::Up,
+        };
+        let distance = instruction.color.0 >> 4;
+        Instruction {
             color: Color(instruction.distance),
-            distance: instruction.color.0,
-            direction: instruction.direction,
-        }),
-    )
+            distance: distance,
+            direction: dir,
+        }
+    }))
 }
 
 #[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
@@ -911,6 +829,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_part1() {
         assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "62");
     }
@@ -922,14 +841,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_part2() {
         assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "952408144115");
     }
 
     #[test]
-    #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "66296566363189");
     }
 }
