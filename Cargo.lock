@@ -1001,4 +1001,5 @@ dependencies = [
  "criterion",
  "itertools",
  "nom",
+ "rstest",
 ]

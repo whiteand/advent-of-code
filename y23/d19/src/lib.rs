@@ -1,4 +1,4 @@
-use std::{cmp, collections::BTreeMap, str::FromStr};
+use std::{cmp, collections::BTreeMap, ops::Range, str::FromStr};
 
 use nom::{error::ErrorKind, Parser};
 
@@ -73,23 +73,22 @@ impl FromStr for Outcome {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 enum Condition {
     Any,
+    Never,
     FieldBased {
         field: Field,
         order: cmp::Ordering,
         value: usize,
     },
-    Never,
-    Or(Box<Condition>, Box<Condition>),
-    And(Box<Condition>, Box<Condition>),
 }
 
 impl std::fmt::Debug for Condition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Any => write!(f, "true"),
+            Self::Never => write!(f, "false"),
             Self::FieldBased {
                 field,
                 order,
@@ -107,143 +106,14 @@ impl std::fmt::Debug for Condition {
                     value
                 )
             }
-            Self::Never => write!(f, "false"),
-            Self::Or(arg0, arg1) => {
-                write!(f, "({:?}) || ({:?})", arg0, arg1)
-            }
-            Self::And(arg0, arg1) => write!(f, "({:?}) && ({:?})", arg0, arg1),
         }
     }
 }
 impl Condition {
-    fn negate(&self) -> Self {
-        match self {
-            Self::Any => Self::Never,
-            Self::Never => Self::Any,
-            Self::FieldBased {
-                field,
-                order,
-                value,
-            } => match order {
-                cmp::Ordering::Less => Self::FieldBased {
-                    field: *field,
-                    order: cmp::Ordering::Greater,
-                    value: value - 1,
-                },
-                cmp::Ordering::Equal => unreachable!(),
-                cmp::Ordering::Greater => Self::FieldBased {
-                    field: *field,
-                    order: cmp::Ordering::Less,
-                    value: value + 1,
-                },
-            },
-            Self::Or(a, b) => Self::And(a.negate().into(), b.negate().into()),
-            Self::And(a, b) => Self::Or(a.negate().into(), b.negate().into()),
-        }
-    }
-
-    fn or(&self, other: &Self) -> Self {
-        match (self, other) {
-            (Condition::Any, _) => Condition::Any,
-            (_, Condition::Any) => Condition::Any,
-            (Condition::Never, x) => x.clone(),
-            (x, Condition::Never) => x.clone(),
-            (
-                Condition::FieldBased {
-                    field: field_a,
-                    order: order_a,
-                    value: value_a,
-                },
-                Condition::FieldBased {
-                    field: field_b,
-                    order: order_b,
-                    value: value_b,
-                },
-            ) => {
-                if field_a != field_b {
-                    return Condition::Or(self.clone().into(), other.clone().into());
-                }
-                if order_a != order_b {
-                    return Condition::Or(self.clone().into(), other.clone().into());
-                }
-                todo!(
-                    "merge conditions {:?} {:?} ({:?}) and ({:?})",
-                    field_a,
-                    order_a,
-                    value_a,
-                    value_b
-                );
-            }
-            (Condition::And(a, b), Condition::And(c, d)) => Condition::Or(
-                Condition::And(a.clone().into(), b.clone().into()).into(),
-                Condition::And(c.clone().into(), d.clone().into()).into(),
-            ),
-            (Condition::Or(a, b), cond) => Condition::Or(
-                Condition::Or(a.clone().into(), cond.clone().into()).into(),
-                b.clone().into(),
-            ),
-            (a, b) => {
-                todo!("Not implemented or for\n  {:?}\nand\n  {:?}\n", self, other)
-            }
-        }
-    }
-
-    fn and(&self, other: &Self) -> Self {
-        match (self, other) {
-            (Condition::Any, x) => x.clone(),
-            (_, Condition::Never) => Condition::Never,
-            (
-                Condition::FieldBased {
-                    field: field_a,
-                    order: order_a,
-                    value: value_a,
-                },
-                Condition::FieldBased {
-                    field: field_b,
-                    order: order_b,
-                    value: value_b,
-                },
-            ) => {
-                if field_a != field_b {
-                    return Condition::And(self.clone().into(), other.clone().into());
-                }
-                match (order_a, order_b) {
-                    (cmp::Ordering::Less, cmp::Ordering::Less) => todo!(
-                        "Not implemented and for {:?} and {:?}",
-                        (field_a, order_a, value_a),
-                        (field_b, order_b, value_b)
-                    ),
-                    (cmp::Ordering::Less, cmp::Ordering::Greater) => todo!(
-                        "Not implemented and for {:?} and {:?}",
-                        (field_a, order_a, value_a),
-                        (field_b, order_b, value_b)
-                    ),
-                    (cmp::Ordering::Greater, cmp::Ordering::Less) => todo!(
-                        "Not implemented and for {:?} and {:?}",
-                        (field_a, order_a, value_a),
-                        (field_b, order_b, value_b)
-                    ),
-                    (cmp::Ordering::Greater, cmp::Ordering::Greater) => Condition::FieldBased {
-                        field: *field_a,
-                        order: *order_a,
-                        value: cmp::max(*value_a, *value_b),
-                    },
-                    (_, cmp::Ordering::Equal) | (cmp::Ordering::Equal, _) => unreachable!(),
-                }
-            }
-            (cond, Condition::Or(a, b)) => cond.and(a).or(&cond.and(b)),
-            (Condition::Or(a, b), cond) => cond.and(a).or(&cond.and(b)),
-            (Condition::And(a, b), cond) => cond.and(a).and(&cond.and(b)),
-            (cond, Condition::And(a, b)) => cond.and(a).and(&cond.and(b)),
-            (a, b) => {
-                todo!("Not implemented and for {:?} and {:?}", self, other)
-            }
-        }
-    }
-
     fn matches(&self, obj: &[usize; 4]) -> bool {
         match self {
             Condition::Any => true,
+            Condition::Never => false,
             Condition::FieldBased {
                 field,
                 order,
@@ -253,17 +123,62 @@ impl Condition {
                 let actual_cmp = obj_value.cmp(value);
                 actual_cmp == *order
             }
-            Condition::Never => false,
-            Condition::Or(a, b) => a.matches(obj) || b.matches(obj),
-            Condition::And(a, b) => a.matches(obj) && b.matches(obj),
+        }
+    }
+    fn negation(&self) -> Self {
+        match self {
+            Condition::Any => Condition::Never,
+            Condition::FieldBased {
+                field,
+                order,
+                value,
+            } => match order {
+                cmp::Ordering::Less => Condition::FieldBased {
+                    field: *field,
+                    order: cmp::Ordering::Greater,
+                    value: *value - 1,
+                },
+                cmp::Ordering::Equal => unreachable!("We do not have equality condition"),
+                cmp::Ordering::Greater => Condition::FieldBased {
+                    field: *field,
+                    order: cmp::Ordering::Less,
+                    value: *value + 1,
+                },
+            },
+            Condition::Never => Condition::Any,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 struct Rule {
     condition: Condition,
     outcome: Outcome,
+}
+
+impl std::fmt::Debug for Rule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.condition {
+            Condition::Any => write!(f, "always {:?}", self.outcome),
+            Condition::Never => write!(f, "never {:?}", self.outcome),
+            Condition::FieldBased {
+                field,
+                order,
+                value,
+            } => write!(
+                f,
+                "{}{}{} -> {:?}",
+                char::from(&field),
+                match order {
+                    cmp::Ordering::Less => "<",
+                    cmp::Ordering::Equal => "=",
+                    cmp::Ordering::Greater => ">",
+                },
+                value,
+                self.outcome
+            ),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -310,33 +225,9 @@ fn parse_input(input: &str) -> (BTreeMap<WorkflowId, Workflow>, Vec<[usize; 4]>)
 
             let outcome = outcome_str.parse::<Outcome>().unwrap();
 
-            let (input, f) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("xmas")
-                .map(|c| Field::from(c))
-                .parse(condition_str)
-                .unwrap();
-            let (input, o) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("><")
-                .map(|c| match c {
-                    '>' => cmp::Ordering::Greater,
-                    '<' => cmp::Ordering::Less,
-                    _ => panic!("invalid ordering"),
-                })
-                .parse(input)
-                .unwrap();
-            let (input, v) = nom::character::complete::digit1::<_, (&str, ErrorKind)>
-                .map(|s: &str| s.parse::<usize>().expect("invalid number"))
-                .parse(input)
-                .unwrap();
+            let condition = parse_condition(&condition_str);
 
-            assert_eq!(input, "");
-
-            rules.push(Rule {
-                condition: Condition::FieldBased {
-                    field: f,
-                    order: o,
-                    value: v,
-                },
-                outcome,
-            })
+            rules.push(Rule { condition, outcome })
         }
 
         workflows.insert(id, Workflow { rules });
@@ -356,6 +247,33 @@ fn parse_input(input: &str) -> (BTreeMap<WorkflowId, Workflow>, Vec<[usize; 4]>)
     }
 
     (workflows, objects)
+}
+
+fn parse_condition(input: &str) -> Condition {
+    let (input, f) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("xmas")
+        .map(|c| Field::from(c))
+        .parse(input)
+        .unwrap();
+    let (input, o) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("><")
+        .map(|c| match c {
+            '>' => cmp::Ordering::Greater,
+            '<' => cmp::Ordering::Less,
+            _ => panic!("invalid ordering"),
+        })
+        .parse(input)
+        .unwrap();
+    let (input, v) = nom::character::complete::digit1::<_, (&str, ErrorKind)>
+        .map(|s: &str| s.parse::<usize>().expect("invalid number"))
+        .parse(input)
+        .unwrap();
+
+    assert_eq!(input, "");
+
+    Condition::FieldBased {
+        field: f,
+        order: o,
+        value: v,
+    }
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -384,41 +302,109 @@ pub fn solve_part_1(file_content: &str) -> usize {
     accepted_total
 }
 
-fn get_accepted_condition_from_workflow(
-    workflows: &BTreeMap<WorkflowId, Workflow>,
-    workflow_id: WorkflowId,
-) -> Condition {
-    let mut when_accepted = Condition::Never;
+#[derive(Clone, PartialEq, Eq)]
+struct Space {
+    values: [Range<usize>; 4],
+}
 
-    let workflow = workflows.get(&workflow_id).unwrap();
-
-    let mut when_previous_rule_is_not_applied = Condition::Any;
-
-    for rule in workflow.rules.iter() {
-        match rule.outcome {
-            Outcome::Accepted => {
-                when_accepted =
-                    when_accepted.or(&when_previous_rule_is_not_applied.and(&rule.condition));
-                when_previous_rule_is_not_applied =
-                    when_previous_rule_is_not_applied.and(&rule.condition.negate())
-            }
-            Outcome::Rejected => {
-                when_previous_rule_is_not_applied =
-                    when_previous_rule_is_not_applied.and(&rule.condition.negate())
-            }
-            Outcome::Workflow(w_id) => {
-                when_accepted = when_accepted.or(&when_previous_rule_is_not_applied.and(
-                    &rule
-                        .condition
-                        .and(&get_accepted_condition_from_workflow(workflows, w_id)),
-                ));
-                when_previous_rule_is_not_applied =
-                    when_previous_rule_is_not_applied.and(&rule.condition.negate())
-            }
+impl Space {
+    fn all<const MIN: usize, const MAX: usize>() -> Self {
+        Self {
+            values: [MIN..MAX, MIN..MAX, MIN..MAX, MIN..MAX],
         }
     }
+    fn is_empty(&self) -> bool {
+        self.values.iter().any(|r| r.start == r.end)
+    }
 
-    when_accepted
+    fn combinations(&self) -> usize {
+        self.values.iter().map(|r| r.end - r.start).product()
+    }
+
+    fn choose(&self, condition: &Condition) -> Self {
+        match condition {
+            Condition::Any => self.clone(),
+            Condition::Never => Self::all::<0, 0>(),
+            Condition::FieldBased {
+                field,
+                order,
+                value,
+            } => match order {
+                cmp::Ordering::Less => {
+                    let mut prev_range = self.values[(*field) as usize].clone();
+                    prev_range.end = prev_range.end.min(*value);
+                    let mut new_values = self.values.clone();
+                    new_values[(*field) as usize] = prev_range;
+
+                    Self { values: new_values }
+                }
+                cmp::Ordering::Greater => {
+                    let mut prev_range = self.values[(*field) as usize].clone();
+                    prev_range.start = prev_range.start.max(value + 1);
+                    let mut new_values = self.values.clone();
+                    new_values[(*field) as usize] = prev_range;
+
+                    Self { values: new_values }
+                }
+                cmp::Ordering::Equal => unreachable!(),
+            },
+        }
+    }
+}
+
+impl std::fmt::Debug for Space {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{x={:?},m={:?},a={:?},s={:?}}}",
+            self.values[0], self.values[1], self.values[2], self.values[3]
+        )
+    }
+}
+
+fn get_accepted_combinations_from_outcome(
+    workflows: &BTreeMap<WorkflowId, Workflow>,
+    outcome: Outcome,
+    space: Space,
+) -> usize {
+    match outcome {
+        Outcome::Accepted => space.combinations(),
+        Outcome::Rejected => 0,
+        Outcome::Workflow(id) => get_accepted_combinations_from_workflow(workflows, id, space),
+    }
+}
+
+fn get_accepted_combinations_from_workflow(
+    workflows: &BTreeMap<WorkflowId, Workflow>,
+    id: WorkflowId,
+    mut space: Space,
+) -> usize {
+    println!("Workflow {:?} for {:?}", id, &space);
+    let workflow = workflows.get(&id).unwrap();
+    let mut total = 0usize;
+    for rule in &workflow.rules {
+        println!("{:?}  Rule {:?}", id, rule);
+        let applied_space = space.choose(&rule.condition);
+        println!(
+            "    {:?} | {:?} = {:?}",
+            &space, &rule.condition, &applied_space
+        );
+        if applied_space.is_empty() {
+            println!("  There is no combinations which satisfies this rule");
+            space = space.choose(&rule.condition.negation());
+            continue;
+        }
+        total += get_accepted_combinations_from_outcome(workflows, rule.outcome, applied_space);
+        space = space.choose(&rule.condition.negation());
+        println!(
+            "{:?}  {:?} |! {:?} = {:?}",
+            id, &space, &rule.condition, &space
+        );
+        if space.is_empty() {
+            break;
+        }
+    }
+    total
 }
 
 pub fn solve_part_2(file_content: &str) -> usize {
@@ -426,21 +412,58 @@ pub fn solve_part_2(file_content: &str) -> usize {
 
     let start_id = WorkflowId::from_str("in").unwrap();
 
-    let accepted_condition = get_accepted_condition_from_workflow(&workflows, start_id);
+    let initial_space = Space::all::<1, 4001>();
 
-    dbg!(accepted_condition);
-
-    0
+    get_accepted_combinations_from_workflow(&workflows, start_id, initial_space)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part_1, solve_part_2};
+    use rstest::rstest;
+
+    use crate::parse_condition;
+
+    use super::*;
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     fn test_part1() {
         assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "19114");
+    }
+
+    #[rstest]
+    #[case("x<10", "x>9")]
+    #[case("m<10", "m>9")]
+    #[case("a<10", "a>9")]
+    #[case("s<10", "s>9")]
+    #[case("x>9", "x<10")]
+    #[case("m>9", "m<10")]
+    #[case("a>9", "a<10")]
+    #[case("s>9", "s<10")]
+    fn test_negation(#[case] condition_str: &str, #[case] expected_condition_str: &str) {
+        let condition = parse_condition(&condition_str);
+        let expected_condition = parse_condition(&expected_condition_str);
+
+        assert_eq!(condition.negation(), expected_condition);
+    }
+
+    #[rstest]
+    #[case(Space::all::<1, 4001>(), Condition::Any, Space::all::<1, 4001>())]
+    #[case(Space::all::<1, 4001>(), Condition::Never, Space::all::<0, 0>())]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::X, order: cmp::Ordering::Less, value: 10 }, Space { values: [1..10, 1..4001,1..4001,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::X, order: cmp::Ordering::Greater, value: 10 }, Space { values: [11..4001, 1..4001,1..4001,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::M, order: cmp::Ordering::Less, value: 10 }, Space { values: [ 1..4001,1..10,1..4001,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::M, order: cmp::Ordering::Greater, value: 10 }, Space { values: [ 1..4001,11..4001,1..4001,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::A, order: cmp::Ordering::Less, value: 10 }, Space { values: [ 1..4001,1..4001,1..10,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::A, order: cmp::Ordering::Greater, value: 10 }, Space { values: [ 1..4001,1..4001,11..4001,1..4001]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::S, order: cmp::Ordering::Less, value: 10 }, Space { values: [ 1..4001,1..4001,1..4001,1..10,]})]
+    #[case(Space::all::<1, 4001>(), Condition::FieldBased { field: Field::S, order: cmp::Ordering::Greater, value: 10 }, Space { values: [ 1..4001,1..4001,1..4001,11..4001,]})]
+    fn test_choose(
+        #[case] space: Space,
+        #[case] condition: Condition,
+        #[case] expected_space: Space,
+    ) {
+        assert_eq!(space.choose(&condition), expected_space);
     }
 
     #[test]
@@ -450,12 +473,11 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
+        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "167409079868000");
     }
 
     #[test]
-    #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "131192538505367");
     }
 }

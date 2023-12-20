@@ -9,6 +9,7 @@ edition = "2021"
 itertools.workspace = true
 criterion.workspace = true
 nom.workspace = true
+rstest.workspace = true
 
 
 [[bench]]
