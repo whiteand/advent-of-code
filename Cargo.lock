@@ -1011,3 +1011,11 @@ dependencies = [
  "criterion",
  "itertools",
 ]
+
+[[package]]
+name = "y23d21"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "itertools",
+]

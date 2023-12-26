@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
-members = ["y23/d17", "y18/d01", "y23/d18", "y23/d19", "y23/d20"]
+members = ["y23/d17", "y18/d01", "y23/d18", "y23/d19", "y23/d20", "y23/d21"]
 
 [workspace.dependencies]
 itertools = "0.10.5"

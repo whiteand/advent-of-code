@@ -275,3 +275,12 @@ y23d20-test:
     cargo test --package y23d20 --lib -- tests
 y23d20-bench:
     cargo bench --package y23d20
+
+y23d21-solve:
+    cat ./y23/d21/input.txt | cargo run --release --package y23d21
+y23d21-example:
+    cat ./y23/d21/example.txt | cargo run --release --package y23d21
+y23d21-test:
+    cargo test --package y23d21 --lib -- tests
+y23d21-bench:
+    cargo bench --package y23d21
