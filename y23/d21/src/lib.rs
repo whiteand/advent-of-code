@@ -159,7 +159,7 @@ impl Counter {
     }
 }
 
-fn get_min_distances<T: Field>(grid: &T, max_d: usize) -> usize {
+fn solve<T: Field>(grid: &T, max_d: usize) -> usize {
     let mut counter = Counter::new(max_d);
     let mut min_distances = BTreeMap::new();
 
@@ -206,41 +206,35 @@ fn print_distances(ds: &[Vec<u16>]) {
     }
 }
 
-fn solve_finite(file_content: &str, steps: usize) -> usize {
-    let grid = parse_grid(file_content);
-    get_min_distances(&grid, steps)
-}
-fn solve_infinite(file_content: &str, steps: usize) -> usize {
-    todo!("Not implemented yet");
-    let grid = parse_grid(file_content);
-    let grid = Infinite(grid);
-    get_min_distances(&grid, steps)
-}
-
 pub fn solve_part_1(file_content: &str) -> usize {
-    solve_finite(file_content, 64)
+    let grid = parse_grid(file_content);
+    solve(&grid, 64)
 }
 pub fn solve_part_2(file_content: &str) -> usize {
-    solve_infinite(file_content, 26501365)
+    let grid = parse_grid(file_content);
+    let grid = Infinite(grid);
+    solve(&grid, 26501365)
 }
 
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
 
-    use crate::solve_infinite;
+    use crate::{parse_grid, Infinite};
 
-    use super::{solve_finite, solve_part_2};
+    use super::{solve, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     fn test_part1() {
-        assert_eq!(format!("{}", solve_finite(EXAMPLE, 6)), "16");
+        let grid = parse_grid(EXAMPLE);
+        assert_eq!(format!("{}", solve(&grid, 6)), "16");
     }
 
     #[test]
     fn test_part1_actual() {
-        assert_eq!(format!("{}", solve_finite(ACTUAL, 64)), "3740");
+        let grid = parse_grid(ACTUAL);
+        assert_eq!(format!("{}", solve(&grid, 64)), "3740");
     }
 
     #[rstest]
@@ -251,9 +245,10 @@ mod tests {
     #[case(500, 167004)]
     #[case(1000, 668697)]
     #[case(5000, 16733044)]
-    #[ignore]
     fn test_part2(#[case] steps: usize, #[case] expected: usize) {
-        assert_eq!(solve_infinite(EXAMPLE, steps), expected);
+        let grid = parse_grid(EXAMPLE);
+        let grid = Infinite(grid);
+        assert_eq!(solve(&grid, steps), expected);
     }
 
     #[test]
