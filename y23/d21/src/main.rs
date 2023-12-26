@@ -15,7 +15,7 @@ fn main() {
     println!();
 
     instant = std::time::Instant::now();
-    let result = solve_part_2(&input);
+    let result = solve_part_2(&input, 26501365);
     println!("Part 2: {}", result);
     println!("Time: {:?}ms", instant.elapsed());
 }

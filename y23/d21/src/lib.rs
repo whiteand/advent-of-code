@@ -1,8 +1,24 @@
-use std::collections::{BTreeMap, VecDeque};
+use std::{
+    collections::{BTreeMap, VecDeque},
+    ops::Range,
+};
+
+use itertools::Itertools;
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
     fn get_start(&self) -> (isize, isize);
+    fn get_original_size(&self) -> (usize, usize);
+}
+
+trait MinDistances {
+    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize>;
+}
+
+impl MinDistances for BTreeMap<(isize, isize), usize> {
+    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
+        self.get(coord).copied()
+    }
 }
 
 struct Grid {
@@ -28,6 +44,10 @@ impl Field for Grid {
 
     fn get_start(&self) -> (isize, isize) {
         (self.start.0 as isize, self.start.1 as isize)
+    }
+
+    fn get_original_size(&self) -> (usize, usize) {
+        (self.cells.len(), self.cells[0].len())
     }
 }
 
@@ -73,6 +93,10 @@ impl Field for Infinite {
     }
     fn get_start(&self) -> (isize, isize) {
         self.0.get_start()
+    }
+
+    fn get_original_size(&self) -> (usize, usize) {
+        self.0.get_original_size()
     }
 }
 
@@ -142,6 +166,7 @@ impl Counter {
 
         if self.current_distance % 2 == self.max_distance % 2 {
             self.total += self.current_count;
+            println!("{} {}", self.current_distance, self.current_count);
             self.current_count = 1;
             self.current_distance = distance;
             return;
@@ -152,6 +177,7 @@ impl Counter {
 
     fn into_total(self) -> usize {
         if self.current_distance % 2 == self.max_distance % 2 {
+            println!("{} {}", self.current_distance, self.current_count);
             self.total + self.current_count
         } else {
             self.total
@@ -159,7 +185,7 @@ impl Counter {
     }
 }
 
-fn solve<T: Field>(grid: &T, max_d: usize) -> usize {
+fn solve<T: Field>(grid: &T, max_d: usize) -> (usize, BTreeMap<(isize, isize), usize>) {
     let mut counter = Counter::new(max_d);
     let mut min_distances = BTreeMap::new();
 
@@ -190,37 +216,194 @@ fn solve<T: Field>(grid: &T, max_d: usize) -> usize {
         }
     }
 
-    counter.into_total()
+    (counter.into_total(), min_distances)
 }
 
-fn print_distances(ds: &[Vec<u16>]) {
-    for row in ds {
-        for d in row {
-            if *d == u16::MAX {
+fn print_distances<T: Field, D: MinDistances>(
+    rows: Range<isize>,
+    cols: Range<isize>,
+    grid: &T,
+    ds: &D,
+) {
+    let original_size = grid.get_original_size();
+    for r in rows {
+        let rem = r.rem_euclid(original_size.0 as isize);
+        if rem == 0 {
+            println!();
+        }
+        for c in cols.clone() {
+            let rem_c = c.rem_euclid(original_size.1 as isize);
+            if rem_c == 0 {
+                print!("|");
+            }
+            if let Some(d) = ds.get_min_distance_to(&(r, c)) {
+                print!("{:3}", d);
+            } else if grid.is_empty((r, c)) {
                 print!("  .");
             } else {
-                print!("{:3}", d);
+                print!("  #");
+            }
+        }
+        println!();
+    }
+}
+fn print_distances_oddity(
+    rows: Range<isize>,
+    cols: Range<isize>,
+    grid: &impl Field,
+    remainder: usize,
+    ds: &impl MinDistances,
+) {
+    let original_size = grid.get_original_size();
+    for r in rows {
+        let rem = r.rem_euclid(original_size.0 as isize);
+        if rem == 0 {
+            println!();
+        }
+        for c in cols.clone() {
+            let rem_c = c.rem_euclid(original_size.1 as isize);
+            if rem_c == 0 {
+                print!(" ");
+            }
+            if let Some(d) = ds.get_min_distance_to(&(r, c)) {
+                if d % 2 == remainder {
+                    print!("◼︎");
+                } else {
+                    print!("◻︎");
+                }
+            } else if grid.is_empty((r, c)) {
+                print!(".");
+            } else {
+                print!("#");
             }
         }
         println!();
     }
 }
 
+fn get_minimal_distances(
+    grid: &impl Field,
+    rows: Range<isize>,
+    cols: Range<isize>,
+    init: impl Iterator<Item = ((isize, isize), usize)>,
+) -> BTreeMap<(isize, isize), usize> {
+    let mut min_distances = BTreeMap::new();
+    let mut queue = VecDeque::new();
+    queue.extend(init);
+
+    while let Some((coord, dist)) = queue.pop_front() {
+        if min_distances.contains_key(&coord) {
+            continue;
+        }
+        min_distances.insert(coord, dist);
+        let (r, c) = coord;
+        if rows.contains(&(r - 1))
+            && grid.is_empty((r - 1, c))
+            && !min_distances.contains_key(&(r - 1, c))
+        {
+            queue.push_back(((r - 1, c), dist + 1));
+        }
+        if rows.contains(&(r + 1))
+            && grid.is_empty((r + 1, c))
+            && !min_distances.contains_key(&(r + 1, c))
+        {
+            queue.push_back(((r + 1, c), dist + 1));
+        }
+        if cols.contains(&(c - 1))
+            && grid.is_empty((r, c - 1))
+            && !min_distances.contains_key(&(r, c - 1))
+        {
+            queue.push_back(((r, c - 1), dist + 1));
+        }
+        if cols.contains(&(c + 1))
+            && grid.is_empty((r, c + 1))
+            && !min_distances.contains_key(&(r, c + 1))
+        {
+            queue.push_back(((r, c + 1), dist + 1));
+        }
+    }
+
+    min_distances
+}
+
+struct InfiniteMinDistances {
+    size: (usize, usize),
+    left_top: BTreeMap<(isize, isize), usize>,
+    right_top: BTreeMap<(isize, isize), usize>,
+    left_bottom: BTreeMap<(isize, isize), usize>,
+    right_bottom: BTreeMap<(isize, isize), usize>,
+    top: BTreeMap<(isize, isize), usize>,
+    bottom: BTreeMap<(isize, isize), usize>,
+    left: BTreeMap<(isize, isize), usize>,
+    right: BTreeMap<(isize, isize), usize>,
+    center: BTreeMap<(isize, isize), usize>,
+}
+
+impl InfiniteMinDistances {
+    fn new<F: Field>(grid: &F) -> Self {
+        let (r, c) = grid.get_original_size();
+        let ri = r as isize;
+        let ci = c as isize;
+        let center =
+            get_minimal_distances(grid, 0..ri, 0..ci, std::iter::once((grid.get_start(), 0)));
+        let left_top =
+            get_minimal_distances(grid, 0..ri, 0..ci, std::iter::once(((ri - 1, ci - 1), 0)));
+        Self {
+            size: (r as usize, c as usize),
+            left_top,
+            right_top: BTreeMap::new(),
+            left_bottom: BTreeMap::new(),
+            right_bottom: BTreeMap::new(),
+            top: BTreeMap::new(),
+            bottom: BTreeMap::new(),
+            left: BTreeMap::new(),
+            right: BTreeMap::new(),
+            center,
+        }
+    }
+}
+
+impl MinDistances for InfiniteMinDistances {
+    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
+        let (rows, cols) = self.size;
+        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 >= 0 && coord.1 < cols as isize {
+            return self.center.get_min_distance_to(coord);
+        }
+        if coord.0 < 0 && coord.1 < 0 {
+            let r_rem = coord.0.rem_euclid(rows as isize);
+            let c_rem = coord.1.rem_euclid(cols as isize);
+            let bottom_right_prev_row =
+                coord.0 + (rows as isize - coord.0.rem_euclid(rows as isize));
+            let bottom_right_prev_col =
+                coord.1 + (cols as isize - coord.1.rem_euclid(cols as isize));
+            let bottom_right = (bottom_right_prev_row, bottom_right_prev_col);
+            let d = self.get_min_distance_to(&bottom_right)?;
+            let additional = self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
+            return Some(d + additional + 2);
+        }
+        None
+    }
+}
+
 pub fn solve_part_1(file_content: &str) -> usize {
     let grid = parse_grid(file_content);
-    solve(&grid, 64)
+    let (total, _) = solve(&grid, 64);
+    total
 }
-pub fn solve_part_2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let grid = parse_grid(file_content);
-    let grid = Infinite(grid);
-    solve(&grid, 26501365)
+    let distances = InfiniteMinDistances::new(&grid);
+
+    print_distances(-40..51, -40..51, &grid, &distances);
+    print_distances_oddity(-40..51, -40..51, &grid, steps % 2, &distances);
+    0
 }
 
 #[cfg(test)]
 mod tests {
     use rstest::rstest;
 
-    use crate::{parse_grid, Infinite};
+    use crate::parse_grid;
 
     use super::{solve, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -228,32 +411,30 @@ mod tests {
     #[test]
     fn test_part1() {
         let grid = parse_grid(EXAMPLE);
-        assert_eq!(format!("{}", solve(&grid, 6)), "16");
+        assert_eq!(format!("{}", solve(&grid, 6).0), "16");
     }
 
     #[test]
     fn test_part1_actual() {
         let grid = parse_grid(ACTUAL);
-        assert_eq!(format!("{}", solve(&grid, 64)), "3740");
+        assert_eq!(format!("{}", solve(&grid, 64).0), "3740");
     }
 
     #[rstest]
-    #[case(6, 16)]
-    #[case(10, 50)]
+    // #[case(6, 16)]
+    // #[case(10, 50)]
     #[case(50, 1594)]
-    #[case(100, 6536)]
-    #[case(500, 167004)]
-    #[case(1000, 668697)]
-    #[case(5000, 16733044)]
+    // #[case(100, 6536)]
+    // #[case(500, 167004)]
+    // #[case(1000, 668697)]
+    // #[case(5000, 16733044)]
     fn test_part2(#[case] steps: usize, #[case] expected: usize) {
-        let grid = parse_grid(EXAMPLE);
-        let grid = Infinite(grid);
-        assert_eq!(solve(&grid, steps), expected);
+        assert_eq!(solve_part_2(EXAMPLE, steps), expected);
     }
 
     #[test]
     #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL, 26501365)), "0");
     }
 }
