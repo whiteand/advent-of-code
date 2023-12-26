@@ -1003,3 +1003,11 @@ dependencies = [
  "nom",
  "rstest",
 ]
+
+[[package]]
+name = "y23d20"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "itertools",
+]

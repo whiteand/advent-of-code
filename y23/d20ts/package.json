@@ -1,0 +1,11 @@
+{
+  "name": "y23d20",
+  "module": "solve.ts",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
