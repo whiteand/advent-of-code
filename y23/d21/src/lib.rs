@@ -7,7 +7,7 @@ use itertools::Itertools;
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
-    fn get_start(&self) -> (isize, isize);
+    fn get_start(&self) -> (usize, usize);
     fn get_original_size(&self) -> (usize, usize);
 }
 
@@ -18,6 +18,20 @@ trait MinDistances {
 impl MinDistances for BTreeMap<(isize, isize), usize> {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
         self.get(coord).copied()
+    }
+}
+impl MinDistances for Vec<Vec<usize>> {
+    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
+        let (r, c) = coord;
+
+        let r = usize::try_from(*r).ok()?;
+        let c = usize::try_from(*c).ok()?;
+
+        self.get(r).and_then(|r| {
+            r.get(c)
+                .copied()
+                .and_then(|d| (d != usize::MAX).then_some(d))
+        })
     }
 }
 
@@ -42,8 +56,8 @@ impl Field for Grid {
         !self.cells[row][col]
     }
 
-    fn get_start(&self) -> (isize, isize) {
-        (self.start.0 as isize, self.start.1 as isize)
+    fn get_start(&self) -> (usize, usize) {
+        (self.start.0, self.start.1)
     }
 
     fn get_original_size(&self) -> (usize, usize) {
@@ -91,7 +105,7 @@ impl Field for Infinite {
         let (r, c) = self.get_coords(coord);
         self.0.is_empty((r as isize, c as isize))
     }
-    fn get_start(&self) -> (isize, isize) {
+    fn get_start(&self) -> (usize, usize) {
         self.0.get_start()
     }
 
@@ -190,7 +204,9 @@ fn solve<T: Field>(grid: &T, max_d: usize) -> (usize, BTreeMap<(isize, isize), u
     let mut min_distances = BTreeMap::new();
 
     let mut queue = VecDeque::new();
-    queue.push_back((grid.get_start(), 0));
+    let start = grid.get_start();
+    let start = (start.0 as isize, start.1 as isize);
+    queue.push_back((start, 0));
 
     while let Some((coord, dist)) = queue.pop_front() {
         if min_distances.contains_key(&coord) {
@@ -283,41 +299,44 @@ fn print_distances_oddity(
 
 fn get_minimal_distances(
     grid: &impl Field,
-    rows: Range<isize>,
-    cols: Range<isize>,
-    init: impl Iterator<Item = ((isize, isize), usize)>,
-) -> BTreeMap<(isize, isize), usize> {
-    let mut min_distances = BTreeMap::new();
+    rows: usize,
+    cols: usize,
+    init: impl Iterator<Item = ((usize, usize), usize)>,
+) -> Vec<Vec<usize>> {
+    let mut min_distances = (0..rows)
+        .map(|_| (0..cols).map(|_| usize::MAX).collect_vec())
+        .collect_vec();
     let mut queue = VecDeque::new();
     queue.extend(init);
 
     while let Some((coord, dist)) = queue.pop_front() {
-        if min_distances.contains_key(&coord) {
+        let prev_distance = min_distances[coord.0][coord.1];
+        if dist >= prev_distance {
             continue;
         }
-        min_distances.insert(coord, dist);
+        min_distances[coord.0][coord.1] = dist;
         let (r, c) = coord;
-        if rows.contains(&(r - 1))
-            && grid.is_empty((r - 1, c))
-            && !min_distances.contains_key(&(r - 1, c))
+        if r > 0
+            && grid.is_empty(((r - 1) as isize, c as isize))
+            && min_distances[r - 1][c] == usize::MAX
         {
             queue.push_back(((r - 1, c), dist + 1));
         }
-        if rows.contains(&(r + 1))
-            && grid.is_empty((r + 1, c))
-            && !min_distances.contains_key(&(r + 1, c))
+        if r < rows - 1
+            && grid.is_empty(((r + 1) as isize, c as isize))
+            && min_distances[r + 1][c] == usize::MAX
         {
             queue.push_back(((r + 1, c), dist + 1));
         }
-        if cols.contains(&(c - 1))
-            && grid.is_empty((r, c - 1))
-            && !min_distances.contains_key(&(r, c - 1))
+        if c > 0
+            && grid.is_empty((r as isize, (c - 1) as isize))
+            && min_distances[r][c - 1] == usize::MAX
         {
             queue.push_back(((r, c - 1), dist + 1));
         }
-        if cols.contains(&(c + 1))
-            && grid.is_empty((r, c + 1))
-            && !min_distances.contains_key(&(r, c + 1))
+        if c < cols - 1
+            && grid.is_empty((r as isize, (c + 1) as isize))
+            && min_distances[r][c + 1] == usize::MAX
         {
             queue.push_back(((r, c + 1), dist + 1));
         }
@@ -328,36 +347,37 @@ fn get_minimal_distances(
 
 struct InfiniteMinDistances {
     size: (usize, usize),
-    left_top: BTreeMap<(isize, isize), usize>,
-    right_top: BTreeMap<(isize, isize), usize>,
-    left_bottom: BTreeMap<(isize, isize), usize>,
-    right_bottom: BTreeMap<(isize, isize), usize>,
-    top: BTreeMap<(isize, isize), usize>,
-    bottom: BTreeMap<(isize, isize), usize>,
-    left: BTreeMap<(isize, isize), usize>,
-    right: BTreeMap<(isize, isize), usize>,
-    center: BTreeMap<(isize, isize), usize>,
+    left_top: Vec<Vec<usize>>,
+    right_top: Vec<Vec<usize>>,
+    left_bottom: Vec<Vec<usize>>,
+    right_bottom: Vec<Vec<usize>>,
+    tops: Vec<Vec<Vec<usize>>>,
+    bottom: Vec<Vec<usize>>,
+    left: Vec<Vec<usize>>,
+    right: Vec<Vec<usize>>,
+    center: Vec<Vec<usize>>,
 }
 
 impl InfiniteMinDistances {
     fn new<F: Field>(grid: &F) -> Self {
-        let (r, c) = grid.get_original_size();
-        let ri = r as isize;
-        let ci = c as isize;
+        let (rows, cols) = grid.get_original_size();
         let center =
-            get_minimal_distances(grid, 0..ri, 0..ci, std::iter::once((grid.get_start(), 0)));
+            get_minimal_distances(grid, rows, cols, std::iter::once((grid.get_start(), 0)));
         let left_top =
-            get_minimal_distances(grid, 0..ri, 0..ci, std::iter::once(((ri - 1, ci - 1), 0)));
+            get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, cols - 1), 0)));
+        let tops = (0..cols)
+            .map(|c| get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, c), 1))))
+            .collect_vec();
         Self {
-            size: (r as usize, c as usize),
+            size: (rows as usize, cols as usize),
             left_top,
-            right_top: BTreeMap::new(),
-            left_bottom: BTreeMap::new(),
-            right_bottom: BTreeMap::new(),
-            top: BTreeMap::new(),
-            bottom: BTreeMap::new(),
-            left: BTreeMap::new(),
-            right: BTreeMap::new(),
+            tops,
+            right_top: Vec::new(),
+            left_bottom: Vec::new(),
+            right_bottom: Vec::new(),
+            bottom: Vec::new(),
+            left: Vec::new(),
+            right: Vec::new(),
             center,
         }
     }
@@ -380,6 +400,19 @@ impl MinDistances for InfiniteMinDistances {
             let d = self.get_min_distance_to(&bottom_right)?;
             let additional = self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
             return Some(d + additional + 2);
+        }
+        if coord.0 < 0 && coord.1 >= 0 && coord.1 < cols as isize {
+            let next_row = coord.0 + (rows as isize) - coord.0.rem_euclid(rows as isize);
+            let r_rem = coord.0.rem_euclid(rows as isize);
+            return (0..cols)
+                .flat_map(|c| {
+                    self.get_min_distance_to(&(next_row, c as isize))
+                        .and_then(|d| {
+                            let additional = self.tops[c].get_min_distance_to(&(r_rem, coord.1))?;
+                            Some(d + additional)
+                        })
+                })
+                .min();
         }
         None
     }
