@@ -3,7 +3,7 @@ use std::{
     ops::Range,
 };
 
-use itertools::{Itertools, MinMaxResult};
+use itertools::Itertools;
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
@@ -12,13 +12,44 @@ trait Field {
 }
 
 trait MinDistances {
-    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize>;
+    fn get_min_distance_to(
+        &self,
+        coord: &(isize, isize),
+        cache: &mut impl MinDistances,
+    ) -> Option<usize>;
+}
+
+impl MinDistances for () {
+    fn get_min_distance_to(
+        &self,
+        coord: &(isize, isize),
+        cache: &mut impl MinDistances,
+    ) -> Option<usize> {
+        None
+    }
+}
+
+impl MinDistances for BTreeMap<(isize, isize), usize> {
+    fn get_min_distance_to(
+        &self,
+        coord: &(isize, isize),
+        _cache: &mut impl MinDistances,
+    ) -> Option<usize> {
+        self.get(coord).copied()
+    }
+}
+
+trait AggregatedMinDistances {
     fn get_min_distances_for_row(&self, row: isize) -> Option<usize>;
     fn get_min_distances_for_col(&self, col: isize) -> Option<usize>;
 }
 
 impl MinDistances for Vec<Vec<usize>> {
-    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
+    fn get_min_distance_to(
+        &self,
+        coord: &(isize, isize),
+        _: &mut impl MinDistances,
+    ) -> Option<usize> {
         let (r, c) = coord;
 
         let r = usize::try_from(*r).ok()?;
@@ -30,6 +61,8 @@ impl MinDistances for Vec<Vec<usize>> {
                 .and_then(|d| (d != usize::MAX).then_some(d))
         })
     }
+}
+impl AggregatedMinDistances for Vec<Vec<usize>> {
     fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
         let r = usize::try_from(row).ok()?;
         self.get(r)
@@ -251,6 +284,7 @@ fn print_distances<T: Field, D: MinDistances>(
     ds: &D,
 ) {
     let original_size = grid.get_original_size();
+    let mut cache: BTreeMap<(isize, isize), usize> = BTreeMap::new();
     for r in rows {
         let rem = r.rem_euclid(original_size.0 as isize);
         if rem == 0 {
@@ -261,7 +295,7 @@ fn print_distances<T: Field, D: MinDistances>(
             if rem_c == 0 {
                 print!("|");
             }
-            if let Some(d) = ds.get_min_distance_to(&(r, c)) {
+            if let Some(d) = ds.get_min_distance_to(&(r, c), &mut cache) {
                 print!("{:3}", d);
             } else if grid.is_empty((r, c)) {
                 print!("  .");
@@ -290,7 +324,7 @@ fn print_distances_oddity(
             if rem_c == 0 {
                 print!(" ");
             }
-            if let Some(d) = ds.get_min_distance_to(&(r, c)) {
+            if let Some(d) = ds.get_min_distance_to(&(r, c), &mut ()) {
                 if d % 2 == remainder {
                     print!("◼︎");
                 } else {
@@ -408,112 +442,121 @@ impl InfiniteMinDistances {
 }
 
 impl MinDistances for InfiniteMinDistances {
-    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
-        let (rows, cols) = self.size;
-        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 >= 0 && coord.1 < cols as isize {
-            return self.center.get_min_distance_to(coord);
+    fn get_min_distance_to(
+        &self,
+        coord: &(isize, isize),
+        cache: &mut impl MinDistances,
+    ) -> Option<usize> {
+        if let Some(d) = cache.get_min_distance_to(coord, &mut ()) {
+            return Some(d);
         }
-        if coord.0 < 0 && coord.1 < 0 {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let bottom_right_prev_row =
-                coord.0 + (rows as isize - coord.0.rem_euclid(rows as isize));
-            let bottom_right_prev_col =
-                coord.1 + (cols as isize - coord.1.rem_euclid(cols as isize));
+        let (rows, cols) = self.size;
+        let (row, col) = coord.clone();
+        let rows_i = rows as isize;
+        let cols_i = cols as isize;
+        if row >= 0 && row < rows_i && col >= 0 && col < cols_i {
+            return self.center.get_min_distance_to(coord, &mut ());
+        }
+
+        let r_rem = row.rem_euclid(rows_i);
+        let c_rem = col.rem_euclid(cols_i);
+
+        if row < 0 && col < 0 {
+            let bottom_right_prev_row = row + (rows_i - r_rem);
+            let bottom_right_prev_col = col + (cols_i - c_rem);
             let bottom_right = (bottom_right_prev_row, bottom_right_prev_col);
-            let d = self.get_min_distance_to(&bottom_right)?;
-            let additional = self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
+            let d = self.get_min_distance_to(&bottom_right, cache)?;
+            let additional = self
+                .left_top
+                .get_min_distance_to(&(r_rem, c_rem), &mut ())?;
             return Some(d + additional + 2);
         }
-        if coord.0 < 0 && coord.1 >= 0 && coord.1 < cols as isize {
-            let next_row = coord.0 + (rows as isize) - coord.0.rem_euclid(rows as isize);
-            let r_rem = coord.0.rem_euclid(rows as isize);
+        if row < 0 && col >= 0 && col < cols_i {
+            let next_row = row + (rows_i) - r_rem;
             return (0..cols)
                 .flat_map(|c| {
-                    self.get_min_distance_to(&(next_row, c as isize))
+                    self.get_min_distance_to(&(next_row, c as isize), cache)
                         .and_then(|d| {
-                            let additional = self.tops[c].get_min_distance_to(&(r_rem, coord.1))?;
+                            let additional =
+                                self.tops[c].get_min_distance_to(&(r_rem, col), &mut ())?;
                             Some(d + additional)
                         })
                 })
                 .min();
         }
-        if coord.0 < 0 && coord.1 >= cols as isize {
-            let next_row = coord.0 + (rows as isize - coord.0.rem_euclid(rows as isize));
-            let next_col = coord.1 - coord.1.rem_euclid(cols as isize) - 1;
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
+        if row < 0 && col >= cols_i {
+            let next_row = row + (rows_i - r_rem);
+            let next_col = col - c_rem - 1;
+            let d = self.get_min_distance_to(&(next_row, next_col), cache)?;
+            let additional = self
+                .right_top
+                .get_min_distance_to(&(r_rem, c_rem), &mut ())?;
             return Some(d + additional);
         }
-        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 < 0 {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let next_col = coord.1 + (cols as isize - coord.1.rem_euclid(cols as isize));
+        if row >= 0 && row < rows_i && col < 0 {
+            let next_col = col + (cols_i - c_rem);
             return (0..rows)
                 .flat_map(|r| {
-                    let d = self.get_min_distance_to(&(r as isize, next_col))?;
-                    let additional = self.lefts[r].get_min_distance_to(&(r_rem, c_rem))?;
+                    let d = self.get_min_distance_to(&(r as isize, next_col), cache)?;
+                    let additional = self.lefts[r].get_min_distance_to(&(r_rem, c_rem), &mut ())?;
                     Some(d + additional)
                 })
                 .min();
         }
-        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 >= cols as isize {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let next_col = coord.1 - coord.1.rem_euclid(cols as isize) - 1;
+        if row >= 0 && row < rows_i && col >= cols_i {
+            let next_col = col - c_rem - 1;
             return (0..rows)
                 .flat_map(|r| {
-                    let d = self.get_min_distance_to(&(r as isize, next_col))?;
-                    let additional = self.rights[r].get_min_distance_to(&(r_rem, c_rem))?;
+                    let d = self.get_min_distance_to(&(r as isize, next_col), cache)?;
+                    let additional =
+                        self.rights[r].get_min_distance_to(&(r_rem, c_rem), &mut ())?;
                     Some(d + additional)
                 })
                 .min();
         }
-        if coord.0 >= rows as isize && coord.1 < 0 {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let next_row = coord.0 - coord.0.rem_euclid(rows as isize) - 1;
-            let next_col = coord.1 + (cols as isize - coord.1.rem_euclid(cols as isize));
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.left_bottom.get_min_distance_to(&(r_rem, c_rem))?;
+        if row >= rows_i && col < 0 {
+            let next_row = row - r_rem - 1;
+            let next_col = col + (cols_i - c_rem);
+            let d = self.get_min_distance_to(&(next_row, next_col), cache)?;
+            let additional = self
+                .left_bottom
+                .get_min_distance_to(&(r_rem, c_rem), &mut ())?;
             return Some(d + additional);
         }
-        if coord.0 >= rows as isize && coord.1 >= cols as isize {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let c_rem = coord.1.rem_euclid(cols as isize);
-            let next_row = coord.0 - coord.0.rem_euclid(rows as isize) - 1;
-            let next_col = coord.1 - coord.1.rem_euclid(cols as isize) - 1;
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.right_bottom.get_min_distance_to(&(r_rem, c_rem))?;
+        if row >= rows_i && col >= cols_i {
+            let next_row = row - r_rem - 1;
+            let next_col = col - c_rem - 1;
+            let d = self.get_min_distance_to(&(next_row, next_col), cache)?;
+            let additional = self
+                .right_bottom
+                .get_min_distance_to(&(r_rem, c_rem), &mut ())?;
             return Some(d + additional);
         }
-        if coord.0 >= rows as isize && coord.1 >= 0 && coord.1 < cols as isize {
-            let r_rem = coord.0.rem_euclid(rows as isize);
-            let next_row = coord.0 - coord.0.rem_euclid(rows as isize) - 1;
+        if row >= rows_i && col >= 0 && col < cols_i {
+            let next_row = row - r_rem - 1;
             return (0..cols)
                 .flat_map(|c| {
-                    let d = self.get_min_distance_to(&(next_row, c as isize))?;
-                    let additional = self.bottoms[c].get_min_distance_to(&(r_rem, coord.1))?;
+                    let d = self.get_min_distance_to(&(next_row, c as isize), cache)?;
+                    let additional = self.bottoms[c].get_min_distance_to(&(r_rem, col), &mut ())?;
                     Some(d + additional)
                 })
                 .min();
         }
         unreachable!();
     }
-
+}
+impl AggregatedMinDistances for InfiniteMinDistances {
     fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
         let (_, cols) = self.size;
         (0..cols)
-            .flat_map(|c| self.get_min_distance_to(&(row, c as isize)))
+            .flat_map(|c| self.get_min_distance_to(&(row, c as isize), &mut ()))
             .min()
     }
 
     fn get_min_distances_for_col(&self, col: isize) -> Option<usize> {
         let (rows, _) = self.size;
         (0..rows)
-            .flat_map(|r| self.get_min_distance_to(&(r as isize, col)))
+            .flat_map(|r| self.get_min_distance_to(&(r as isize, col), &mut ()))
             .min()
     }
 }
@@ -527,15 +570,42 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let grid = parse_grid(file_content);
     let distances = InfiniteMinDistances::new(&grid);
     let start = grid.get_start();
+    let size = grid.get_original_size();
 
-    solve_infinite_sum(start, distances, steps)
+    get_odd_count_less_then(start, size, distances, steps)
 }
 
-fn solve_infinite_sum(
+fn iter_spiral() -> impl Iterator<Item = (isize, isize)> {
+    let mut dir = (0, 1);
+    let mut pos = (0, 0);
+    let mut steps = 2;
+    let mut remaining_steps = steps / 2;
+    std::iter::from_fn(move || {
+        if remaining_steps == 0 {
+            dir = match dir {
+                (0, 1) => (1, 0),
+                (1, 0) => (0, -1),
+                (0, -1) => (-1, 0),
+                (-1, 0) => (0, 1),
+                _ => unreachable!(),
+            };
+            steps += 1;
+            remaining_steps = steps / 2;
+        }
+        let prev_pos = pos;
+        remaining_steps -= 1;
+        pos = (pos.0 + dir.0, pos.1 + dir.1);
+        Some(prev_pos)
+    })
+}
+
+fn get_odd_count_less_then(
     (start_row, start_col): (usize, usize),
+    (rows, cols): (usize, usize),
     distances: InfiniteMinDistances,
     steps: usize,
 ) -> usize {
+    let start_time = std::time::Instant::now();
     let min_row = (0isize..)
         .map(|dr| start_row as isize - dr)
         .take_while(|r| match distances.get_min_distances_for_row(*r) {
@@ -572,16 +642,37 @@ fn solve_infinite_sum(
     let remainder = steps % 2;
 
     let mut total = 0;
-    for r in min_row..=max_row {
-        for c in min_col..=max_col {
-            match distances.get_min_distance_to(&(r, c)) {
-                Some(d) if d <= steps && d % 2 == remainder => {
+    let mut cache: BTreeMap<(isize, isize), usize> = BTreeMap::new();
+    for (dr, dc) in iter_spiral() {
+        let r = (start_row as isize) + dr;
+        let c = (start_col as isize) + dc;
+        if dc == 0 && dr.abs() > steps as isize {
+            break;
+        }
+        if dr == 0 && dc.abs() > steps as isize {
+            break;
+        }
+        if dr.abs() + dc.abs() > steps as isize {
+            continue;
+        }
+        let r_rem = r.rem_euclid(rows as isize);
+        let c_rem = c.rem_euclid(cols as isize);
+
+        match distances.get_min_distance_to(&(r, c), &mut cache) {
+            Some(d) => {
+                if d <= steps && d % 2 == remainder {
                     total += 1;
                 }
-                _ => {}
+                if (c_rem == (cols as isize) - 1 || c_rem == 0)
+                    && (r_rem == (rows as isize) - 1 || r_rem == 0)
+                {
+                    cache.insert((r, c), d);
+                }
             }
+            _ => {}
         }
     }
+
     total
 }
 
@@ -610,7 +701,7 @@ mod tests {
     #[case(6, 16)]
     #[case(10, 50)]
     #[case(50, 1594)]
-    // #[case(100, 6536)]
+    #[case(100, 6536)]
     // #[case(500, 167004)]
     // #[case(1000, 668697)]
     // #[case(5000, 16733044)]
