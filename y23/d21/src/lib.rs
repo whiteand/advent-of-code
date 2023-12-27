@@ -368,11 +368,13 @@ impl InfiniteMinDistances {
         let tops = (0..cols)
             .map(|c| get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, c), 1))))
             .collect_vec();
+        let right_top =
+            get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, 0), 2)));
         Self {
             size: (rows as usize, cols as usize),
             left_top,
             tops,
-            right_top: Vec::new(),
+            right_top,
             left_bottom: Vec::new(),
             right_bottom: Vec::new(),
             bottom: Vec::new(),
@@ -413,6 +415,15 @@ impl MinDistances for InfiniteMinDistances {
                         })
                 })
                 .min();
+        }
+        if coord.0 < 0 && coord.1 >= cols as isize {
+            let next_row = coord.0 + (rows as isize - coord.0.rem_euclid(rows as isize));
+            let next_col = coord.1 - coord.1.rem_euclid(cols as isize) - 1;
+            let r_rem = coord.0.rem_euclid(rows as isize);
+            let c_rem = coord.1.rem_euclid(cols as isize);
+            let d = self.get_min_distance_to(&(next_row, next_col))?;
+            let additional = self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
+            return Some(d + additional);
         }
         None
     }
