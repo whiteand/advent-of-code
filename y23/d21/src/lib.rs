@@ -353,8 +353,8 @@ struct InfiniteMinDistances {
     right_bottom: Vec<Vec<usize>>,
     tops: Vec<Vec<Vec<usize>>>,
     bottom: Vec<Vec<usize>>,
-    left: Vec<Vec<usize>>,
-    right: Vec<Vec<usize>>,
+    lefts: Vec<Vec<Vec<usize>>>,
+    rights: Vec<Vec<Vec<usize>>>,
     center: Vec<Vec<usize>>,
 }
 
@@ -370,6 +370,12 @@ impl InfiniteMinDistances {
             .collect_vec();
         let right_top =
             get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, 0), 2)));
+        let lefts = (0..rows)
+            .map(|r| get_minimal_distances(grid, rows, cols, std::iter::once(((r, cols - 1), 1))))
+            .collect_vec();
+        let rights = (0..rows)
+            .map(|r| get_minimal_distances(grid, rows, cols, std::iter::once(((r, 0), 1))))
+            .collect_vec();
         Self {
             size: (rows as usize, cols as usize),
             left_top,
@@ -378,8 +384,8 @@ impl InfiniteMinDistances {
             left_bottom: Vec::new(),
             right_bottom: Vec::new(),
             bottom: Vec::new(),
-            left: Vec::new(),
-            right: Vec::new(),
+            lefts,
+            rights,
             center,
         }
     }
@@ -424,6 +430,30 @@ impl MinDistances for InfiniteMinDistances {
             let d = self.get_min_distance_to(&(next_row, next_col))?;
             let additional = self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
             return Some(d + additional);
+        }
+        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 < 0 {
+            let r_rem = coord.0.rem_euclid(rows as isize);
+            let c_rem = coord.1.rem_euclid(cols as isize);
+            let next_col = coord.1 + (cols as isize - coord.1.rem_euclid(cols as isize));
+            return (0..rows)
+                .flat_map(|r| {
+                    let d = self.get_min_distance_to(&(r as isize, next_col))?;
+                    let additional = self.lefts[r].get_min_distance_to(&(r_rem, c_rem))?;
+                    Some(d + additional)
+                })
+                .min();
+        }
+        if coord.0 >= 0 && coord.0 < rows as isize && coord.1 >= cols as isize {
+            let r_rem = coord.0.rem_euclid(rows as isize);
+            let c_rem = coord.1.rem_euclid(cols as isize);
+            let next_col = coord.1 - coord.1.rem_euclid(cols as isize) - 1;
+            return (0..rows)
+                .flat_map(|r| {
+                    let d = self.get_min_distance_to(&(r as isize, next_col))?;
+                    let additional = self.rights[r].get_min_distance_to(&(r_rem, c_rem))?;
+                    Some(d + additional)
+                })
+                .min();
         }
         None
     }
