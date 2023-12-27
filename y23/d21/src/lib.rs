@@ -3,7 +3,7 @@ use std::{
     ops::Range,
 };
 
-use itertools::Itertools;
+use itertools::{Itertools, MinMaxResult};
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
@@ -13,13 +13,10 @@ trait Field {
 
 trait MinDistances {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize>;
+    fn get_min_distances_for_row(&self, row: isize) -> Option<usize>;
+    fn get_min_distances_for_col(&self, col: isize) -> Option<usize>;
 }
 
-impl MinDistances for BTreeMap<(isize, isize), usize> {
-    fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
-        self.get(coord).copied()
-    }
-}
 impl MinDistances for Vec<Vec<usize>> {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
         let (r, c) = coord;
@@ -32,6 +29,20 @@ impl MinDistances for Vec<Vec<usize>> {
                 .copied()
                 .and_then(|d| (d != usize::MAX).then_some(d))
         })
+    }
+    fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
+        let r = usize::try_from(row).ok()?;
+        self.get(r)
+            .and_then(|r| r.iter().copied().min())
+            .and_then(|d| (d != usize::MAX).then_some(d))
+    }
+    fn get_min_distances_for_col(&self, col: isize) -> Option<usize> {
+        let c = usize::try_from(col).ok()?;
+        self.iter()
+            .flat_map(|r| r.get(c))
+            .copied()
+            .min()
+            .and_then(|d| (d != usize::MAX).then_some(d))
     }
 }
 
@@ -180,7 +191,6 @@ impl Counter {
 
         if self.current_distance % 2 == self.max_distance % 2 {
             self.total += self.current_count;
-            println!("{} {}", self.current_distance, self.current_count);
             self.current_count = 1;
             self.current_distance = distance;
             return;
@@ -191,7 +201,6 @@ impl Counter {
 
     fn into_total(self) -> usize {
         if self.current_distance % 2 == self.max_distance % 2 {
-            println!("{} {}", self.current_distance, self.current_count);
             self.total + self.current_count
         } else {
             self.total
@@ -493,6 +502,20 @@ impl MinDistances for InfiniteMinDistances {
         }
         unreachable!();
     }
+
+    fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
+        let (_, cols) = self.size;
+        (0..cols)
+            .flat_map(|c| self.get_min_distance_to(&(row, c as isize)))
+            .min()
+    }
+
+    fn get_min_distances_for_col(&self, col: isize) -> Option<usize> {
+        let (rows, _) = self.size;
+        (0..rows)
+            .flat_map(|r| self.get_min_distance_to(&(r as isize, col)))
+            .min()
+    }
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -503,10 +526,63 @@ pub fn solve_part_1(file_content: &str) -> usize {
 pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let grid = parse_grid(file_content);
     let distances = InfiniteMinDistances::new(&grid);
+    let start = grid.get_start();
 
-    print_distances(-40..51, -40..51, &grid, &distances);
-    print_distances_oddity(-40..51, -40..51, &grid, steps % 2, &distances);
-    0
+    solve_infinite_sum(start, distances, steps)
+}
+
+fn solve_infinite_sum(
+    (start_row, start_col): (usize, usize),
+    distances: InfiniteMinDistances,
+    steps: usize,
+) -> usize {
+    let min_row = (0isize..)
+        .map(|dr| start_row as isize - dr)
+        .take_while(|r| match distances.get_min_distances_for_row(*r) {
+            Some(d) => d <= steps,
+            None => false,
+        })
+        .last()
+        .expect("min_row should exist");
+    let max_row = (0isize..)
+        .map(|dr| start_row as isize + dr)
+        .take_while(|r| match distances.get_min_distances_for_row(*r) {
+            Some(d) => d <= steps,
+            None => false,
+        })
+        .last()
+        .expect("max row should exist");
+    let min_col = (0isize..)
+        .map(|dc| start_col as isize - dc)
+        .take_while(|c| match distances.get_min_distances_for_col(*c) {
+            Some(d) => d <= steps,
+            None => false,
+        })
+        .last()
+        .expect("min_col should exist");
+    let max_col = (0isize..)
+        .map(|dc| start_col as isize + dc)
+        .take_while(|c| match distances.get_min_distances_for_col(*c) {
+            Some(d) => d <= steps,
+            None => false,
+        })
+        .last()
+        .expect("max_col should exist");
+
+    let remainder = steps % 2;
+
+    let mut total = 0;
+    for r in min_row..=max_row {
+        for c in min_col..=max_col {
+            match distances.get_min_distance_to(&(r, c)) {
+                Some(d) if d <= steps && d % 2 == remainder => {
+                    total += 1;
+                }
+                _ => {}
+            }
+        }
+    }
+    total
 }
 
 #[cfg(test)]
@@ -531,8 +607,8 @@ mod tests {
     }
 
     #[rstest]
-    // #[case(6, 16)]
-    // #[case(10, 50)]
+    #[case(6, 16)]
+    #[case(10, 50)]
     #[case(50, 1594)]
     // #[case(100, 6536)]
     // #[case(500, 167004)]
