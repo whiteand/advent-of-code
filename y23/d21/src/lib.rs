@@ -761,6 +761,18 @@ impl MinDistances for InfiniteMinDistances {
             }
 
             if row >= rows_i && col < 0 {
+                if r_rem == rows_i - 1 && c_rem == 0 {
+                    let row_grid_index = (row.abs() as usize + 1 - rows) / rows;
+                    let col_grid_index = col.abs() as usize / cols;
+                    let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
+                    let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
+                    let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
+                    total += self.left_bottom.get_min_distance_to(&(r_rem, c_rem))?
+                        * steps_to_horizontal_or_vertical;
+                    row = (next_row_grid_index as isize * rows_i) + rows_i - 1;
+                    col = -(next_col_grid_index as isize * cols_i);
+                    continue;
+                }
                 row -= r_rem + 1;
                 col += cols_i - c_rem;
                 total += self.left_bottom.get_min_distance_to(&(r_rem, c_rem))?;
