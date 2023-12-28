@@ -392,7 +392,7 @@ impl InfiniteMinDistances {
         let center =
             get_minimal_distances(grid, rows, cols, std::iter::once((grid.get_start(), 0)));
         let left_top =
-            get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, cols - 1), 0)));
+            get_minimal_distances(grid, rows, cols, std::iter::once(((rows - 1, cols - 1), 2)));
 
         let tops = {
             let mut res = Vec::new();
@@ -657,108 +657,121 @@ impl From<&[Vec<usize>]> for DistanceMap {
 impl MinDistances for InfiniteMinDistances {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
         let (rows, cols) = self.size;
-        let (row, col) = coord.clone();
+        let (mut row, mut col) = coord.clone();
         let rows_i = rows as isize;
         let cols_i = cols as isize;
-        if row >= 0 && row < rows_i && col >= 0 && col < cols_i {
-            return self.center.get_min_distance_to(coord);
-        }
+        let mut total = 0usize;
 
-        let r_rem = row.rem_euclid(rows_i);
-        let c_rem = col.rem_euclid(cols_i);
+        loop {
+            if row >= 0 && row < rows_i && col >= 0 && col < cols_i {
+                total += self.center.get_min_distance_to(&(row, col))?;
+                return Some(total);
+            }
+            let c_rem = col.rem_euclid(cols_i);
+            let r_rem = row.rem_euclid(rows_i);
 
-        if row < 0 && col < 0 {
-            let bottom_right_prev_row = row + (rows_i - r_rem);
-            let bottom_right_prev_col = col + (cols_i - c_rem);
-            let bottom_right = (bottom_right_prev_row, bottom_right_prev_col);
-            let d = self.get_min_distance_to(&bottom_right)?;
-            let additional = self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
-            return Some(d + additional + 2);
-        }
-        if row < 0 && col >= 0 && col < cols_i {
-            let top_index = (row + 1).abs() as usize / rows;
-            if top_index < self.tops.len() {
-                return self.tops[top_index].get_min_distance_to(&(r_rem, c_rem));
-            }
-            let distance_to_known = top_index - self.tops.len();
-            let last_top = self.tops.last().expect("to be present");
-            let mut res = last_top.difference.get_min_distance_to(&(r_rem, c_rem))?;
-            let difference_per_grid = last_top.difference[0][last_top.input.1] + 1;
-            res += difference_per_grid * distance_to_known;
-            res += last_top.difference[0][last_top.input.1] + 1 + last_top.min_distance;
-            return Some(res);
-        }
-        if row < 0 && col >= cols_i {
-            let next_row = row + (rows_i - r_rem);
-            let next_col = col - c_rem - 1;
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
-            return Some(d + additional);
-        }
-        if row >= 0 && row < rows_i && col < 0 {
-            let left_index = (col + 1).abs() as usize / cols;
-            if left_index < self.lefts.len() {
-                return self.lefts[left_index].get_min_distance_to(&(r_rem, c_rem));
-            }
-            let distance_to_known = left_index - self.lefts.len();
-            let last_left = self.lefts.last().expect("to be present");
-            let difference_per_grid = last_left.difference[last_left.input.0][0] + 1;
-            let res = last_left.difference.get_min_distance_to(&(r_rem, c_rem))?
-                + difference_per_grid * distance_to_known
-                + last_left.difference[last_left.input.0][0]
-                + 1
-                + last_left.min_distance;
-            return Some(res);
-        }
-        if row >= 0 && row < rows_i && col >= cols_i {
-            let right_ind = (col as usize - cols) / cols;
-            if right_ind < self.rights.len() {
-                return self.rights[right_ind].get_min_distance_to(&(r_rem, c_rem));
+            if row < 0 && col < 0 {
+                row += rows_i - r_rem;
+                col += cols_i - c_rem;
+                total += self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
+                continue;
             }
 
-            let distance_to_known = right_ind - self.rights.len();
-            let last_right = self.rights.last().expect("to be present");
-            let difference_per_grid = last_right.difference[last_right.input.0][cols - 1] + 1;
-            let res = last_right.difference.get_min_distance_to(&(r_rem, c_rem))?
-                + difference_per_grid * distance_to_known
-                + last_right.difference[last_right.input.0][cols - 1]
-                + 1
-                + last_right.min_distance;
-            return Some(res);
-        }
-        if row >= rows_i && col < 0 {
-            let next_row = row - r_rem - 1;
-            let next_col = col + (cols_i - c_rem);
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.left_bottom.get_min_distance_to(&(r_rem, c_rem))?;
-            return Some(d + additional);
-        }
-        if row >= rows_i && col >= cols_i {
-            let next_row = row - r_rem - 1;
-            let next_col = col - c_rem - 1;
-            let d = self.get_min_distance_to(&(next_row, next_col))?;
-            let additional = self.right_bottom.get_min_distance_to(&(r_rem, c_rem))?;
-            return Some(d + additional);
-        }
-        if row >= rows_i && col >= 0 && col < cols_i {
-            let bottom_ind = (row as usize - rows) / rows;
-            if bottom_ind < self.bottoms.len() {
-                return self.bottoms[bottom_ind].get_min_distance_to(&(r_rem, c_rem));
+            if row < 0 && col >= 0 && col < cols_i {
+                let top_index = (row + 1).abs() as usize / rows;
+                if top_index < self.tops.len() {
+                    total += self.tops[top_index].get_min_distance_to(&(r_rem, c_rem))?;
+                    return Some(total);
+                }
+                let distance_to_known = top_index - self.tops.len();
+                let last_top = self.tops.last().expect("to be present");
+                let difference_per_grid = last_top.difference[0][last_top.input.1] + 1;
+                total += last_top.difference.get_min_distance_to(&(r_rem, c_rem))?
+                    + difference_per_grid * distance_to_known
+                    + last_top.difference[0][last_top.input.1]
+                    + 1
+                    + last_top.min_distance;
+                return Some(total);
             }
 
-            let distance_to_known = bottom_ind - self.bottoms.len();
-            let last_bottom = self.bottoms.last().expect("to be present");
-            let difference_per_grid = last_bottom.difference[rows - 1][last_bottom.input.1] + 1;
-            let res = last_bottom
-                .difference
-                .get_min_distance_to(&(r_rem, c_rem))?
-                + difference_per_grid * distance_to_known
-                + last_bottom.difference[rows - 1][last_bottom.input.1]
-                + 1
-                + last_bottom.min_distance;
-            return Some(res);
+            if row < 0 && col >= cols_i {
+                row += rows_i - r_rem;
+                col -= c_rem + 1;
+                total += self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
+                continue;
+            }
+
+            if row >= 0 && row < rows_i && col < 0 {
+                let left_index = (col + 1).abs() as usize / cols;
+                if left_index < self.lefts.len() {
+                    total += self.lefts[left_index].get_min_distance_to(&(r_rem, c_rem))?;
+                    return Some(total);
+                }
+                let distance_to_known = left_index - self.lefts.len();
+                let last_left = self.lefts.last().expect("to be present");
+                let difference_per_grid = last_left.difference[last_left.input.0][0] + 1;
+                total += last_left.difference.get_min_distance_to(&(r_rem, c_rem))?
+                    + difference_per_grid * distance_to_known
+                    + last_left.difference[last_left.input.0][0]
+                    + 1
+                    + last_left.min_distance;
+                return Some(total);
+            }
+
+            if row >= 0 && row < rows_i && col >= cols_i {
+                let right_ind = (col as usize - cols) / cols;
+                if right_ind < self.rights.len() {
+                    total += self.rights[right_ind].get_min_distance_to(&(r_rem, c_rem))?;
+                    return Some(total);
+                }
+
+                let distance_to_known = right_ind - self.rights.len();
+                let last_right = self.rights.last().expect("to be present");
+                let difference_per_grid = last_right.difference[last_right.input.0][cols - 1] + 1;
+                total += last_right.difference.get_min_distance_to(&(r_rem, c_rem))?
+                    + difference_per_grid * distance_to_known
+                    + last_right.difference[last_right.input.0][cols - 1]
+                    + 1
+                    + last_right.min_distance;
+                return Some(total);
+            }
+
+            if row >= rows_i && col < 0 {
+                row -= r_rem + 1;
+                col += cols_i - c_rem;
+                total += self.left_bottom.get_min_distance_to(&(r_rem, c_rem))?;
+                continue;
+            }
+
+            if row >= rows_i && col >= cols_i {
+                row -= r_rem + 1;
+                col -= c_rem + 1;
+                total += self.right_bottom.get_min_distance_to(&(r_rem, c_rem))?;
+                continue;
+            }
+
+            if row >= rows_i && col >= 0 && col < cols_i {
+                let bottom_ind = (row as usize - rows) / rows;
+                if bottom_ind < self.bottoms.len() {
+                    total += self.bottoms[bottom_ind].get_min_distance_to(&(r_rem, c_rem))?;
+                    return Some(total);
+                }
+
+                let distance_to_known = bottom_ind - self.bottoms.len();
+                let last_bottom = self.bottoms.last().expect("to be present");
+                let difference_per_grid = last_bottom.difference[rows - 1][last_bottom.input.1] + 1;
+                total += last_bottom
+                    .difference
+                    .get_min_distance_to(&(r_rem, c_rem))?
+                    + difference_per_grid * distance_to_known
+                    + last_bottom.difference[rows - 1][last_bottom.input.1]
+                    + 1
+                    + last_bottom.min_distance;
+                return Some(total);
+            }
+
+            unreachable!();
         }
-        unreachable!();
     }
 }
 impl AggregatedMinDistances for InfiniteMinDistances {
@@ -788,7 +801,7 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let start = grid.get_start();
     let size = grid.get_original_size();
 
-    // print_distances(0..11, 0..55, &grid, &distances);
+    // print_distances(-44..22, -11..22, &grid, &distances);
 
     get_odd_count_less_then(start, size, &distances, steps)
 }
