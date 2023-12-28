@@ -865,31 +865,23 @@ fn get_grid_sum<T: MinDistances>(
     let top_left_row = coord.0 * rows_i;
     let remainder = steps % 2;
     let top_left_col = coord.1 * cols_i;
-    let a = distances
-        .get_min_distance_to(&(top_left_row, top_left_col))
-        .expect("corner coordinates are reachable");
-    let b = distances
-        .get_min_distance_to(&(top_left_row, top_left_col + cols_i - 1))
-        .expect("corner coordinates are reachable");
-    let c = distances
-        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col))
-        .expect("corner coordinates are reachable");
-    let d = distances
-        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col + cols_i - 1))
-        .expect("corner coordinates are reachable");
-
-    let max_d = rows.max(cols) / 2;
-    if (coord.0 != 0 || coord.1 != 0)
-        && a > steps + max_d
-        && b > steps + max_d
-        && c > steps + max_d
-        && d > steps + max_d
-    {
+    let (min_d, max_d) = get_grid_minmax((rows, cols), distances, coord);
+    if min_d > steps {
         return 0;
     }
-    if a <= steps - max_d && b <= steps - max_d && c <= steps - max_d && d <= steps - max_d {
-        return if a % 2 == remainder { same } else { other };
+    if max_d <= steps {
+        return if distances
+            .get_min_distance_to(&(top_left_row, top_left_col))
+            .expect("edges to be available")
+            % 2
+            == remainder
+        {
+            same
+        } else {
+            other
+        };
     }
+
     let mut total = 0;
     for r in top_left_row..(top_left_row + rows_i) {
         for c in top_left_col..(top_left_col + cols_i) {
@@ -905,6 +897,41 @@ fn get_grid_sum<T: MinDistances>(
         }
     }
     total
+}
+
+fn get_grid_minmax<T: MinDistances>(
+    (rows, cols): (usize, usize),
+    distances: &T,
+    coord: (isize, isize),
+) -> (usize, usize) {
+    let rows_i = rows as isize;
+    let cols_i = cols as isize;
+    let top_left_row = coord.0 * rows_i;
+    let top_left_col = coord.1 * cols_i;
+    let a = distances
+        .get_min_distance_to(&(top_left_row, top_left_col))
+        .expect("corner coordinates are reachable");
+    let b = distances
+        .get_min_distance_to(&(top_left_row, top_left_col + cols_i - 1))
+        .expect("corner coordinates are reachable");
+    let c = distances
+        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col))
+        .expect("corner coordinates are reachable");
+    let d = distances
+        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col + cols_i - 1))
+        .expect("corner coordinates are reachable");
+    let max_value = a.max(b).max(c).max(d);
+    if coord.0 == 0 && coord.1 == 0 {
+        return (0, max_value);
+    };
+
+    let min_value = a.min(b).min(c).min(d);
+    let min_d = rows.max(cols) / 2;
+
+    (
+        min_value.saturating_sub(min_d),
+        max_value.saturating_add(min_d),
+    )
 }
 
 fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
