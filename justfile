@@ -281,6 +281,6 @@ y23d21-solve:
 y23d21-example:
     cat ./y23/d21/example.txt | cargo run --release --package y23d21
 y23d21-test:
-    cargo test --package y23d21 --lib -- tests
+    cargo test --package y23d21 --lib -- --nocapture tests
 y23d21-bench:
     cargo bench --package y23d21
