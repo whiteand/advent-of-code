@@ -3,7 +3,7 @@ use std::{
     ops::Range,
 };
 
-use itertools::Itertools;
+use itertools::{Itertools, MinMaxResult};
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
@@ -848,67 +848,160 @@ pub fn solve_part_1(file_content: &str) -> usize {
 pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let grid = parse_grid(file_content);
     let distances = InfiniteMinDistances::new(&grid);
-    let start = grid.get_start();
     let size = grid.get_original_size();
 
-    // print_distances(-44..22, -11..22, &grid, &distances);
-
-    get_odd_count_less_then(start, size, &distances, steps)
+    get_odd_count_less_then(size, &distances, steps)
 }
 
-fn iter_spiral() -> impl Iterator<Item = (isize, isize)> {
-    let mut dir = (0, 1);
-    let mut pos = (0, 0);
-    let mut steps = 2;
-    let mut remaining_steps = steps / 2;
-    std::iter::from_fn(move || {
-        if remaining_steps == 0 {
-            dir = match dir {
-                (0, 1) => (1, 0),
-                (1, 0) => (0, -1),
-                (0, -1) => (-1, 0),
-                (-1, 0) => (0, 1),
-                _ => unreachable!(),
+fn get_grid_sum<T: MinDistances>(
+    (rows, cols): (usize, usize),
+    steps: usize,
+    distances: &T,
+    (same, other): (usize, usize),
+    coord: (isize, isize),
+) -> usize {
+    let rows_i = rows as isize;
+    let cols_i = cols as isize;
+    let top_left_row = coord.0 * rows_i;
+    let remainder = steps % 2;
+    let top_left_col = coord.1 * cols_i;
+    let a = distances
+        .get_min_distance_to(&(top_left_row, top_left_col))
+        .expect("corner coordinates are reachable");
+    let b = distances
+        .get_min_distance_to(&(top_left_row, top_left_col + cols_i - 1))
+        .expect("corner coordinates are reachable");
+    let c = distances
+        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col))
+        .expect("corner coordinates are reachable");
+    let d = distances
+        .get_min_distance_to(&(top_left_row + rows_i - 1, top_left_col + cols_i - 1))
+        .expect("corner coordinates are reachable");
+
+    let max_d = rows.max(cols) / 2;
+    if (coord.0 != 0 || coord.1 != 0)
+        && a > steps + max_d
+        && b > steps + max_d
+        && c > steps + max_d
+        && d > steps + max_d
+    {
+        return 0;
+    }
+    if a <= steps - max_d && b <= steps - max_d && c <= steps - max_d && d <= steps - max_d {
+        return if a % 2 == remainder { same } else { other };
+    }
+    let mut total = 0;
+    for r in top_left_row..(top_left_row + rows_i) {
+        for c in top_left_col..(top_left_col + cols_i) {
+            let Some(d) = distances.get_min_distance_to(&(r, c)) else {
+                continue;
             };
-            steps += 1;
-            remaining_steps = steps / 2;
+            if d > steps {
+                continue;
+            }
+            if d % 2 == remainder {
+                total += 1;
+            }
         }
-        let prev_pos = pos;
-        remaining_steps -= 1;
-        pos = (pos.0 + dir.0, pos.1 + dir.1);
-        Some(prev_pos)
-    })
+    }
+    total
 }
 
 fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
-    (start_row, start_col): (usize, usize),
-    _: (usize, usize),
+    (rows, cols): (usize, usize),
     distances: &T,
     steps: usize,
 ) -> usize {
-    let remainder = steps % 2;
+    let min_row_grid_index = -((0isize..)
+        .take_while(|i| {
+            let row = -i * (rows as isize) + (rows as isize) - 1;
+            (0..cols)
+                .map(|c| {
+                    distances
+                        .get_min_distance_to(&(row, c as isize))
+                        .unwrap_or(usize::MAX)
+                })
+                .min()
+                .unwrap_or(usize::MAX)
+                <= steps
+        })
+        .last()
+        .unwrap_or_default());
+    let max_row_grid_index = (0isize..)
+        .take_while(|i| {
+            let row = i * (rows as isize);
+            (0..cols)
+                .map(|c| {
+                    distances
+                        .get_min_distance_to(&(row, c as isize))
+                        .unwrap_or(usize::MAX)
+                })
+                .min()
+                .unwrap_or(usize::MAX)
+                <= steps
+        })
+        .last()
+        .unwrap_or_default();
+    let min_col_grid_index = -((0isize..)
+        .take_while(|i| {
+            let col = -i * (cols as isize) + (cols as isize) - 1;
+            (0..rows)
+                .map(|r| {
+                    distances
+                        .get_min_distance_to(&(r as isize, col))
+                        .unwrap_or(usize::MAX)
+                })
+                .min()
+                .unwrap_or(usize::MAX)
+                <= steps
+        })
+        .last()
+        .unwrap_or_default());
+
+    let max_col_grid_index = (0isize..)
+        .take_while(|i| {
+            let col = i * (cols as isize);
+            (0..rows)
+                .map(|r| {
+                    distances
+                        .get_min_distance_to(&(r as isize, col))
+                        .unwrap_or(usize::MAX)
+                })
+                .min()
+                .unwrap_or(usize::MAX)
+                <= steps
+        })
+        .last()
+        .unwrap_or_default();
+
+    let mut same_oddity_as_top_left = 0;
+    let mut different_oddity_as_top_left = 0;
+    let top_left_d = distances
+        .get_min_distance_to(&(0, 0))
+        .expect("top left should be reachable");
+    for r in 0..rows {
+        for c in 0..cols {
+            let Some(d) = distances.get_min_distance_to(&(r as isize, c as isize)) else {
+                continue;
+            };
+            if d % 2 == top_left_d % 2 {
+                same_oddity_as_top_left += 1;
+            } else {
+                different_oddity_as_top_left += 1;
+            }
+        }
+    }
 
     let mut total = 0;
-    for (dr, dc) in iter_spiral() {
-        let r = (start_row as isize) + dr;
-        let c = (start_col as isize) + dc;
-        if dc == 0 && dr.abs() > steps as isize {
-            break;
-        }
-        if dr == 0 && dc.abs() > steps as isize {
-            break;
-        }
-        if dr.abs() + dc.abs() > steps as isize {
-            continue;
-        }
-
-        match distances.get_min_distance_to(&(r, c)) {
-            Some(d) => {
-                if d <= steps && d % 2 == remainder {
-                    total += 1;
-                }
-            }
-            _ => {}
+    for grid_row in min_row_grid_index..=max_row_grid_index {
+        for grid_col in min_col_grid_index..=max_col_grid_index {
+            total += get_grid_sum(
+                (rows, cols),
+                steps,
+                distances,
+                (same_oddity_as_top_left, different_oddity_as_top_left),
+                (grid_row, grid_col),
+            );
         }
     }
 
