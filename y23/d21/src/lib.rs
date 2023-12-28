@@ -780,6 +780,20 @@ impl MinDistances for InfiniteMinDistances {
             }
 
             if row >= rows_i && col >= cols_i {
+                if r_rem == rows_i - 1 && c_rem == cols_i - 1 {
+                    let row_grid_index = (row.abs() as usize + 1 - rows) / rows;
+                    let col_grid_index = (col.abs() as usize + 1 - cols) / cols;
+                    let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
+                    let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
+                    let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
+                    total += self.right_bottom.get_min_distance_to(&(r_rem, c_rem))?
+                        * steps_to_horizontal_or_vertical;
+
+                    row = (next_row_grid_index as isize * rows_i) + rows_i - 1;
+                    col = (next_col_grid_index as isize * cols_i) + cols_i - 1;
+                    continue;
+                }
+
                 row -= r_rem + 1;
                 col -= c_rem + 1;
                 total += self.right_bottom.get_min_distance_to(&(r_rem, c_rem))?;
@@ -929,7 +943,7 @@ mod tests {
     #[case(100, 6536)]
     #[case(500, 167004)]
     #[case(1000, 668697)]
-    // #[case(5000, 16733044)]
+    #[case(5000, 16733044)]
     fn test_part2(#[case] steps: usize, #[case] expected: usize) {
         assert_eq!(solve_part_2(EXAMPLE, steps), expected);
     }
