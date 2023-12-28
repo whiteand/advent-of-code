@@ -671,6 +671,18 @@ impl MinDistances for InfiniteMinDistances {
             let r_rem = row.rem_euclid(rows_i);
 
             if row < 0 && col < 0 {
+                if r_rem == 0 && c_rem == 0 {
+                    let row_grid_index = row.abs() as usize / rows;
+                    let col_grid_index = col.abs() as usize / cols;
+                    let steps_to_vertical_or_horizontal = row_grid_index.min(col_grid_index);
+                    let next_row_grid_index = row_grid_index - steps_to_vertical_or_horizontal;
+                    let next_col_grid_index = col_grid_index - steps_to_vertical_or_horizontal;
+                    total += self.left_top.get_min_distance_to(&(r_rem, c_rem))?
+                        * steps_to_vertical_or_horizontal;
+                    row = -(next_row_grid_index as isize * rows_i);
+                    col = -(next_col_grid_index as isize * cols_i);
+                    continue;
+                }
                 row += rows_i - r_rem;
                 col += cols_i - c_rem;
                 total += self.left_top.get_min_distance_to(&(r_rem, c_rem))?;
@@ -695,6 +707,18 @@ impl MinDistances for InfiniteMinDistances {
             }
 
             if row < 0 && col >= cols_i {
+                if r_rem == 0 && c_rem == cols_i - 1 {
+                    let row_grid_index = row.abs() as usize / rows;
+                    let col_grid_index = (col.abs() as usize + 1 - cols) / cols;
+                    let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
+                    let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
+                    let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
+                    total += self.right_top.get_min_distance_to(&(r_rem, c_rem))?
+                        * steps_to_horizontal_or_vertical;
+                    row = -(next_row_grid_index as isize * rows_i);
+                    col = (next_col_grid_index as isize * cols_i) + cols_i - 1;
+                    continue;
+                }
                 row += rows_i - r_rem;
                 col -= c_rem + 1;
                 total += self.right_top.get_min_distance_to(&(r_rem, c_rem))?;
