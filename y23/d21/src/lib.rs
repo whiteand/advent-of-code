@@ -382,7 +382,7 @@ struct InfiniteMinDistances {
     tops: Vec<DistanceMap>,
     bottoms: Vec<DistanceMap>,
     lefts: Vec<DistanceMap>,
-    rights: Vec<Vec<Vec<usize>>>,
+    rights: Vec<DistanceMap>,
     center: Vec<Vec<usize>>,
 }
 
@@ -486,9 +486,51 @@ impl InfiniteMinDistances {
             }
             res
         };
-        let rights = (0..rows)
-            .map(|r| get_minimal_distances(grid, rows, cols, std::iter::once(((r, 0), 1))))
-            .collect_vec();
+        let rights = {
+            let mut res = Vec::new();
+            let mut current = get_minimal_distances(
+                grid,
+                rows,
+                cols,
+                (0..rows).map(|r| {
+                    (
+                        (r, 0),
+                        center
+                            .get_min_distance_to(&(r as isize, (cols as isize) - 1))
+                            .expect("to be present")
+                            + 1,
+                    )
+                }),
+            );
+            loop {
+                let current_distance = DistanceMap::from(current.as_slice());
+
+                let next = get_minimal_distances(
+                    grid,
+                    rows,
+                    cols,
+                    (0..rows).map(|r| {
+                        (
+                            (r, 0),
+                            current
+                                .get_min_distance_to(&(r as isize, (cols as isize) - 1))
+                                .expect("to be present")
+                                + 1,
+                        )
+                    }),
+                );
+
+                let next_distance = DistanceMap::from(next.as_slice());
+                if current_distance.relatively_same(&next_distance) {
+                    res.push(current_distance);
+                    break;
+                } else {
+                    res.push(current_distance);
+                    current = next;
+                }
+            }
+            res
+        };
         let left_bottom =
             get_minimal_distances(grid, rows, cols, std::iter::once(((0, cols - 1), 2)));
         let bottoms = {
@@ -669,14 +711,20 @@ impl MinDistances for InfiniteMinDistances {
             return Some(res);
         }
         if row >= 0 && row < rows_i && col >= cols_i {
-            let next_col = col - c_rem - 1;
-            return (0..rows)
-                .flat_map(|r| {
-                    let d = self.get_min_distance_to(&(r as isize, next_col))?;
-                    let additional = self.rights[r].get_min_distance_to(&(r_rem, c_rem))?;
-                    Some(d + additional)
-                })
-                .min();
+            let right_ind = (col as usize - cols) / cols;
+            if right_ind < self.rights.len() {
+                return self.rights[right_ind].get_min_distance_to(&(r_rem, c_rem));
+            }
+
+            let distance_to_known = right_ind - self.rights.len();
+            let last_right = self.rights.last().expect("to be present");
+            let difference_per_grid = last_right.difference[last_right.input.0][cols - 1] + 1;
+            let res = last_right.difference.get_min_distance_to(&(r_rem, c_rem))?
+                + difference_per_grid * distance_to_known
+                + last_right.difference[last_right.input.0][cols - 1]
+                + 1
+                + last_right.min_distance;
+            return Some(res);
         }
         if row >= rows_i && col < 0 {
             let next_row = row - r_rem - 1;
@@ -700,12 +748,12 @@ impl MinDistances for InfiniteMinDistances {
 
             let distance_to_known = bottom_ind - self.bottoms.len();
             let last_bottom = self.bottoms.last().expect("to be present");
-            let mut res = last_bottom
-                .difference
-                .get_min_distance_to(&(r_rem, c_rem))?;
             let difference_per_grid = last_bottom.difference[rows - 1][last_bottom.input.1] + 1;
-            res += difference_per_grid * distance_to_known;
-            res += last_bottom.difference[rows - 1][last_bottom.input.1]
+            let res = last_bottom
+                .difference
+                .get_min_distance_to(&(r_rem, c_rem))?
+                + difference_per_grid * distance_to_known
+                + last_bottom.difference[rows - 1][last_bottom.input.1]
                 + 1
                 + last_bottom.min_distance;
             return Some(res);
@@ -740,7 +788,7 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let start = grid.get_start();
     let size = grid.get_original_size();
 
-    print_distances(0..11, -44..11, &grid, &distances);
+    print_distances(0..11, 0..55, &grid, &distances);
 
     get_odd_count_less_then(start, size, &distances, steps)
 }
