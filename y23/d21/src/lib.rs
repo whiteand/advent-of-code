@@ -819,14 +819,13 @@ fn iter_spiral() -> impl Iterator<Item = (isize, isize)> {
 
 fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
     (start_row, start_col): (usize, usize),
-    (rows, cols): (usize, usize),
+    _: (usize, usize),
     distances: &T,
     steps: usize,
 ) -> usize {
     let remainder = steps % 2;
 
     let mut total = 0;
-    let mut cache: BTreeMap<(isize, isize), usize> = BTreeMap::new();
     for (dr, dc) in iter_spiral() {
         let r = (start_row as isize) + dr;
         let c = (start_col as isize) + dc;
@@ -839,18 +838,11 @@ fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
         if dr.abs() + dc.abs() > steps as isize {
             continue;
         }
-        let r_rem = r.rem_euclid(rows as isize);
-        let c_rem = c.rem_euclid(cols as isize);
 
         match distances.get_min_distance_to(&(r, c)) {
             Some(d) => {
                 if d <= steps && d % 2 == remainder {
                     total += 1;
-                }
-                if (c_rem == (cols as isize) - 1 || c_rem == 0)
-                    && (r_rem == (rows as isize) - 1 || r_rem == 0)
-                {
-                    cache.insert((r, c), d);
                 }
             }
             _ => {}
