@@ -380,7 +380,7 @@ struct InfiniteMinDistances {
     left_bottom: Vec<Vec<usize>>,
     right_bottom: Vec<Vec<usize>>,
     tops: Vec<DistanceMap>,
-    bottoms: Vec<Vec<Vec<usize>>>,
+    bottoms: Vec<DistanceMap>,
     lefts: Vec<Vec<Vec<usize>>>,
     rights: Vec<Vec<Vec<usize>>>,
     center: Vec<Vec<usize>>,
@@ -449,9 +449,51 @@ impl InfiniteMinDistances {
             .collect_vec();
         let left_bottom =
             get_minimal_distances(grid, rows, cols, std::iter::once(((0, cols - 1), 2)));
-        let bottoms = (0..cols)
-            .map(|c| get_minimal_distances(grid, rows, cols, std::iter::once(((0, c), 1))))
-            .collect_vec();
+        let bottoms = {
+            let mut res = Vec::new();
+            let mut current = get_minimal_distances(
+                grid,
+                rows,
+                cols,
+                (0..cols).map(|c| {
+                    (
+                        (0, c),
+                        center
+                            .get_min_distance_to(&((rows as isize) - 1, c as isize))
+                            .expect("to be present")
+                            + 1,
+                    )
+                }),
+            );
+            loop {
+                let current_distance = DistanceMap::from(current.as_slice());
+
+                let next = get_minimal_distances(
+                    grid,
+                    rows,
+                    cols,
+                    (0..cols).map(|c| {
+                        (
+                            (0, c),
+                            current
+                                .get_min_distance_to(&((rows as isize) - 1, c as isize))
+                                .expect("to be present")
+                                + 1,
+                        )
+                    }),
+                );
+
+                let next_distance = DistanceMap::from(next.as_slice());
+                if current_distance.relatively_same(&next_distance) {
+                    res.push(current_distance);
+                    break;
+                } else {
+                    res.push(current_distance);
+                    current = next;
+                }
+            }
+            res
+        };
         let right_bottom = get_minimal_distances(grid, rows, cols, std::iter::once(((0, 0), 2)));
 
         Self {
@@ -604,14 +646,22 @@ impl MinDistances for InfiniteMinDistances {
             return Some(d + additional);
         }
         if row >= rows_i && col >= 0 && col < cols_i {
-            let next_row = row - r_rem - 1;
-            return (0..cols)
-                .flat_map(|c| {
-                    let d = self.get_min_distance_to(&(next_row, c as isize))?;
-                    let additional = self.bottoms[c].get_min_distance_to(&(r_rem, col))?;
-                    Some(d + additional)
-                })
-                .min();
+            let bottom_ind = (row as usize - rows) / rows;
+            if bottom_ind < self.bottoms.len() {
+                return self.bottoms[bottom_ind].get_min_distance_to(&(r_rem, c_rem));
+            }
+
+            let distance_to_known = bottom_ind - self.bottoms.len();
+            let last_bottom = self.bottoms.last().expect("to be present");
+            let mut res = last_bottom
+                .difference
+                .get_min_distance_to(&(r_rem, c_rem))?;
+            let difference_per_grid = last_bottom.difference[rows - 1][last_bottom.input.1] + 1;
+            res += difference_per_grid * distance_to_known;
+            res += last_bottom.difference[rows - 1][last_bottom.input.1]
+                + 1
+                + last_bottom.min_distance;
+            return Some(res);
         }
         unreachable!();
     }
@@ -643,7 +693,7 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let start = grid.get_start();
     let size = grid.get_original_size();
 
-    print_distances(-44..11, 0..11, &grid, &distances);
+    print_distances(0..44, 0..11, &grid, &distances);
 
     get_odd_count_less_then(start, size, &distances, steps)
 }
