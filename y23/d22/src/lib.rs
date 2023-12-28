@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, ops::Range};
+use std::{
+    collections::{BTreeMap, VecDeque},
+    ops::Range,
+};
 
 use itertools::Itertools;
 
@@ -60,44 +63,6 @@ impl std::fmt::Debug for Brick {
     }
 }
 
-#[allow(dead_code)]
-fn print_height_map(h: &BTreeMap<(usize, usize), Vec<(usize, usize)>>) {
-    if h.is_empty() {
-        return;
-    }
-    let min_x = h.first_key_value().map(|x| x.0 .0).unwrap();
-    let max_x = h.last_key_value().map(|x| x.0 .0).unwrap();
-    let (min_y, max_y) = h.keys().map(|(_, y)| *y).minmax().into_option().unwrap();
-
-    print!("{:3} ", "");
-    for y in min_y..=max_y {
-        print!("{:3} ", y);
-    }
-    println!();
-    print!("----");
-    for _ in min_y..=max_y {
-        print!("----");
-    }
-    println!();
-
-    for x in min_x..=max_x {
-        print!("{:3}|", x);
-        for y in min_y..=max_y {
-            let height = h
-                .get(&(x, y))
-                .and_then(|v| v.last().map(|v| v.1))
-                .unwrap_or(0);
-            if height == 0 {
-                print!("  . ");
-                continue;
-            }
-            print!("{:3} ", height);
-        }
-        println!();
-    }
-    println!();
-}
-
 struct Relations {
     supported_by: Vec<Vec<usize>>,
     supports: Vec<Vec<usize>>,
@@ -106,16 +71,55 @@ impl Relations {
     fn ids(&self) -> Range<usize> {
         0..self.supports.len()
     }
-    fn get_supporters_for(&self, id: &usize) -> &[usize] {
-        &self.supported_by[*id]
+    fn get_supporters_for(&self, id: usize) -> &[usize] {
+        &self.supported_by[id]
     }
-    fn get_supported_by(&self, id: &usize) -> &[usize] {
-        &self.supports[*id]
+    fn get_supported_by(&self, id: usize) -> &[usize] {
+        &self.supports[id]
+    }
+    fn get_fallen_if_removed(&self, id: usize) -> impl Iterator<Item = usize> + '_ {
+        self.get_supported_by(id)
+            .iter()
+            .filter(move |supported_id| {
+                self.get_supporters_for(**supported_id)
+                    .iter()
+                    .filter(move |supporter_id| **supporter_id != id)
+                    .count()
+                    == 0
+            })
+            .copied()
+    }
+
+    fn get_fallen_count_if_removed_recursive(&self, id: usize) -> usize {
+        let mut to_fall = VecDeque::from([id]);
+        let mut fallen = self.ids().map(|_| false).collect_vec();
+        let mut count = 0;
+        while let Some(id) = to_fall.pop_front() {
+            if fallen[id] {
+                continue;
+            }
+            fallen[id] = true;
+            count += 1;
+            for supported_id in self.get_supported_by(id).iter().filter(|id| !fallen[**id]) {
+                assert!(!self.get_supporters_for(*supported_id).is_empty());
+
+                let has_not_fallen_suporters = self
+                    .get_supporters_for(*supported_id)
+                    .iter()
+                    .any(|supporter_id| !fallen[*supporter_id]);
+
+                if has_not_fallen_suporters {
+                    continue;
+                }
+                to_fall.push_back(*supported_id);
+            }
+        }
+        count - 1
     }
 }
 
-fn get_relations(file_content: &str) -> Relations {
-    let mut bricks = parse(file_content).collect_vec();
+fn get_relations(bricks: impl Iterator<Item = Brick>) -> Relations {
+    let mut bricks = bricks.collect_vec();
     bricks.sort_by_key(|b| b.get_min_z());
 
     let mut height_map: BTreeMap<(usize, usize), Vec<(usize, usize)>> = BTreeMap::new();
@@ -190,6 +194,15 @@ fn get_relations(file_content: &str) -> Relations {
         }
     }
 
+    for id in 0..bricks.len() {
+        for supporter_id in supported_by[id].iter() {
+            assert!(supports[*supporter_id].contains(&id));
+        }
+        for supported_id in supports[id].iter() {
+            assert!(supported_by[*supported_id].contains(&id));
+        }
+    }
+
     Relations {
         supports,
         supported_by,
@@ -197,21 +210,19 @@ fn get_relations(file_content: &str) -> Relations {
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
-    let relations = get_relations(file_content);
+    let relations = get_relations(parse(file_content));
     relations
         .ids()
-        .filter(|brick_id| {
-            relations
-                .get_supported_by(brick_id)
-                .iter()
-                .all(|supported_brick_id| {
-                    relations.get_supporters_for(supported_brick_id).len() != 1
-                })
-        })
+        .filter(|brick_id| relations.get_fallen_if_removed(*brick_id).count() == 0)
         .count()
 }
-pub fn solve_part_2(_file_content: &str) -> usize {
-    todo!("part 2 is not implemented yet")
+pub fn solve_part_2(file_content: &str) -> usize {
+    let relations = get_relations(parse(file_content));
+
+    relations
+        .ids()
+        .map(move |id| relations.get_fallen_count_if_removed_recursive(id))
+        .sum()
 }
 
 fn parse(input: &str) -> impl Iterator<Item = Brick> + '_ {
@@ -233,7 +244,7 @@ mod tests {
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     fn test_part1() {
-        assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "5");
+        assert_eq!(solve_part_1(EXAMPLE), 5);
     }
 
     #[test]
@@ -242,14 +253,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_part2() {
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
+        assert_eq!(solve_part_2(EXAMPLE), 7);
     }
 
     #[test]
-    #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(solve_part_2(ACTUAL), 96356);
     }
 }

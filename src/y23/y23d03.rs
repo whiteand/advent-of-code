@@ -118,7 +118,7 @@ fn parse_map(file_content: &str) -> Map {
 
     let mut res = Map::new(
         lines.len(),
-        lines.get(0).map(|e| e.len()).unwrap_or_default(),
+        lines.first().map(|e| e.len()).unwrap_or_default(),
     );
 
     for (row, bs) in lines.into_iter().enumerate() {
