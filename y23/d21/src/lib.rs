@@ -1,6 +1,6 @@
 use std::{
     collections::{BTreeMap, VecDeque},
-    ops::Range,
+    ops::{Range, RangeInclusive},
 };
 
 use itertools::{Itertools, MinMaxResult};
@@ -853,6 +853,94 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     get_odd_count_less_then(size, &distances, steps)
 }
 
+fn get_grid_row_sum<T: MinDistances>(
+    size: (usize, usize),
+    steps: usize,
+    distances: &T,
+    (same, other): (usize, usize),
+    row: isize,
+    cols: &mut RangeInclusive<isize>,
+) -> usize {
+    loop {
+        let (min_d, max_d) = get_grid_minmax(size, distances, (row, *cols.start()));
+        if min_d <= steps && max_d > steps {
+            *cols = (cols.start() - 1)..=*cols.end();
+            break;
+        }
+        if min_d <= steps {
+            *cols = (cols.start() - 1)..=*cols.end();
+        } else {
+            *cols = (cols.start() + 1)..=*cols.end();
+        }
+    }
+    loop {
+        let (min_d, max_d) = get_grid_minmax(size, distances, (row, *cols.end()));
+        if min_d <= steps && max_d > steps {
+            *cols = (*cols.start())..=((*cols.end()) + 1);
+            break;
+        }
+        if min_d <= steps {
+            *cols = (*cols.start())..=((*cols.end()) + 1);
+        } else {
+            *cols = (*cols.start())..=((*cols.end()) - 1);
+        }
+    }
+
+    let mut min_col = *cols.start();
+    let mut max_col = *cols.end();
+
+    let mut total = 0;
+
+    loop {
+        if min_col > max_col {
+            break;
+        }
+        let (min_d, max_d) = get_grid_minmax(size, distances, (row, min_col));
+
+        if min_d > steps {
+            min_col += 1;
+            continue;
+        }
+        if max_d <= steps {
+            break;
+        }
+        let sum = get_grid_sum(size, steps, distances, (same, other), (row, min_col));
+        total += sum;
+        min_col += 1;
+    }
+    loop {
+        if max_col < min_col {
+            break;
+        }
+        let (min_d, max_d) = get_grid_minmax(size, distances, (row, max_col));
+        if min_d > steps {
+            max_col -= 1;
+            continue;
+        }
+        if max_d <= steps {
+            break;
+        }
+        let sum = get_grid_sum(size, steps, distances, (same, other), (row, max_col));
+        total += sum;
+        max_col -= 1;
+    }
+    if max_col < min_col {
+        return total;
+    }
+    if max_col == min_col {
+        total += get_grid_sum(size, steps, distances, (same, other), (row, max_col));
+        return total;
+    }
+
+    let mut totally_full_grids = (max_col - min_col + 1) as usize;
+    if totally_full_grids % 2 != 0 {
+        let sum = get_grid_sum(size, steps, distances, (same, other), (row, min_col));
+        total += sum;
+        totally_full_grids -= 1;
+    }
+    return total + same * totally_full_grids / 2 + other * totally_full_grids / 2;
+}
+
 fn get_grid_sum<T: MinDistances>(
     (rows, cols): (usize, usize),
     steps: usize,
@@ -969,37 +1057,6 @@ fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
         })
         .last()
         .unwrap_or_default();
-    let min_col_grid_index = -((0isize..)
-        .take_while(|i| {
-            let col = -i * (cols as isize) + (cols as isize) - 1;
-            (0..rows)
-                .map(|r| {
-                    distances
-                        .get_min_distance_to(&(r as isize, col))
-                        .unwrap_or(usize::MAX)
-                })
-                .min()
-                .unwrap_or(usize::MAX)
-                <= steps
-        })
-        .last()
-        .unwrap_or_default());
-
-    let max_col_grid_index = (0isize..)
-        .take_while(|i| {
-            let col = i * (cols as isize);
-            (0..rows)
-                .map(|r| {
-                    distances
-                        .get_min_distance_to(&(r as isize, col))
-                        .unwrap_or(usize::MAX)
-                })
-                .min()
-                .unwrap_or(usize::MAX)
-                <= steps
-        })
-        .last()
-        .unwrap_or_default();
 
     let mut same_oddity_as_top_left = 0;
     let mut different_oddity_as_top_left = 0;
@@ -1020,16 +1077,16 @@ fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
     }
 
     let mut total = 0;
+    let mut cols_range = 0isize..=0;
     for grid_row in min_row_grid_index..=max_row_grid_index {
-        for grid_col in min_col_grid_index..=max_col_grid_index {
-            total += get_grid_sum(
-                (rows, cols),
-                steps,
-                distances,
-                (same_oddity_as_top_left, different_oddity_as_top_left),
-                (grid_row, grid_col),
-            );
-        }
+        total += get_grid_row_sum(
+            (rows, cols),
+            steps,
+            distances,
+            (same_oddity_as_top_left, different_oddity_as_top_left),
+            grid_row,
+            &mut cols_range,
+        );
     }
 
     total
