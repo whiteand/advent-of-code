@@ -3,7 +3,7 @@ use std::{
     ops::{Range, RangeInclusive},
 };
 
-use itertools::{Itertools, MinMaxResult};
+use itertools::Itertools;
 
 trait Field {
     fn is_empty(&self, coord: (isize, isize)) -> bool;
@@ -1125,9 +1125,13 @@ mod tests {
         assert_eq!(solve_part_2(EXAMPLE, steps), expected);
     }
 
+    // This test takes at least 9 minutes
     #[test]
     #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL, 26501365)), "0");
+        assert_eq!(
+            format!("{}", solve_part_2(ACTUAL, 26501365)),
+            "620962518745459"
+        );
     }
 }
