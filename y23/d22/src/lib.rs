@@ -60,6 +60,44 @@ impl std::fmt::Debug for Brick {
     }
 }
 
+#[allow(dead_code)]
+fn print_height_map(h: &BTreeMap<(usize, usize), Vec<(usize, usize)>>) {
+    if h.is_empty() {
+        return;
+    }
+    let min_x = h.first_key_value().map(|x| x.0 .0).unwrap();
+    let max_x = h.last_key_value().map(|x| x.0 .0).unwrap();
+    let (min_y, max_y) = h.keys().map(|(_, y)| *y).minmax().into_option().unwrap();
+
+    print!("{:3} ", "");
+    for y in min_y..=max_y {
+        print!("{:3} ", y);
+    }
+    println!();
+    print!("----");
+    for _ in min_y..=max_y {
+        print!("----");
+    }
+    println!();
+
+    for x in min_x..=max_x {
+        print!("{:3}|", x);
+        for y in min_y..=max_y {
+            let height = h
+                .get(&(x, y))
+                .and_then(|v| v.last().map(|v| v.1))
+                .unwrap_or(0);
+            if height == 0 {
+                print!("  . ");
+                continue;
+            }
+            print!("{:3} ", height);
+        }
+        println!();
+    }
+    println!();
+}
+
 pub fn solve_part_1(file_content: &str) -> usize {
     let mut bricks = parse(file_content).collect_vec();
     bricks.sort_by_key(|b| b.get_min_z());
@@ -72,7 +110,14 @@ pub fn solve_part_1(file_content: &str) -> usize {
         let min_z = brick.get_min_z();
         if min_z == 1 {
             for p in brick.iter() {
-                height_map.entry((p.x, p.y)).or_default().push((id, p.z));
+                let relative_height = p.z - min_z + 1;
+                height_map
+                    .entry((p.x, p.y))
+                    .and_modify(|boxes_in_pos| {
+                        boxes_in_pos.retain(|(i, _)| *i != id);
+                    })
+                    .or_default()
+                    .push((id, relative_height));
             }
             continue;
         }
@@ -82,9 +127,11 @@ pub fn solve_part_1(file_content: &str) -> usize {
         let mut base_height = 0;
 
         for p in brick.iter() {
-            for (id, height) in height_map.get(&(p.x, p.y)).into_iter().flatten() {
+            for (id, height) in height_map.get(&(p.x, p.y)).into_iter().flatten().rev() {
                 if *height > p.z {
-                    continue;
+                    unreachable!(
+                        "there is no way something is placed here already above the current brick"
+                    );
                 }
                 if *height == p.z {
                     unreachable!("collision");
@@ -107,27 +154,31 @@ pub fn solve_part_1(file_content: &str) -> usize {
         }
 
         for p in brick.iter() {
+            let relative_height = p.z - min_z + 1;
             height_map
                 .entry((p.x, p.y))
+                .and_modify(|boxes_in_pos| {
+                    boxes_in_pos.retain(|(i, _)| *i != id);
+                })
                 .or_default()
-                .push((id, base_height + 1));
+                .push((id, base_height + relative_height));
         }
     }
 
     for id in 0..bricks.len() {
         for supporter_id in supported_by[id].iter() {
+            if supports[*supporter_id].contains(&id) {
+                continue;
+            }
             supports[*supporter_id].push(id);
         }
     }
 
     (0..(bricks.len()))
         .filter(|id| {
-            for supported_id in supports[*id].iter() {
-                if supported_by[*supported_id].len() == 1 {
-                    return false;
-                }
-            }
-            true
+            supports[*id]
+                .iter()
+                .all(|s_id| supported_by[*s_id].len() != 1)
         })
         .count()
 }
@@ -159,8 +210,7 @@ mod tests {
 
     #[test]
     fn test_part1_actual() {
-        assert_ne!(format!("{}", solve_part_1(ACTUAL)), "509");
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "509");
+        assert_eq!(solve_part_1(ACTUAL), 490);
     }
 
     #[test]
