@@ -788,7 +788,7 @@ pub fn solve_part_2(file_content: &str, steps: usize) -> usize {
     let start = grid.get_start();
     let size = grid.get_original_size();
 
-    print_distances(0..11, 0..55, &grid, &distances);
+    // print_distances(0..11, 0..55, &grid, &distances);
 
     get_odd_count_less_then(start, size, &distances, steps)
 }
@@ -883,11 +883,11 @@ mod tests {
 
     #[rstest]
     #[case(6, 16)]
-    // #[case(10, 50)]
-    // #[case(50, 1594)]
-    // #[case(100, 6536)]
-    // #[case(500, 167004)]
-    // #[case(1000, 668697)]
+    #[case(10, 50)]
+    #[case(50, 1594)]
+    #[case(100, 6536)]
+    #[case(500, 167004)]
+    #[case(1000, 668697)]
     // #[case(5000, 16733044)]
     fn test_part2(#[case] steps: usize, #[case] expected: usize) {
         assert_eq!(solve_part_2(EXAMPLE, steps), expected);
