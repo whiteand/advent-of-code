@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, ops::Range};
 
 use itertools::Itertools;
 
@@ -98,7 +98,23 @@ fn print_height_map(h: &BTreeMap<(usize, usize), Vec<(usize, usize)>>) {
     println!();
 }
 
-pub fn solve_part_1(file_content: &str) -> usize {
+struct Relations {
+    supported_by: Vec<Vec<usize>>,
+    supports: Vec<Vec<usize>>,
+}
+impl Relations {
+    fn ids(&self) -> Range<usize> {
+        0..self.supports.len()
+    }
+    fn get_supporters_for(&self, id: &usize) -> &[usize] {
+        &self.supported_by[*id]
+    }
+    fn get_supported_by(&self, id: &usize) -> &[usize] {
+        &self.supports[*id]
+    }
+}
+
+fn get_relations(file_content: &str) -> Relations {
     let mut bricks = parse(file_content).collect_vec();
     bricks.sort_by_key(|b| b.get_min_z());
 
@@ -174,11 +190,23 @@ pub fn solve_part_1(file_content: &str) -> usize {
         }
     }
 
-    (0..(bricks.len()))
-        .filter(|id| {
-            supports[*id]
+    Relations {
+        supports,
+        supported_by,
+    }
+}
+
+pub fn solve_part_1(file_content: &str) -> usize {
+    let relations = get_relations(file_content);
+    relations
+        .ids()
+        .filter(|brick_id| {
+            relations
+                .get_supported_by(brick_id)
                 .iter()
-                .all(|s_id| supported_by[*s_id].len() != 1)
+                .all(|supported_brick_id| {
+                    relations.get_supporters_for(supported_brick_id).len() != 1
+                })
         })
         .count()
 }
