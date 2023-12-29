@@ -44,6 +44,16 @@ We need 3 hailstones which are flying in non-colinear fashion.
 
 So we will have 9 equations with 9 unknowns.
 
+To rmove unnecessary indices lets introduce such values:
+$$
+\vec{v}_{0} = \vec{u}\\
+\vec{v}_{1} = \vec{v}\\
+\vec{v}_{2} = \vec{w}\\
+\vec{p}_{0} = \vec{a}\\
+\vec{p}_{1} = \vec{b}\\
+\vec{p}_{2} = \vec{c}\\
+$$
+
 $$
 \begin{cases}
 t_{0} * v_{x} - t_{0} * (v_{0})_{x} = (p_{0})_{x} - p_{x}\\
@@ -55,5 +65,42 @@ t_{1} * v_{z} - t_{1} * (v_{1})_{z} = (p_{1})_{z} - p_{z}\\
 t_{2} * v_{x} - t_{2} * (v_{2})_{x} = (p_{2})_{x} - p_{x}\\
 t_{2} * v_{y} - t_{2} * (v_{2})_{y} = (p_{2})_{y} - p_{y}\\
 t_{2} * v_{z} - t_{2} * (v_{2})_{z} = (p_{2})_{z} - p_{z}\\
+\end{cases}
+$$
+$$
+\begin{cases}
+t_{0} * v_{x} - t_{0} * (v_{0})_{x} + p_{x} = (p_{0})_{x}\\
+t_{0} * v_{y} - t_{0} * (v_{0})_{y} + p_{y} = (p_{0})_{y}\\
+t_{0} * v_{z} - t_{0} * (v_{0})_{z} + p_{z} = (p_{0})_{z}\\
+t_{1} * v_{x} - t_{1} * (v_{1})_{x} + p_{x} = (p_{1})_{x}\\
+t_{1} * v_{y} - t_{1} * (v_{1})_{y} + p_{y} = (p_{1})_{y}\\
+t_{1} * v_{z} - t_{1} * (v_{1})_{z} + p_{z} = (p_{1})_{z}\\
+t_{2} * v_{x} - t_{2} * (v_{2})_{x} + p_{x} = (p_{2})_{x}\\
+t_{2} * v_{y} - t_{2} * (v_{2})_{y} + p_{y} = (p_{2})_{y}\\
+t_{2} * v_{z} - t_{2} * (v_{2})_{z} + p_{z} = (p_{2})_{z}\\
+\end{cases}
+$$
+
+From first three equations:
+
+$$
+\begin{cases}
+p_{x} = (p_{0})_{x} - t_{0} * v_{x} + t_{0} * (v_{0})_{x}\\
+p_{y} = (p_{0})_{y} - t_{0} * v_{y} + t_{0} * (v_{0})_{y}\\
+p_{z} = (p_{0})_{z} - t_{0} * v_{z} + t_{0} * (v_{0})_{z}\\
+\end{cases}
+$$
+
+
+Substituting into the rest of the equations:
+
+$$
+\begin{cases}
+t_{1} * v_{x} - t_{1} * (v_{1})_{x} + (p_{0})_{x} - t_{0} * v_{x} + t_{0} * (v_{0})_{x} = (p_{1})_{x}\\
+t_{1} * v_{y} - t_{1} * (v_{1})_{y} + (p_{0})_{y} - t_{0} * v_{y} + t_{0} * (v_{0})_{y} = (p_{1})_{y}\\
+t_{1} * v_{z} - t_{1} * (v_{1})_{z} + (p_{0})_{z} - t_{0} * v_{z} + t_{0} * (v_{0})_{z} = (p_{1})_{z}\\
+t_{2} * v_{x} - t_{2} * (v_{2})_{x} + (p_{0})_{x} - t_{0} * v_{x} + t_{0} * (v_{0})_{x} = (p_{2})_{x}\\
+t_{2} * v_{y} - t_{2} * (v_{2})_{y} + (p_{0})_{y} - t_{0} * v_{y} + t_{0} * (v_{0})_{y} = (p_{2})_{y}\\
+t_{2} * v_{z} - t_{2} * (v_{2})_{z} + (p_{0})_{z} - t_{0} * v_{z} + t_{0} * (v_{0})_{z} = (p_{2})_{z}\\
 \end{cases}
 $$
