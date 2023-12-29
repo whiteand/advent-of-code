@@ -15,6 +15,7 @@ members = [
     "y23/d21",
     "y23/d22",
     "y23/d23",
+    "y23/d24",
 ]
 
 [workspace.dependencies]
