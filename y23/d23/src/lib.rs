@@ -2,6 +2,7 @@ use glam::UVec2;
 use std::{
     collections::VecDeque,
     ops::{Add, Sub},
+    thread::current,
 };
 
 use itertools::Itertools;
@@ -242,32 +243,67 @@ impl Bitmask {
 }
 
 #[derive(Clone)]
+struct Previous {
+    segments: Bitmask,
+    starts: Bitmask,
+}
+impl Previous {
+    fn with_inserted(&self, current: &Current) -> Self {
+        Self {
+            segments: self.segments.with_inserted(current.segment),
+            starts: self.starts.with_inserted(current.start),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct Current {
+    segment: usize,
+    start: usize,
+}
+
+#[derive(Clone)]
 struct ConcatenatedSegments {
-    previous: Bitmask,
-    current: usize,
+    previous: Previous,
+    current: Current,
 }
 
 impl ConcatenatedSegments {
-    fn new(current: usize) -> Self {
+    fn new(segment: usize, current_start: usize) -> Self {
         Self {
-            previous: Bitmask::new(),
-            current,
+            previous: Previous {
+                segments: Bitmask::new(),
+                starts: Bitmask::new(),
+            },
+            current: Current {
+                segment: segment,
+                start: current_start,
+            },
         }
     }
-    fn push(&self, next: usize) -> Self {
+    fn push(&self, next: usize, start: usize) -> Self {
         Self {
-            previous: self.previous.with_inserted(self.current),
-            current: next,
+            previous: self.previous.with_inserted(&self.current),
+            current: Current {
+                segment: next,
+                start,
+            },
         }
     }
-    fn contains(&self, ind: usize) -> bool {
-        self.previous.contains(ind) || self.current == ind
+    fn contains_segment(&self, ind: usize) -> bool {
+        self.previous.segments.contains(ind) || self.current.segment == ind
+    }
+    fn contains_start(&self, ind: usize) -> bool {
+        self.previous.starts.contains(ind) || self.current.start == ind
     }
     fn calculate_length(&self, segments: &[CellPath]) -> usize {
         self.iter().map(|id| segments[id].length - 1).sum::<usize>()
     }
     fn iter(&self) -> impl Iterator<Item = usize> + '_ {
-        self.previous.iter().chain(std::iter::once(self.current))
+        self.previous
+            .segments
+            .iter()
+            .chain(std::iter::once(self.current.segment))
     }
 }
 
@@ -291,44 +327,59 @@ fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath
     segments.sort_unstable_by_key(|f| f.length);
     segments.reverse();
 
-    let mut next_segments = segments.iter().map(|_| Vec::new()).collect_vec();
+    let points = segments
+        .iter()
+        .flat_map(|s| [s.start(), s.end()])
+        .unique()
+        .sorted_by(|a, b| a.y.cmp(&b.y).then(a.x.cmp(&b.x)))
+        .collect_vec();
 
-    for from_id in 0..segments.len() {
-        for to_id in 0..segments.len() {
-            if from_id == to_id {
-                continue;
-            }
-            let end = segments[from_id].end();
-            let start = segments[to_id].start();
-            if end != start {
-                continue;
-            }
-            next_segments[from_id].push(to_id);
-        }
-    }
+    let starts = segments
+        .iter()
+        .map(|s| {
+            let start = s.start();
+            points.iter().position(|p| p.eq(&start)).unwrap()
+        })
+        .collect_vec();
+    let ends = segments
+        .iter()
+        .map(|s| {
+            let end = s.end();
+            points.iter().position(|p| p.eq(&end)).unwrap()
+        })
+        .collect_vec();
 
-    let mut ends_lists = VecDeque::new();
+    let next_segments = (0..segments.len())
+        .map(|from_id| {
+            (0..segments.len())
+                .filter(|to_id| *to_id != from_id && ends[from_id] == starts[*to_id])
+                .collect_vec()
+        })
+        .collect_vec();
+
+    let mut ends_lists = Vec::new();
 
     ends_lists.extend(
         (0..segments.len())
             .filter(|id| segments[*id].start() == start)
-            .map(ConcatenatedSegments::new),
+            .map(|id| ConcatenatedSegments::new(id, starts[id])),
     );
 
     let mut finished_paths = Vec::new();
 
-    while let Some(segs) = ends_lists.pop_front() {
+    while let Some(segs) = ends_lists.pop() {
         ends_lists.extend(
-            next_segments[segs.current]
+            next_segments[segs.current.segment]
                 .iter()
-                .filter(|next_segment_id| !segs.contains(**next_segment_id))
+                .filter(|next_segment_id| {
+                    !segs.contains_segment(**next_segment_id)
+                        && !segs.contains_start(ends[**next_segment_id])
+                })
                 .copied()
-                .map(|next_id| segs.push(next_id)),
+                .map(|next_id| segs.push(next_id, starts[next_id])),
         );
 
-        let last_end = segments[segs.current].end();
-
-        if last_end == end {
+        if segments[segs.current.segment].end.eq(&end) {
             finished_paths.push(segs);
         }
     }
