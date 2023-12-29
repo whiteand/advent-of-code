@@ -207,6 +207,70 @@ fn get_segments(
         .collect_vec()
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
+struct Bitmask {
+    bits: [u64; 3],
+}
+impl Bitmask {
+    fn new() -> Self {
+        Self { bits: [0; 3] }
+    }
+    fn get_pos(&self, ind: usize) -> (usize, usize) {
+        if ind >= 64 * 3 {
+            unreachable!("too big index: {}", ind);
+        }
+        let times = ind >> 6;
+        return (times, ind & 63);
+    }
+    fn insert(&mut self, ind: usize) {
+        let (bit, ind) = self.get_pos(ind);
+        self.bits[bit] |= 1 << ind;
+    }
+    fn with_inserted(&self, ind: usize) -> Self {
+        let mut res = self.clone();
+        res.insert(ind);
+        res
+    }
+    fn contains(&self, ind: usize) -> bool {
+        let (bit, ind) = self.get_pos(ind);
+        self.bits[bit] & (1 << ind) != 0
+    }
+    fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+        let n = self.bits.len() * 64;
+        (0..n).filter(move |i| self.contains(*i))
+    }
+}
+
+#[derive(Clone)]
+struct ConcatenatedSegments {
+    previous: Bitmask,
+    current: usize,
+}
+
+impl ConcatenatedSegments {
+    fn new(current: usize) -> Self {
+        Self {
+            previous: Bitmask::new(),
+            current,
+        }
+    }
+    fn push(&self, next: usize) -> Self {
+        Self {
+            previous: self.previous.with_inserted(self.current),
+            current: next,
+        }
+    }
+    fn contains(&self, ind: usize) -> bool {
+        self.previous.contains(ind) || self.current == ind
+    }
+    fn calculate_length(&self, segments: &[CellPath]) -> usize {
+        self.iter().map(|id| segments[id].length - 1).sum::<usize>()
+    }
+    fn iter(&self) -> impl Iterator<Item = usize> + '_ {
+        self.previous.iter().chain(std::iter::once(self.current))
+    }
+}
+
 fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath>) -> usize {
     let grid = Grid {
         cells: file_content
@@ -248,40 +312,30 @@ fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath
     ends_lists.extend(
         (0..segments.len())
             .filter(|id| segments[*id].start() == start)
-            .map(|id| vec![id]),
+            .map(ConcatenatedSegments::new),
     );
 
     let mut finished_paths = Vec::new();
 
-    while let Some(segments_ids) = ends_lists.pop_front() {
-        let last_segment_id = segments_ids.last().copied().unwrap();
-        let last_end = segments_ids.last().map(|id| segments[*id].end()).unwrap();
-
-        for next_id in next_segments[last_segment_id]
-            .iter()
-            .filter(|next_segment_id| !segments_ids.contains(next_segment_id))
-            .copied()
-        {
-            let new_ends_list = segments_ids
+    while let Some(segs) = ends_lists.pop_front() {
+        ends_lists.extend(
+            next_segments[segs.current]
                 .iter()
-                .cloned()
-                .chain(std::iter::once(next_id))
-                .collect_vec();
-            ends_lists.push_back(new_ends_list);
-        }
+                .filter(|next_segment_id| !segs.contains(**next_segment_id))
+                .copied()
+                .map(|next_id| segs.push(next_id)),
+        );
+
+        let last_end = segments[segs.current].end();
 
         if last_end == end {
-            finished_paths.push(segments_ids);
+            finished_paths.push(segs);
         }
     }
 
     finished_paths
         .into_iter()
-        .map(|p| {
-            p.into_iter()
-                .map(|id| segments[id].length - 1)
-                .sum::<usize>()
-        })
+        .map(|p| p.calculate_length(&segments))
         .max()
         .unwrap_or_default()
 }
