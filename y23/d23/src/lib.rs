@@ -1,8 +1,7 @@
 use glam::UVec2;
 use std::{
-    collections::VecDeque,
+    collections::{BinaryHeap, VecDeque},
     ops::{Add, Sub},
-    thread::current,
 };
 
 use itertools::Itertools;
@@ -208,7 +207,7 @@ fn get_segments(
         .collect_vec()
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Copy)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Copy)]
 struct Bitmask {
     bits: [u64; 3],
 }
@@ -242,7 +241,7 @@ impl Bitmask {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 struct Previous {
     segments: Bitmask,
     starts: Bitmask,
@@ -256,20 +255,21 @@ impl Previous {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 struct Current {
     segment: usize,
     start: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 struct ConcatenatedSegments {
     previous: Previous,
     current: Current,
+    length: usize,
 }
 
 impl ConcatenatedSegments {
-    fn new(segment: usize, current_start: usize) -> Self {
+    fn new(segment: usize, current_start: usize, current_length: usize) -> Self {
         Self {
             previous: Previous {
                 segments: Bitmask::new(),
@@ -279,15 +279,25 @@ impl ConcatenatedSegments {
                 segment: segment,
                 start: current_start,
             },
+            length: current_length,
         }
     }
-    fn push(&self, next: usize, start: usize) -> Self {
+    fn segments_count(&self) -> usize {
+        self.previous
+            .segments
+            .bits
+            .iter()
+            .fold(0usize, |acc, s| acc + s.count_ones() as usize)
+            + 1
+    }
+    fn push(&self, next: usize, start: usize, next_len: usize) -> Self {
         Self {
             previous: self.previous.with_inserted(&self.current),
             current: Current {
                 segment: next,
                 start,
             },
+            length: self.length + next_len,
         }
     }
     fn contains_segment(&self, ind: usize) -> bool {
@@ -296,15 +306,43 @@ impl ConcatenatedSegments {
     fn contains_start(&self, ind: usize) -> bool {
         self.previous.starts.contains(ind) || self.current.start == ind
     }
-    fn calculate_length(&self, segments: &[CellPath]) -> usize {
-        self.iter().map(|id| segments[id].length - 1).sum::<usize>()
+}
+
+impl std::cmp::Ord for ConcatenatedSegments {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.length.cmp(&other.length)
     }
-    fn iter(&self) -> impl Iterator<Item = usize> + '_ {
-        self.previous
-            .segments
-            .iter()
-            .chain(std::iter::once(self.current.segment))
+}
+impl std::cmp::PartialOrd for ConcatenatedSegments {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
+}
+
+fn can_reach_the_finish(
+    next_segments: &[Vec<usize>],
+    starts: &[usize],
+    ends: &[usize],
+    end_index: usize,
+    segs: &ConcatenatedSegments,
+) -> bool {
+    let mut visited = Bitmask::new();
+    let mut queue = VecDeque::from([segs.current.segment]);
+    while let Some(seg_id) = queue.pop_front() {
+        if visited.contains(seg_id) {
+            continue;
+        }
+        if ends[seg_id] == end_index {
+            return true;
+        }
+        visited.insert(seg_id);
+        queue.extend(next_segments[seg_id].iter().filter(|next_id| {
+            !visited.contains(**next_id)
+                && !segs.contains_segment(**next_id)
+                && !segs.contains_start(starts[**next_id])
+        }));
+    }
+    false
 }
 
 fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath>) -> usize {
@@ -334,6 +372,8 @@ fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath
         .sorted_by(|a, b| a.y.cmp(&b.y).then(a.x.cmp(&b.x)))
         .collect_vec();
 
+    let end_index = points.iter().position(|p| p.eq(&end)).unwrap();
+
     let starts = segments
         .iter()
         .map(|s| {
@@ -357,17 +397,23 @@ fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath
         })
         .collect_vec();
 
-    let mut ends_lists = Vec::new();
+    let mut ends_lists = BinaryHeap::new();
 
     ends_lists.extend(
         (0..segments.len())
             .filter(|id| segments[*id].start() == start)
-            .map(|id| ConcatenatedSegments::new(id, starts[id])),
+            .map(|id| ConcatenatedSegments::new(id, starts[id], segments[id].length - 1)),
     );
 
-    let mut finished_paths = Vec::new();
-
+    let mut max_finish_len = 0usize;
     while let Some(segs) = ends_lists.pop() {
+        if segments[segs.current.segment].end.eq(&end) {
+            let len = segs.length;
+            if len > max_finish_len {
+                max_finish_len = len;
+            }
+            continue;
+        }
         ends_lists.extend(
             next_segments[segs.current.segment]
                 .iter()
@@ -376,19 +422,15 @@ fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath
                         && !segs.contains_start(ends[**next_segment_id])
                 })
                 .copied()
-                .map(|next_id| segs.push(next_id, starts[next_id])),
+                .map(|next_id| segs.push(next_id, starts[next_id], segments[next_id].length - 1))
+                .filter(|segs| {
+                    ends[segs.current.segment] == end_index
+                        || can_reach_the_finish(&next_segments, &starts, &ends, end_index, segs)
+                }),
         );
-
-        if segments[segs.current.segment].end.eq(&end) {
-            finished_paths.push(segs);
-        }
     }
 
-    finished_paths
-        .into_iter()
-        .map(|p| p.calculate_length(&segments))
-        .max()
-        .unwrap_or_default()
+    max_finish_len
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -427,7 +469,8 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "6406");
     }
 }

@@ -1042,4 +1042,5 @@ dependencies = [
  "criterion",
  "glam",
  "itertools",
+ "pathfinding",
 ]
