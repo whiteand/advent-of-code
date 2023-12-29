@@ -1,6 +1,6 @@
 use glam::UVec2;
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     ops::{Add, Sub},
 };
 
@@ -127,49 +127,47 @@ impl std::fmt::Debug for Grid {
 
 #[derive(Clone)]
 struct CellPath {
-    points: Vec<glam::UVec2>,
+    start: glam::UVec2,
+    end: glam::UVec2,
+    length: usize,
 }
 impl CellPath {
-    fn last(&self) -> glam::UVec2 {
-        self.points.last().cloned().unwrap()
+    fn end(&self) -> glam::UVec2 {
+        self.end.clone()
     }
-    fn first(&self) -> glam::UVec2 {
-        self.points.first().cloned().unwrap()
+    fn start(&self) -> glam::UVec2 {
+        self.start.clone()
     }
     fn reversed(&self) -> Self {
         Self {
-            points: self.points.iter().rev().cloned().collect_vec(),
+            start: self.end.clone(),
+            end: self.start.clone(),
+            length: self.length,
         }
     }
 }
 
 impl std::fmt::Debug for CellPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}", self.points.first().unwrap())?;
-        for point in &self.points[1..] {
-            write!(f, "->{}", point)?;
-        }
-        write!(f, ")")
+        write!(f, "{} -{}-> {}", self.start, self.length, self.end)
     }
 }
 
-fn get_no_choicers(
+fn get_segments(
     grid: &Grid,
     start: UVec2,
     get_neighbours: impl Fn(&Grid, &UVec2) -> Vec<UVec2>,
 ) -> Vec<CellPath> {
     let mut paths = VecDeque::new();
 
-    paths.push_back(CellPath {
-        points: Vec::from([start]),
-    });
+    paths.push_back(Vec::from([start]));
 
-    let mut no_choicers = Vec::new();
+    let mut segments = Vec::new();
     let mut visited_multiple_opportuinities = Vec::new();
 
     while let Some(mut path) = paths.pop_front() {
         'points_loop: loop {
-            let last_point = &path.points[path.points.len() - 1];
+            let last_point = &path[path.len() - 1];
 
             if visited_multiple_opportuinities.contains(last_point) {
                 break;
@@ -177,11 +175,11 @@ fn get_no_choicers(
 
             let options = get_neighbours(&grid, last_point)
                 .into_iter()
-                .filter(|p| !path.points.iter().rev().contains(&p))
+                .filter(|p| !path.iter().rev().contains(&p))
                 .collect_vec();
 
             if options.len() == 1 {
-                path.points.push(options[0]);
+                path.push(options[0]);
                 continue 'points_loop;
             }
 
@@ -192,20 +190,24 @@ fn get_no_choicers(
             visited_multiple_opportuinities.push(last_point.clone());
 
             for opt in options {
-                let new_path = CellPath {
-                    points: vec![last_point.clone(), opt],
-                };
-                paths.push_back(new_path);
+                paths.push_back(vec![last_point.clone(), opt]);
             }
             break;
         }
-        no_choicers.push(path);
+        segments.push(path);
     }
 
-    no_choicers
+    segments
+        .into_iter()
+        .map(|ps| CellPath {
+            start: ps.first().copied().unwrap(),
+            end: ps.last().copied().unwrap(),
+            length: ps.len(),
+        })
+        .collect_vec()
 }
 
-fn solve(file_content: &str, get_no_choicers: impl Fn(&Grid, UVec2) -> Vec<CellPath>) -> usize {
+fn solve(file_content: &str, get_segments: impl Fn(&Grid, UVec2) -> Vec<CellPath>) -> usize {
     let grid = Grid {
         cells: file_content
             .lines()
@@ -220,47 +222,56 @@ fn solve(file_content: &str, get_no_choicers: impl Fn(&Grid, UVec2) -> Vec<CellP
     let start = UVec2::new(1, 0);
     let end = UVec2::new(grid.cells[0].len() as u32 - 2, grid.cells.len() as u32 - 1);
 
-    let mut no_choicers: HashMap<UVec2, Vec<CellPath>> = HashMap::new();
+    let mut segments = get_segments(&grid, start);
 
-    for no_choicer in get_no_choicers(&grid, start) {
-        let start = no_choicer.first();
-        no_choicers.entry(start).or_default().push(no_choicer);
+    segments.sort_unstable_by_key(|f| f.length);
+    segments.reverse();
+
+    let mut next_segments = segments.iter().map(|_| Vec::new()).collect_vec();
+
+    for from_id in 0..segments.len() {
+        for to_id in 0..segments.len() {
+            if from_id == to_id {
+                continue;
+            }
+            let end = segments[from_id].end();
+            let start = segments[to_id].start();
+            if end != start {
+                continue;
+            }
+            next_segments[from_id].push(to_id);
+        }
     }
 
     let mut ends_lists = VecDeque::new();
 
-    for p in no_choicers.get(&start).into_iter().flatten() {
-        ends_lists.push_back(vec![(p.first(), p.last())])
-    }
+    ends_lists.extend(
+        (0..segments.len())
+            .filter(|id| segments[*id].start() == start)
+            .map(|id| vec![id]),
+    );
 
     let mut finished_paths = Vec::new();
 
-    let no_choicers_len = no_choicers.values().flatten().count();
-    println!("No choicers len: {}", no_choicers_len);
-    for no_choicer in no_choicers.values().flatten() {
-        println!("{:?}", &no_choicer.points.len());
-    }
+    while let Some(segments_ids) = ends_lists.pop_front() {
+        let last_segment_id = segments_ids.last().copied().unwrap();
+        let last_end = segments_ids.last().map(|id| segments[*id].end()).unwrap();
 
-    while let Some(ends_list) = ends_lists.pop_front() {
-        let last_end = ends_list.last().cloned().unwrap().1;
-
-        for next in no_choicers
-            .get(&last_end)
-            .into_iter()
-            .flatten()
-            .filter(|p| !ends_list.iter().map(|p| p.0).contains(&p.last()))
+        for next_id in next_segments[last_segment_id]
+            .iter()
+            .filter(|next_segment_id| !segments_ids.contains(next_segment_id))
+            .copied()
         {
-            let new_pair = (last_end, next.last());
-            let new_ends_list = ends_list
+            let new_ends_list = segments_ids
                 .iter()
                 .cloned()
-                .chain(std::iter::once(new_pair))
+                .chain(std::iter::once(next_id))
                 .collect_vec();
             ends_lists.push_back(new_ends_list);
         }
 
         if last_end == end {
-            finished_paths.push(ends_list);
+            finished_paths.push(segments_ids);
         }
     }
 
@@ -268,15 +279,7 @@ fn solve(file_content: &str, get_no_choicers: impl Fn(&Grid, UVec2) -> Vec<CellP
         .into_iter()
         .map(|p| {
             p.into_iter()
-                .map(|(s, e)| {
-                    let no_choicer = no_choicers
-                        .get(&s)
-                        .unwrap()
-                        .iter()
-                        .find(|p| p.last() == e)
-                        .unwrap();
-                    no_choicer.points.len() - 1
-                })
+                .map(|id| segments[id].length - 1)
                 .sum::<usize>()
         })
         .max()
@@ -285,12 +288,12 @@ fn solve(file_content: &str, get_no_choicers: impl Fn(&Grid, UVec2) -> Vec<CellP
 
 pub fn solve_part_1(file_content: &str) -> usize {
     solve(file_content, |grid, start| {
-        get_no_choicers(grid, start, Grid::available_neighbours)
+        get_segments(grid, start, Grid::available_neighbours)
     })
 }
 pub fn solve_part_2(file_content: &str) -> usize {
     solve(file_content, |grid, start| {
-        get_no_choicers(grid, start, Grid::available_without_slopes_neighbours)
+        get_segments(grid, start, Grid::available_without_slopes_neighbours)
             .into_iter()
             .flat_map(|p| [p.reversed(), p].into_iter().rev())
             .collect()
