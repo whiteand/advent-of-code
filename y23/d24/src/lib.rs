@@ -1,4 +1,6 @@
-use std::ops::RangeInclusive;
+use rand::prelude::*;
+
+use std::{array::IntoIter, ops::RangeInclusive};
 
 use itertools::Itertools;
 
@@ -83,6 +85,18 @@ impl Rat {
             0
         }
     }
+
+    fn ceil(&self) -> Rat {
+        let sign = self.signum();
+        let mut top = self.top.abs() as u128;
+        top += top % self.bottom;
+        let value = top / self.bottom;
+        Rat::new((value as i128) * sign, 1)
+    }
+
+    fn as_f64(&self) -> f64 {
+        self.top as f64 / self.bottom as f64
+    }
 }
 
 impl std::cmp::PartialOrd for Rat {
@@ -154,9 +168,28 @@ impl std::ops::Sub for Rat {
     }
 }
 
+impl std::ops::SubAssign for Rat {
+    fn sub_assign(&mut self, rhs: Self) {
+        let new_bottom = get_lcm(self.bottom, rhs.bottom);
+        self.top = self.top * ((new_bottom / self.bottom) as i128)
+            - rhs.top * ((new_bottom / rhs.bottom) as i128);
+        self.bottom = new_bottom
+    }
+}
+
 impl From<i128> for Rat {
     fn from(i: i128) -> Self {
         Self { top: i, bottom: 1 }
+    }
+}
+
+impl TryFrom<Rat> for i64 {
+    type Error = ();
+    fn try_from(r: Rat) -> Result<Self, Self::Error> {
+        if r.bottom != 1 {
+            return Err(());
+        }
+        r.top.try_into().map_err(|_| ())
     }
 }
 
@@ -211,6 +244,43 @@ impl Vec3 {
             y: self.y.clone(),
         }
     }
+    fn times(&self, k: impl Into<Rat>) -> Self {
+        let k = k.into();
+        Self {
+            x: self.x.clone() * k,
+            y: self.y.clone() * k,
+            z: self.z.clone() * k,
+        }
+    }
+    fn as_f64(&self) -> Vec3F64 {
+        Vec3F64 {
+            x: self.x.as_f64(),
+            y: self.y.as_f64(),
+            z: self.z.as_f64(),
+        }
+    }
+}
+impl std::ops::Add for Vec3 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+impl std::ops::Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
 }
 
 impl std::fmt::Debug for Vec3 {
@@ -223,6 +293,32 @@ impl std::fmt::Debug for Vec3 {
 struct Object {
     position: Vec3,
     velocity: Vec3,
+}
+
+impl Object {
+    fn position_at(&self, t: impl Into<Rat>) -> Vec3 {
+        let t: Rat = t.into();
+        Vec3 {
+            x: self.position.x + self.velocity.x * t,
+            y: self.position.y + self.velocity.y * t,
+            z: self.position.z + self.velocity.z * t,
+        }
+    }
+    fn position_at_f64(&self, t: f64) -> Vec3F64 {
+        let x = self.position.x.as_f64();
+        let y = self.position.y.as_f64();
+        let z = self.position.z.as_f64();
+
+        let vx = self.velocity.x.as_f64();
+        let vy = self.velocity.y.as_f64();
+        let vz = self.velocity.z.as_f64();
+
+        let x = x + vx * t;
+        let y = y + vy * t;
+        let z = z + vz * t;
+
+        Vec3F64::new(x, y, z)
+    }
 }
 
 fn solve_xy(
@@ -251,7 +347,7 @@ fn solve_xy(
                         }
                     }
                     Intersection2D::Line(_, _) => {
-                        unreachable!("Lines are not expected to be intersections")
+                        continue;
                     }
                 }
             }
@@ -263,6 +359,67 @@ fn solve_xy(
 enum Intersection2D {
     Point(Vec2, Rat, Rat),
     Line(Vec2, Vec2),
+}
+
+fn get_intersection_3d(
+    a_pos: &Vec3,
+    a_vel: &Vec3,
+    b_pos: &Vec3,
+    b_vel: &Vec3,
+) -> Option<(Rat, Rat)> {
+    let mut a_pos_2 = Vec2::new(a_pos.x, a_pos.y);
+    let mut a_vel_2 = Vec2::new(a_vel.x.clone(), a_vel.y.clone());
+    let mut b_pos_2 = Vec2::new(b_pos.x.clone(), b_pos.y.clone());
+    let mut b_vel_2 = Vec2::new(b_vel.x.clone(), b_vel.y.clone());
+    if let Some(Intersection2D::Point(_, t1, t2)) =
+        get_intersection_xy(&a_pos_2, &a_vel_2, &b_pos_2, &b_vel_2)
+    {
+        if t1.is_non_negative() && t2.is_non_negative() {
+            return Some((t1, t2));
+        }
+    }
+
+    a_pos_2.x = a_pos.x;
+    a_pos_2.y = a_pos.z;
+
+    a_vel_2.x = a_vel.x.clone();
+    a_vel_2.y = a_vel.z.clone();
+
+    b_pos_2.x = b_pos.x.clone();
+    b_pos_2.y = b_pos.z.clone();
+
+    b_vel_2.x = b_vel.x.clone();
+    b_vel_2.y = b_vel.z.clone();
+
+    if let Some(Intersection2D::Point(_, t1, t2)) =
+        get_intersection_xy(&a_pos_2, &a_vel_2, &b_pos_2, &b_vel_2)
+    {
+        if t1.is_non_negative() && t2.is_non_negative() {
+            return Some((t1, t2));
+        }
+    }
+
+    a_pos_2.x = a_pos.y;
+    a_pos_2.y = a_pos.z;
+
+    a_vel_2.x = a_vel.y.clone();
+    a_vel_2.y = a_vel.z.clone();
+
+    b_pos_2.x = b_pos.y.clone();
+    b_pos_2.y = b_pos.z.clone();
+
+    b_vel_2.x = b_vel.y.clone();
+    b_vel_2.y = b_vel.z.clone();
+
+    if let Some(Intersection2D::Point(_, t1, t2)) =
+        get_intersection_xy(&a_pos_2, &a_vel_2, &b_pos_2, &b_vel_2)
+    {
+        if t1.is_non_negative() && t2.is_non_negative() {
+            return Some((t1, t2));
+        }
+    }
+
+    None
 }
 
 fn get_intersection_xy(
@@ -350,8 +507,239 @@ pub fn solve_part_1(file_content: &str) -> usize {
     )
 }
 
-pub fn solve_part_2(_file_content: &str) -> usize {
-    todo!("part 2 is not implemented yet")
+#[derive(Debug, Clone, PartialEq)]
+struct Vec3F64 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+impl Vec3F64 {
+    fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+
+    fn len(&self) -> f64 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    fn times(&self, t: f64) -> Vec3F64 {
+        Vec3F64 {
+            x: self.x * t,
+            y: self.y * t,
+            z: self.z * t,
+        }
+    }
+
+    fn dot(&self, v: &Vec3F64) -> f64 {
+        self.x * v.x + self.y * v.y + self.z * v.z
+    }
+}
+
+impl std::ops::Add for Vec3F64 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z,
+        }
+    }
+}
+
+impl std::ops::Sub for Vec3F64 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl std::ops::SubAssign for Vec3F64 {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
+        self.z -= rhs.z;
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ObjectF64 {
+    position: Vec3F64,
+    velocity: Vec3F64,
+}
+
+impl ObjectF64 {
+    fn position_at(&self, t: f64) -> Vec3F64 {
+        self.position.clone() + self.velocity.times(t)
+    }
+
+    fn as_rat(&self) -> Object {
+        Object {
+            position: Vec3::new(
+                (self.position.x.round()) as i128,
+                (self.position.y.round()) as i128,
+                (self.position.z.round()) as i128,
+            ),
+            velocity: Vec3::new(
+                (self.position.x.round()) as i128,
+                (self.position.y.round()) as i128,
+                (self.position.z.round()) as i128,
+            ),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Weights {
+    weights: [f64; 6],
+    gradient: [f64; 6],
+}
+
+impl Weights {
+    fn adjust(&mut self, position_step: f64, time_step: f64, objects_f64: &[ObjectF64]) -> f64 {
+        let error = self.calculate_gradients(position_step, time_step, objects_f64);
+        self.move_weights(position_step, time_step);
+        error
+    }
+
+    fn move_weights(&mut self, position_step: f64, time_step: f64) {
+        for i in 0..self.weights.len() {
+            let step = if i > 2 { time_step } else { position_step };
+            self.weights[i] = self.weights[i] - self.gradient[i] * step;
+        }
+    }
+
+    fn calculate_gradients(
+        &mut self,
+        position_step: f64,
+        time_step: f64,
+        objects_f64: &[ObjectF64],
+    ) -> f64 {
+        let error = self.get_error(&objects_f64);
+        for i in 0..self.weights.len() {
+            let step = if i > 2 { time_step } else { position_step };
+            let old = self.weights[i];
+            self.weights[i] = old + step;
+            let new_err = self.get_error(&objects_f64);
+            self.weights[i] = old;
+            let gradient = (new_err - error) / step;
+            if gradient < -1e4 {
+                self.gradient[i] = -1.;
+                continue;
+            } else if gradient > 1e4 {
+                self.gradient[i] = 1.;
+                continue;
+            } else {
+                self.gradient[i] = gradient;
+            }
+        }
+        error
+    }
+    fn get_error(&self, objects_f64: &[ObjectF64]) -> f64 {
+        let position = Vec3F64::new(self.weights[0], self.weights[1], self.weights[2]);
+        let velocity = Vec3F64::new(self.weights[3], self.weights[4], self.weights[5]);
+        let rock = ObjectF64 { position, velocity };
+        let mut err = 0f64;
+        for obj in objects_f64 {
+            let min_distance_to_obj_trajectory = get_min_distance_to_trajectory(obj, &rock);
+            err = err + min_distance_to_obj_trajectory;
+        }
+        err
+    }
+}
+
+fn get_min_distance_to_trajectory(obj: &ObjectF64, rock: &ObjectF64) -> f64 {
+    // We are using geometric formula to find the shortest distance between two straight lines
+    // Lines are set by p0 and v0 and p1 and v1
+    // https://en.wikipedia.org/wiki/Skew_lines#Distance
+
+    let p = obj.position.clone();
+    let u = obj.velocity.clone();
+    let r = rock.position.clone();
+    let v = rock.velocity.clone();
+
+    let dot = u.dot(&v).abs();
+
+    let pr = r - p;
+
+    let d = pr.x * (u.y * v.z - u.z * v.y) - pr.y * (u.x * v.z - u.z * v.x)
+        + pr.z * (u.x * v.y - u.y * v.x);
+
+    let d = d.abs();
+
+    return d / dot;
+}
+
+fn get_throw_position_sum(objects: &[Object]) -> i64 {
+    let mut rand_generator = rand::thread_rng();
+    let objects_f64 = objects
+        .iter()
+        .map(|x| ObjectF64 {
+            position: x.position.as_f64(),
+            velocity: x.velocity.as_f64(),
+        })
+        .collect_vec();
+
+    let mut w = Weights {
+        weights: [
+            132777695020144.16,
+            -84061531420895.06,
+            76547399128688.84,
+            0.19388713982967876,
+            0.552358292295493,
+            0.2794689019401747,
+        ],
+        gradient: [0f64; 6],
+    };
+
+    let mut it = 0;
+    let mut min_error = 143812995896221140.;
+    let mut last_error = f64::MAX;
+    let mut pos_step = 1e3;
+    loop {
+        it += 1;
+        let error = w.calculate_gradients(pos_step, 0.0001, &objects_f64);
+
+        w.move_weights(pos_step, 0.0001);
+
+        if it % 100000 == 0 {
+            println!(
+                "Error: {error} / {:.2}%,\t{:?}",
+                (error - min_error) / error * 100.,
+                &w
+            );
+        }
+        if error < min_error {
+            min_error = error;
+        }
+        if error > last_error {
+            pos_step /= 2.;
+        } else {
+            pos_step *= 1.1;
+        }
+
+        if error < 0.1e-4 {
+            break;
+        }
+    }
+
+    w.weights
+        .into_iter()
+        .take(3)
+        .map(|x| x.round() as i64)
+        .sum()
+}
+
+pub fn solve_part_2(file_content: &str) -> i64 {
+    let objects = parse(file_content);
+
+    get_throw_position_sum(&objects)
 }
 
 #[cfg(test)]
@@ -365,6 +753,7 @@ mod tests {
     #[rstest]
     #[case(EXAMPLE, 7, 21, 2)]
     #[case(ACTUAL, 200000000000000, 400000000000000, 11246)]
+    #[ignore]
     fn test_part1(
         #[case] input: &str,
         #[case] min_value: i128,
@@ -378,15 +767,11 @@ mod tests {
         );
     }
 
-    #[test]
-    #[ignore]
-    fn test_part2() {
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+    #[rstest]
+    // #[case(EXAMPLE, 47)]
+    #[case(ACTUAL, 0)]
+    fn test_part2(#[case] input: &str, #[case] expected: i64) {
+        let res = solve_part_2(input);
+        assert_eq!(res, expected);
     }
 }

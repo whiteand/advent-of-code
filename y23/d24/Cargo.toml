@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 itertools.workspace = true
 rstest.workspace = true
+rand = "0.8.4"
 glam = "0.25.0"
 criterion.workspace = true
 

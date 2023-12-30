@@ -58,4 +58,4 @@ Inserting into second:
 
 $$
 t_i (\vec{V}_i - \vec{v}) = \vec{p} - \vec{P}_i  \\
-
+$$
