@@ -1,6 +1,7 @@
 use rand::prelude::*;
 
-use std::{array::IntoIter, ops::RangeInclusive};
+use core::panic;
+use std::{array::IntoIter, iter::Sum, ops::RangeInclusive};
 
 use itertools::Itertools;
 
@@ -507,11 +508,17 @@ pub fn solve_part_1(file_content: &str) -> usize {
     )
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Vec3F64 {
     x: f64,
     y: f64,
     z: f64,
+}
+
+impl Sum for Vec3F64 {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Vec3F64::new(0., 0., 0.), |a, b| a + b)
+    }
 }
 
 impl Vec3F64 {
@@ -597,8 +604,8 @@ impl ObjectF64 {
 
 #[derive(Debug, Clone)]
 struct Weights {
-    weights: [f64; 6],
-    gradient: [f64; 6],
+    weights: [f64; 5],
+    gradient: [f64; 5],
 }
 
 impl Weights {
@@ -643,26 +650,36 @@ impl Weights {
     }
     fn get_error(&self, objects_f64: &[ObjectF64]) -> f64 {
         let position = Vec3F64::new(self.weights[0], self.weights[1], self.weights[2]);
-        let velocity = Vec3F64::new(self.weights[3], self.weights[4], self.weights[5]);
+        let velocity_phi = self.weights[3];
+        let velocity_theta = self.weights[4];
+
+        let velocity = Vec3F64::new(
+            velocity_phi.cos() * velocity_theta.cos(),
+            velocity_phi.sin() * velocity_theta.cos(),
+            velocity_theta.sin(),
+        );
         let rock = ObjectF64 { position, velocity };
+
         let mut err = 0f64;
         for obj in objects_f64 {
-            let min_distance_to_obj_trajectory = get_min_distance_to_trajectory(obj, &rock);
+            let (min_distance_to_obj_trajectory, _, _) = get_closest_distance(obj, &rock);
             err = err + min_distance_to_obj_trajectory;
         }
         err
     }
 }
 
-fn get_min_distance_to_trajectory(obj: &ObjectF64, rock: &ObjectF64) -> f64 {
-    // We are using geometric formula to find the shortest distance between two straight lines
-    // Lines are set by p0 and v0 and p1 and v1
-    // https://en.wikipedia.org/wiki/Skew_lines#Distance
-
+fn get_closest_distance(obj: &ObjectF64, rock: &ObjectF64) -> (f64, f64, f64) {
     let p = obj.position.clone();
     let u = obj.velocity.clone();
     let r = rock.position.clone();
     let v = rock.velocity.clone();
+
+    if v.len() == 0. {
+        let t = (r.dot(&u) - p.dot(&u)) / u.dot(&u);
+        let x = p + u.times(t);
+        return ((x - r).len(), t, t);
+    }
 
     let dot = u.dot(&v).abs();
 
@@ -673,11 +690,34 @@ fn get_min_distance_to_trajectory(obj: &ObjectF64, rock: &ObjectF64) -> f64 {
 
     let d = d.abs();
 
-    return d / dot;
+    let min_d = d / dot;
+
+    // p1 = p + u * t1
+    // p2 = r + v * t2
+    // dpv + uv * t1 - vv * t2  = 0
+    // dpu + uu * t1 - vu * t2 = 0
+    // t1 = (vu * t2 - dpu) / uu
+    // dpv + uv * (vu * t2 - dpu) / uu - vv * t2  = 0
+    // dpv uu + uv * vu * t2 - dpu * uv - vv * uu * t2 = 0
+    // t2(uv * vu  - vv * uu)  = dpu * uv - dpv uu
+    // t2 = (dpu * uv - dpv uu) / (uv * vu  - vv * uu)
+
+    let vv = v.dot(&v);
+    let vu = v.dot(&u);
+    let uu = u.dot(&u);
+    let uv = u.dot(&v);
+    let dp = p - r;
+    let dpv = dp.dot(&v);
+    let dpu = dp.dot(&u);
+
+    let t2 = (dpu * uv - dpv * uu) / (uv * vu - vv * uu);
+    let t1 = (vu * t2 - dpu) / uu;
+
+    return (min_d, t1, t2);
 }
 
 fn get_throw_position_sum(objects: &[Object]) -> i64 {
-    let mut rand_generator = rand::thread_rng();
+    let mut r = rand::thread_rng();
     let objects_f64 = objects
         .iter()
         .map(|x| ObjectF64 {
@@ -686,34 +726,51 @@ fn get_throw_position_sum(objects: &[Object]) -> i64 {
         })
         .collect_vec();
 
+    // weights: [
+    //     132777695020144.16,
+    //     -84061531420895.06,
+    //     76547399128688.84,
+    //     0.19388713982967876,
+    //     0.552358292295493,
+    //     0.2794689019401747,
+    // ],
+
+    let center = objects_f64
+        .iter()
+        .map(|x| x.position.clone().times(1. / objects_f64.len() as f64))
+        .sum::<Vec3F64>();
+
     let mut w = Weights {
-        weights: [
-            132777695020144.16,
-            -84061531420895.06,
-            76547399128688.84,
-            0.19388713982967876,
-            0.552358292295493,
-            0.2794689019401747,
-        ],
-        gradient: [0f64; 6],
+        weights: [center.x, center.y, center.z, r.gen::<f64>(), r.gen::<f64>()],
+        gradient: [0f64; 5],
     };
+
+    let max_pos_step = center.x.abs().max(center.y.abs()).max(center.z.abs()) / 1000.;
 
     let mut it = 0;
     let mut min_error = 143812995896221140.;
     let mut last_error = f64::MAX;
-    let mut pos_step = 1e3;
+    let mut vel_step = 1e-4;
+    let mut pos_step = 1.;
+
+    let mut last_viewed_error = min_error;
     loop {
         it += 1;
         let error = w.calculate_gradients(pos_step, 0.0001, &objects_f64);
+
+        if error.is_nan() {
+            panic!("NAN");
+        }
 
         w.move_weights(pos_step, 0.0001);
 
         if it % 100000 == 0 {
             println!(
-                "Error: {error} / {:.2}%,\t{:?}",
-                (error - min_error) / error * 100.,
+                "Error: {error} / {:.2}%,\t{:?}\tStep={pos_step}",
+                (error - last_viewed_error) / last_viewed_error * 100.,
                 &w
             );
+            last_viewed_error = error;
         }
         if error < min_error {
             min_error = error;
@@ -721,7 +778,7 @@ fn get_throw_position_sum(objects: &[Object]) -> i64 {
         if error > last_error {
             pos_step /= 2.;
         } else {
-            pos_step *= 1.1;
+            pos_step = (pos_step * 1.1).min(max_pos_step);
         }
 
         if error < 0.1e-4 {
@@ -738,8 +795,24 @@ fn get_throw_position_sum(objects: &[Object]) -> i64 {
 
 pub fn solve_part_2(file_content: &str) -> i64 {
     let objects = parse(file_content);
-
-    get_throw_position_sum(&objects)
+    let objects_f = objects
+        .iter()
+        .map(|x| ObjectF64 {
+            position: x.position.as_f64(),
+            velocity: x.velocity.as_f64(),
+        })
+        .collect_vec();
+    for i in 0..objects_f.len() {
+        for j in (i + 1)..objects_f.len() {
+            let a = &objects_f[i];
+            let b = &objects_f[j];
+            let (min_d, t1, t2) = get_closest_distance(&a, &b);
+            let ap = a.position_at(t1);
+            let bp = b.position_at(t2);
+            println!("{i}-{j}\t{t1}\t{t2}\t{min_d}\t{ap:?}\t{bp:?}");
+        }
+    }
+    0
 }
 
 #[cfg(test)]
