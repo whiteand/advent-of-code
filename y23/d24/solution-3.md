@@ -53,11 +53,11 @@ Let's see the example written in this form:
 
 $$
 \begin{cases}
--v_x*(30 - p_z) + v_x*(2*p_y - 26) - v_y*(2*p_x - 38) + v_y*(2*p_z - 60) + v_z*(19 - p_x) - v_z*(2*p_y - 26)\\
-v_x*(2*p_y - 38) - v_x*(p_z - 22) - v_y*(2*p_x - 36) + v_y*(p_z - 22) + v_z*(p_x - 18) - v_z*(p_y - 19)\\
-v_x*(4*p_y - 100) - v_x*(2*p_z - 68) - v_y*(4*p_x - 80) + v_y*(2*p_z - 68) + v_z*(2*p_x - 40) - v_z*(2*p_y - 50)\\
-v_x*(p_y - 31) - v_x*(2*p_z - 56) - v_y*(p_x - 12) + v_y*(p_z - 28) + v_z*(2*p_x - 24) - v_z*(p_y - 31)\\
-v_x*(3*p_y - 57) - v_x*(5*p_z - 75) + v_y*(15 - p_z) - v_y*(3*p_x - 60) - v_z*(19 - p_y) + v_z*(5*p_x - 100)
+-2*p_x*sin(\phi)*sin(\theta) - p_x*cos(\theta) + 2*p_y*sin(\theta)*cos(\phi) - 2*p_y*cos(\theta) + 2*p_z*sin(\phi)*sin(\theta) + p_z*sin(\theta)*cos(\phi) - 22*sin(\phi)*sin(\theta) - 56*sin(\theta)*cos(\phi) + 45*cos(\theta) = 0 \\
+-2*p_x*sin(\phi)*sin(\theta) + p_x*cos(\theta) + 2*p_y*sin(\theta)*cos(\phi) - p_y*cos(\theta) + p_z*sin(\phi)*sin(\theta) - p_z*sin(\theta)*cos(\phi) + 14*sin(\phi)*sin(\theta) - 16*sin(\theta)*cos(\phi) + cos(\theta) = 0 \\
+-4*p_x*sin(\phi)*sin(\theta) + 2*p_x*cos(\theta) + 4*p_y*sin(\theta)*cos(\phi) - 2*p_y*cos(\theta) + 2*p_z*sin(\phi)*sin(\theta) - 2*p_z*sin(\theta)*cos(\phi) + 12*sin(\phi)*sin(\theta) - 32*sin(\theta)*cos(\phi) + 10*cos(\theta) = 0 \\
+-p_x*sin(\phi)*sin(\theta) + 2*p_x*cos(\theta) + p_y*sin(\theta)*cos(\phi) - p_y*cos(\theta) + p_z*sin(\phi)*sin(\theta) - 2*p_z*sin(\theta)*cos(\phi) - 16*sin(\phi)*sin(\theta) + 25*sin(\theta)*cos(\phi) + 7*cos(\theta) = 0 \\
+-3*p_x*sin(\phi)*sin(\theta) + 5*p_x*cos(\theta) + 3*p_y*sin(\theta)*cos(\phi) + p_y*cos(\theta) - p_z*sin(\phi)*sin(\theta) - 5*p_z*sin(\theta)*cos(\phi) + 75*sin(\phi)*sin(\theta) + 18*sin(\theta)*cos(\phi) - 119*cos(\theta) = 0 \\
 \end{cases}
 
 $$
@@ -71,12 +71,25 @@ data = [
     ((12, 31, 28), (-1, -2, -1)),
     ((20, 19, 15), ( 1, -5, -3))
 ]
-px, py, pz = sym.symbols('p_x, p_y, p_z')
-vx, vy, vz = sym.symbols('v_x, v_y, v_z')
 
-equations = [
-    (pix - px)*uiy*vz + (piy - py)*uiz*vx + (piz - pz)*uix*vy - (piz - pz)*uiy*vx - (piy - py)*uix*vz - (pix - px)*uiz*vy
-    for (pix, piy, piz), (uix, uiy, uiz) in data
-]
+def print_equations(data):
+    px, py, pz = sym.symbols('p_x, p_y, p_z')
+    phi, theta = sym.symbols('\\phi, \\theta')
+    vx = sym.cos(phi)*sym.sin(theta)
+    vy = sym.sin(phi)*sym.sin(theta)
+    vz = sym.cos(theta)
+    equations = []
+    print("\\begin{cases}")
+    for (pix, piy, piz), (uix, uiy, uiz) in data:
+        eq = sym.expand((pix - px)*uiy*vz + (piy - py)*uiz*vx + (piz - pz)*uix*vy - (piz - pz)*uiy*vx - (piy - py)*uix*vz - (pix - px)*uiz*vy)
+        print(
+            eq
+            , '= 0 \\\\'
+        )
+        equations.append(eq)
+    print("\\end{cases}")
+    return (equations, [px, py, pz, phi, theta])
 
+eqs, variables = print_equations(data)
+print(sym.nonlinsolve(eqs, variables))
 ```
