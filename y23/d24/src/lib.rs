@@ -1,7 +1,7 @@
 use rand::prelude::*;
 
 use core::panic;
-use std::{array::IntoIter, iter::Sum, ops::RangeInclusive};
+use std::{iter::Sum, ops::RangeInclusive};
 
 use itertools::Itertools;
 
@@ -97,6 +97,13 @@ impl Rat {
 
     fn as_f64(&self) -> f64 {
         self.top as f64 / self.bottom as f64
+    }
+
+    fn abs(&self) -> Self {
+        Self {
+            top: self.top.abs(),
+            bottom: self.bottom,
+        }
     }
 }
 
@@ -239,6 +246,12 @@ impl Vec3 {
             z: z.into(),
         }
     }
+    fn is_zero(&self) -> bool {
+        self.x.is_zero() && self.y.is_zero() && self.z.is_zero()
+    }
+    fn square(&self) -> Rat {
+        self.x * self.x + self.y * self.y + self.z * self.z
+    }
     fn xy(&self) -> Vec2 {
         Vec2 {
             x: self.x.clone(),
@@ -259,6 +272,10 @@ impl Vec3 {
             y: self.y.as_f64(),
             z: self.z.as_f64(),
         }
+    }
+
+    fn dot(&self, u: &Vec3) -> Rat {
+        self.x * u.x + self.y * u.y + self.z * u.z
     }
 }
 impl std::ops::Add for Vec3 {
@@ -290,7 +307,7 @@ impl std::fmt::Debug for Vec3 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Object {
     position: Vec3,
     velocity: Vec3,
@@ -508,11 +525,17 @@ pub fn solve_part_1(file_content: &str) -> usize {
     )
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 struct Vec3F64 {
     x: f64,
     y: f64,
     z: f64,
+}
+
+impl std::fmt::Debug for Vec3F64 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(x: {:.2}, y: {:.2}, z: {:.2})", self.x, self.y, self.z)
+    }
 }
 
 impl Sum for Vec3F64 {
@@ -540,6 +563,27 @@ impl Vec3F64 {
 
     fn dot(&self, v: &Vec3F64) -> f64 {
         self.x * v.x + self.y * v.y + self.z * v.z
+    }
+
+    fn is_zero(&self) -> bool {
+        self.x == 0. && self.y == 0. && self.z == 0.
+    }
+
+    fn cos(&self, other: &Vec3F64) -> f64 {
+        self.dot(other) / (self.len() * other.len())
+    }
+
+    fn unit(&self) -> Vec3F64 {
+        if self.is_zero() {
+            println!("Warning: unit of zero vector");
+            return Vec3F64::new(1., 0., 0.);
+        }
+        let d = self.len();
+        Vec3F64 {
+            x: self.x / d,
+            y: self.y / d,
+            z: self.z / d,
+        }
     }
 }
 
@@ -602,95 +646,17 @@ impl ObjectF64 {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Weights {
-    weights: [f64; 5],
-    gradient: [f64; 5],
-}
-
-impl Weights {
-    fn adjust(&mut self, position_step: f64, time_step: f64, objects_f64: &[ObjectF64]) -> f64 {
-        let error = self.calculate_gradients(position_step, time_step, objects_f64);
-        self.move_weights(position_step, time_step);
-        error
-    }
-
-    fn move_weights(&mut self, position_step: f64, time_step: f64) {
-        for i in 0..self.weights.len() {
-            let step = if i > 2 { time_step } else { position_step };
-            self.weights[i] = self.weights[i] - self.gradient[i] * step;
-        }
-    }
-
-    fn calculate_gradients(
-        &mut self,
-        position_step: f64,
-        time_step: f64,
-        objects_f64: &[ObjectF64],
-    ) -> f64 {
-        let error = self.get_error(&objects_f64);
-        for i in 0..self.weights.len() {
-            let step = if i > 2 { time_step } else { position_step };
-            let old = self.weights[i];
-            self.weights[i] = old + step;
-            let new_err = self.get_error(&objects_f64);
-            self.weights[i] = old;
-            let gradient = (new_err - error) / step;
-            if gradient < -1e4 {
-                self.gradient[i] = -1.;
-                continue;
-            } else if gradient > 1e4 {
-                self.gradient[i] = 1.;
-                continue;
-            } else {
-                self.gradient[i] = gradient;
-            }
-        }
-        error
-    }
-    fn get_error(&self, objects_f64: &[ObjectF64]) -> f64 {
-        let position = Vec3F64::new(self.weights[0], self.weights[1], self.weights[2]);
-        let velocity_phi = self.weights[3];
-        let velocity_theta = self.weights[4];
-
-        let velocity = Vec3F64::new(
-            velocity_phi.cos() * velocity_theta.cos(),
-            velocity_phi.sin() * velocity_theta.cos(),
-            velocity_theta.sin(),
-        );
-        let rock = ObjectF64 { position, velocity };
-
-        let mut err = 0f64;
-        for obj in objects_f64 {
-            let (min_distance_to_obj_trajectory, _, _) = get_closest_distance(obj, &rock);
-            err = err + min_distance_to_obj_trajectory;
-        }
-        err
-    }
-}
-
-fn get_closest_distance(obj: &ObjectF64, rock: &ObjectF64) -> (f64, f64, f64) {
+fn get_closest_distance(obj: &Object, rock: &Object) -> (Vec3, Rat, Rat) {
     let p = obj.position.clone();
     let u = obj.velocity.clone();
     let r = rock.position.clone();
     let v = rock.velocity.clone();
 
-    if v.len() == 0. {
+    if v.is_zero() {
         let t = (r.dot(&u) - p.dot(&u)) / u.dot(&u);
         let x = p + u.times(t);
-        return ((x - r).len(), t, t);
+        return (x - r, t, t);
     }
-
-    let dot = u.dot(&v).abs();
-
-    let pr = r - p;
-
-    let d = pr.x * (u.y * v.z - u.z * v.y) - pr.y * (u.x * v.z - u.z * v.x)
-        + pr.z * (u.x * v.y - u.y * v.x);
-
-    let d = d.abs();
-
-    let min_d = d / dot;
 
     // p1 = p + u * t1
     // p2 = r + v * t2
@@ -706,112 +672,157 @@ fn get_closest_distance(obj: &ObjectF64, rock: &ObjectF64) -> (f64, f64, f64) {
     let vu = v.dot(&u);
     let uu = u.dot(&u);
     let uv = u.dot(&v);
-    let dp = p - r;
+    let dp = p.clone() - r.clone();
     let dpv = dp.dot(&v);
     let dpu = dp.dot(&u);
 
     let t2 = (dpu * uv - dpv * uu) / (uv * vu - vv * uu);
     let t1 = (vu * t2 - dpu) / uu;
 
-    return (min_d, t1, t2);
+    let p1 = p + u.times(t1);
+    let p2 = r + v.times(t2);
+
+    return (p2 - p1, t1, t2);
+}
+fn get_closest_distance_f64(obj: &ObjectF64, rock: &ObjectF64) -> (Vec3F64, f64, f64) {
+    let p = obj.position.clone();
+    let u = obj.velocity.clone();
+    let r = rock.position.clone();
+    let v = rock.velocity.clone();
+
+    if u.is_zero() && v.is_zero() {
+        let dp = p - r;
+        return (dp, 0., 0.);
+    }
+
+    if v.is_zero() {
+        let t = (r.dot(&u) - p.dot(&u)) / u.dot(&u);
+        let x = p + u.times(t);
+        return ((x - r), t, t);
+    }
+
+    if u.is_zero() {
+        let (dv, t2, t1) = get_closest_distance_f64(rock, obj);
+        return (dv.times(-1.), t1, t2);
+    }
+
+    let vv = v.dot(&v);
+    let uu = u.dot(&u);
+    let uv = u.dot(&v);
+
+    if (uv * uv - vv * uu).abs() == 0. {
+        let t = (p - r).dot(&v) / v.len();
+
+        if t < 0. {
+            let m = p + u.times(-t);
+            let d = r - m;
+            return (d, -t, 0.);
+        }
+
+        let m = r + v.times(t);
+        let d = m - p;
+        return (d, 0., t);
+    }
+
+    let dp = p.clone() - r.clone();
+    let dpv = dp.dot(&v);
+    let dpu = dp.dot(&u);
+
+    let t2 = (dpu * uv - dpv * uu) / (uv * uv - vv * uu);
+    let t1 = (uv * t2 - dpu) / uu;
+
+    let p1 = p + u.times(t1);
+    let p2 = r + v.times(t2);
+
+    return (p2 - p1, t1, t2);
 }
 
-fn get_throw_position_sum(objects: &[Object]) -> i64 {
-    let mut r = rand::thread_rng();
-    let objects_f64 = objects
+fn get_error(objects: &[ObjectF64], times: &[f64; 2], line: &mut ObjectF64) -> f64 {
+    line.position = objects[0].position_at(times[0]);
+    line.velocity = (objects[1].position_at(times[1]) - line.position).unit();
+
+    let mut negative_cost = 0.;
+
+    if times[0] < 0. {
+        negative_cost += times[0].abs();
+    }
+
+    if times[1] < 0. {
+        negative_cost += times[1].abs();
+    }
+
+    objects
         .iter()
-        .map(|x| ObjectF64 {
-            position: x.position.as_f64(),
-            velocity: x.velocity.as_f64(),
+        .map(|o| {
+            let (d, _, _) = get_closest_distance_f64(o, line);
+            d.len()
+        })
+        .sum::<f64>()
+        + negative_cost
+}
+
+fn minimize(mut left: f64, mut right: f64, mut f: impl FnMut(f64) -> f64) -> f64 {
+    let mut right_v = f(right);
+    let mut mid = (left + right) / 2.;
+    let mut mid_v = f(mid);
+
+    while mid_v > right_v {
+        right *= 1.618;
+        right_v = f(right);
+        mid = (left + right) / 2.;
+        mid_v = f(mid);
+    }
+
+    while right > left + 1e-9 {
+        let t1 = left + (right - left) * (1. - 0.618);
+        let t2 = left + (right - left) * 0.618;
+        let t1_v = f(t1);
+        let t2_v = f(t2);
+
+        if t1_v > t2_v {
+            left = t1;
+        } else {
+            right = t2;
+        }
+    }
+
+    right
+}
+
+pub fn solve_part_2(file_content: &str) -> i64 {
+    let mut r = rand::thread_rng();
+    let objects = parse(file_content)
+        .into_iter()
+        .map(|o| ObjectF64 {
+            position: o.position.as_f64(),
+            velocity: o.velocity.as_f64(),
         })
         .collect_vec();
 
-    // weights: [
-    //     132777695020144.16,
-    //     -84061531420895.06,
-    //     76547399128688.84,
-    //     0.19388713982967876,
-    //     0.552358292295493,
-    //     0.2794689019401747,
-    // ],
+    // let (_, t1, t2) = get_closest_distance_f64(&objects[0], &objects[1]);
 
-    let center = objects_f64
-        .iter()
-        .map(|x| x.position.clone().times(1. / objects_f64.len() as f64))
-        .sum::<Vec3F64>();
-
-    let mut w = Weights {
-        weights: [center.x, center.y, center.z, r.gen::<f64>(), r.gen::<f64>()],
-        gradient: [0f64; 5],
+    let mut times = [5., 3.];
+    let mut line = ObjectF64 {
+        position: Vec3F64::new(0., 0., 0.),
+        velocity: Vec3F64::new(0., 0., 0.),
     };
 
-    let max_pos_step = center.x.abs().max(center.y.abs()).max(center.z.abs()) / 1000.;
-
-    let mut it = 0;
-    let mut min_error = 143812995896221140.;
-    let mut last_error = f64::MAX;
-    let mut vel_step = 1e-4;
-    let mut pos_step = 1.;
-
-    let mut last_viewed_error = min_error;
     loop {
-        it += 1;
-        let error = w.calculate_gradients(pos_step, 0.0001, &objects_f64);
+        let t0 = times[0];
+        let new_t1 = minimize(0., 1., |t| get_error(&objects[2..], &[t0, t], &mut line));
+        times[1] = new_t1;
 
-        if error.is_nan() {
-            panic!("NAN");
-        }
+        let t1 = times[1];
+        let new_t0 = minimize(0., 1., |t| get_error(&objects[2..], &[t, t1], &mut line));
+        times[0] = new_t0;
 
-        w.move_weights(pos_step, 0.0001);
-
-        if it % 100000 == 0 {
-            println!(
-                "Error: {error} / {:.2}%,\t{:?}\tStep={pos_step}",
-                (error - last_viewed_error) / last_viewed_error * 100.,
-                &w
-            );
-            last_viewed_error = error;
-        }
-        if error < min_error {
-            min_error = error;
-        }
-        if error > last_error {
-            pos_step /= 2.;
-        } else {
-            pos_step = (pos_step * 1.1).min(max_pos_step);
-        }
-
-        if error < 0.1e-4 {
+        println!("t0: {:.2}, t1: {:.2}", times[0], times[1]);
+        let error = get_error(&objects[2..], &times, &mut line);
+        if error < 1e-9 {
             break;
         }
     }
 
-    w.weights
-        .into_iter()
-        .take(3)
-        .map(|x| x.round() as i64)
-        .sum()
-}
-
-pub fn solve_part_2(file_content: &str) -> i64 {
-    let objects = parse(file_content);
-    let objects_f = objects
-        .iter()
-        .map(|x| ObjectF64 {
-            position: x.position.as_f64(),
-            velocity: x.velocity.as_f64(),
-        })
-        .collect_vec();
-    for i in 0..objects_f.len() {
-        for j in (i + 1)..objects_f.len() {
-            let a = &objects_f[i];
-            let b = &objects_f[j];
-            let (min_d, t1, t2) = get_closest_distance(&a, &b);
-            let ap = a.position_at(t1);
-            let bp = b.position_at(t2);
-            println!("{i}-{j}\t{t1}\t{t2}\t{min_d}\t{ap:?}\t{bp:?}");
-        }
-    }
     0
 }
 
@@ -819,7 +830,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
 mod tests {
     use rstest::rstest;
 
-    use super::{parse, solve_part_2, solve_xy};
+    use super::{parse, solve_part_2, solve_xy, ObjectF64, Vec3F64};
 
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
@@ -841,8 +852,85 @@ mod tests {
     }
 
     #[rstest]
-    // #[case(EXAMPLE, 47)]
-    #[case(ACTUAL, 0)]
+    #[case(
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., 0.), 0., 0.)
+    )]
+    #[case(
+        Vec3F64::new(0., 0., 1.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., -1.), 0., 0.)
+    )]
+    #[case(
+        Vec3F64::new(0., 0., 2.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., -2.), 1., 0.)
+    )]
+    #[case(
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(0., 0., 1.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., 1.), 0., 1.)
+    )]
+    #[case(
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., 0.), 1., 0.)
+    )]
+    #[case(
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        (Vec3F64::new(0., 0., 0.), 0., 1.)
+    )]
+    #[case(
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(1., 0., 0.),
+        Vec3F64::new(0., 1., 1.),
+        Vec3F64::new(0., 1., 0.),
+        (Vec3F64::new(0., 0., 1.), -1., -1.)
+    )]
+    #[case(
+        Vec3F64::new(0., 0., 0.),
+        Vec3F64::new(3., 4., 0.),
+        Vec3F64::new(0., 0., 1.),
+        Vec3F64::new(1., 1., 0.),
+        (Vec3F64::new(0., 0., 1.), 0., 0.)
+    )]
+    fn test_distance(
+        #[case] a_pos: Vec3F64,
+        #[case] a_vel: Vec3F64,
+        #[case] b_pos: Vec3F64,
+        #[case] b_vel: Vec3F64,
+        #[case] expected: (Vec3F64, f64, f64),
+    ) {
+        let res = super::get_closest_distance_f64(
+            &ObjectF64 {
+                position: a_pos,
+                velocity: a_vel,
+            },
+            &ObjectF64 {
+                position: b_pos,
+                velocity: b_vel,
+            },
+        );
+        assert_eq!(res, expected);
+    }
+
+    #[rstest]
+    #[case(EXAMPLE, 47)]
+    // #[case(ACTUAL, 0)]
     fn test_part2(#[case] input: &str, #[case] expected: i64) {
         let res = solve_part_2(input);
         assert_eq!(res, expected);
