@@ -5,13 +5,11 @@ static WORDY_DIGITS: [&str; 10] = [
 ];
 
 fn process_line_1(line: &str) -> u32 {
-    let mut digits_iter = (0..line.len()).map(|i| &line[i..]).filter_map(|line| {
-        let f = line.as_bytes()[0];
-        match f {
-            b'0'..=b'9' => Some(f - b'0'),
-            _ => None,
-        }
+    let mut digits_iter = line.as_bytes().iter().filter_map(|f| match f {
+        b'0'..=b'9' => Some(f - b'0'),
+        _ => None,
     });
+
     let a = digits_iter.next().unwrap();
     let b = digits_iter.last().unwrap_or(a);
 
@@ -73,15 +71,21 @@ pub fn solve_task1(file_content: &str) -> u32 {
 pub fn solve_task2(file_content: &str) -> u32 {
     solve(file_content, process_line_2)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
     const INPUT: &str = include_str!("./y23d01/example.txt");
     const INPUT2: &str = include_str!("./y23d01/example2.txt");
+    const INPUT3: &str = include_str!("./y23d01/example3.txt");
     const ACTUAL: &str = include_str!("../../benches/y23/y23d01.txt");
     #[test]
     fn test_task1() {
         assert_eq!(format!("{}", solve_task1(INPUT)), "142");
+    }
+    #[test]
+    fn test_task3() {
+        assert_eq!(format!("{}", solve_task1(INPUT3)), "142");
     }
 
     #[test]
@@ -97,5 +101,9 @@ mod tests {
     #[test]
     fn test_task2_actual() {
         assert_eq!(format!("{}", solve_task2(ACTUAL)), "53868");
+    }
+    #[test]
+    fn test_task2_actual2() {
+        assert_eq!(format!("{}", solve_task2(INPUT3)), "0");
     }
 }
