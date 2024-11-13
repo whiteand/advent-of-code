@@ -133,7 +133,7 @@ where
     }
 }
 
-fn get_score(grid: &Vec<Vec<u8>>, row: usize, col: usize) -> usize {
+fn get_score(grid: &[Vec<u8>], row: usize, col: usize) -> usize {
     let cols = grid[0].len();
     let top = (0..row)
         .rev()
