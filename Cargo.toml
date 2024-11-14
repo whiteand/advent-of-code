@@ -7,9 +7,10 @@ edition = "2021"
 
 [workspace]
 members = [
+    "y15/d05",
+    "y15/d06",
     "y23/d17",
     "y18/d01",
-    "y15/d05",
     "y23/d18",
     "y23/d19",
     "y23/d20",
@@ -21,10 +22,10 @@ members = [
 ]
 
 [workspace.dependencies]
-itertools = "0.10.5"
-criterion = "0.4.0"
+itertools = "0.13.0"
+criterion = "0.5.1"
 nom = "7.1.3"
-rstest = "0.18.2"
+rstest = "0.23.0"
 
 [dependencies]
 itertools.workspace = true
