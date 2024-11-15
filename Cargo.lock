@@ -1306,6 +1306,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "y15d10"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "itertools 0.13.0",
+]
+
+[[package]]
 name = "y18d01"
 version = "0.1.0"
 dependencies = [
