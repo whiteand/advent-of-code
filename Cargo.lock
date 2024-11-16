@@ -241,6 +241,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "edit-distance"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3f497e87b038c09a155dfd169faa5ec940d0644635555ef6bd464ac20e97397"
+
+[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1378,6 +1384,7 @@ name = "y15d19"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "edit-distance",
  "itertools 0.13.0",
 ]
 
