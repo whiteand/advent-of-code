@@ -1,5 +1,5 @@
 pub fn solve_part_1(file_content: &str) -> usize {
-    let (mut xs, mut ys) = parse(file_content);
+    let (mut xs, mut ys, _) = parse(file_content);
 
     xs.sort_unstable();
     ys.sort_unstable();
@@ -7,8 +7,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
     xs.into_iter().zip(ys).map(|(a, b)| a.abs_diff(b)).sum()
 }
 pub fn solve_part_2(file_content: &str) -> usize {
-    let (xs, ys) = parse(file_content);
-    let max_y = ys.iter().copied().max().unwrap_or_default();
+    let (xs, ys, max_y) = parse(file_content);
     let mut cnt = vec![0; max_y + 1];
     for y in ys {
         cnt[y] += 1;
@@ -20,18 +19,21 @@ pub fn solve_part_2(file_content: &str) -> usize {
         .sum()
 }
 
-fn parse(file_content: &str) -> (Vec<usize>, Vec<usize>) {
+fn parse(file_content: &str) -> (Vec<usize>, Vec<usize>, usize) {
     let mut xs = Vec::with_capacity(1000);
     let mut ys = Vec::with_capacity(1000);
-    let mut bytes = file_content.bytes().into_iter();
     let mut state = 0usize;
     let mut nums: [usize; 2] = [0, 0];
-    while let Some(b) = bytes.next() {
+    let mut max_y = 0;
+    for b in file_content.bytes() {
         match b {
             b'\n' => {
                 state = 0;
                 xs.push(nums[0]);
                 ys.push(nums[1]);
+                if nums[1] > max_y {
+                    max_y = nums[1];
+                }
                 nums[0] = 0;
                 nums[1] = 0;
             }
@@ -46,7 +48,7 @@ fn parse(file_content: &str) -> (Vec<usize>, Vec<usize>) {
         }
     }
 
-    (xs, ys)
+    (xs, ys, max_y)
 }
 
 #[cfg(test)]
