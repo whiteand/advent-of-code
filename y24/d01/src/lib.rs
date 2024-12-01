@@ -21,17 +21,32 @@ pub fn solve_part_2(file_content: &str) -> usize {
 }
 
 fn parse(file_content: &str) -> (Vec<usize>, Vec<usize>) {
-    file_content
-        .lines()
-        .filter(|x| !x.is_empty())
-        .map(|line| {
-            let (x, y) = line.split_once("   ").unwrap();
-            (
-                x.parse::<u64>().unwrap() as usize,
-                y.parse::<u64>().unwrap() as usize,
-            )
-        })
-        .unzip()
+    let mut xs = Vec::with_capacity(1000);
+    let mut ys = Vec::with_capacity(1000);
+    let mut bytes = file_content.bytes().into_iter();
+    let mut state = 0usize;
+    let mut nums: [usize; 2] = [0, 0];
+    while let Some(b) = bytes.next() {
+        match b {
+            b'\n' => {
+                state = 0;
+                xs.push(nums[0]);
+                ys.push(nums[1]);
+                nums[0] = 0;
+                nums[1] = 0;
+            }
+            b'0'..=b'9' => {
+                nums[state] *= 10;
+                nums[state] += (b - b'0') as usize;
+            }
+            b' ' => {
+                state = 1;
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    (xs, ys)
 }
 
 #[cfg(test)]
