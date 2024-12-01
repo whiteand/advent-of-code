@@ -1,37 +1,37 @@
-use itertools::Itertools;
-
-pub fn solve_part_1(file_content: &str) -> u64 {
+pub fn solve_part_1(file_content: &str) -> usize {
     let (mut xs, mut ys) = parse(file_content);
 
     xs.sort_unstable();
     ys.sort_unstable();
 
-    xs.into_iter()
-        .zip(ys)
-        .map(|(a, b)| if a > b { a - b } else { b - a })
-        .sum()
+    xs.into_iter().zip(ys).map(|(a, b)| a.abs_diff(b)).sum()
 }
-pub fn solve_part_2(file_content: &str) -> u64 {
+pub fn solve_part_2(file_content: &str) -> usize {
     let (xs, ys) = parse(file_content);
-    let ys_cnt = ys.into_iter().counts();
+    let max_y = ys.iter().copied().max().unwrap_or_default();
+    let mut cnt = vec![0; max_y + 1];
+    for y in ys {
+        cnt[y] += 1;
+    }
+
     xs.into_iter()
-        .map(|x| ys_cnt.get(&x).copied().unwrap_or_default() as u64 * x)
+        .filter(|x| *x <= max_y)
+        .map(|x| cnt[x] * x)
         .sum()
 }
 
-fn parse(file_content: &str) -> (Vec<u64>, Vec<u64>) {
-    let mut xs = vec![];
-    let mut ys = vec![];
-    for (x, y) in file_content.lines().filter(|x| !x.is_empty()).map(|line| {
-        line.split_ascii_whitespace()
-            .map(|x| x.parse().unwrap())
-            .collect_tuple::<(u64, u64)>()
-            .unwrap()
-    }) {
-        xs.push(x);
-        ys.push(y);
-    }
-    (xs, ys)
+fn parse(file_content: &str) -> (Vec<usize>, Vec<usize>) {
+    file_content
+        .lines()
+        .filter(|x| !x.is_empty())
+        .map(|line| {
+            let (x, y) = line.split_once("   ").unwrap();
+            (
+                x.parse::<u64>().unwrap() as usize,
+                y.parse::<u64>().unwrap() as usize,
+            )
+        })
+        .unzip()
 }
 
 #[cfg(test)]
