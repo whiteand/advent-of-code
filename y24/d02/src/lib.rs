@@ -40,34 +40,37 @@ fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
         return true;
     }
     let order = get_order(report, tolerates);
-    is_safe_dp(report, tolerates, order)
+    is_safe_dp(report, 0, tolerates, order)
 }
 
-fn is_safe_dp(report: &mut [usize], tolerates: usize, order: Ordering) -> bool {
-    let mut bad = 0;
-    let mut last = 0;
-    let mut i = 1;
-
-    // assuming that first element is valid level
-    // invalid levels will be collected into `bad` variable
-    while i < report.len() && bad <= tolerates {
-        if valid_neighbours(report[last], report[i], order) {
-            last = i;
-            i += 1;
-            continue;
+fn is_safe_dp(report: &mut [usize], i: usize, tolerates: usize, order: Ordering) -> bool {
+    if report.len() - i <= tolerates + 1 {
+        return true;
+    }
+    for next in (1..=(tolerates + 1).min(report.len())).map(|j| i + j) {
+        if valid_neighbours(report[i], report[next], order) {
+            if is_safe_dp(report, next, tolerates + 1 - (next - i), order) {
+                return true;
+            }
         }
-        bad += 1;
-        i += 1;
+    }
+    if tolerates <= 0 {
+        return false;
+    }
+    if i == 0 {
+        return is_safe_dp(report, i + 1, tolerates - 1, order);
     }
 
-    if bad <= tolerates {
-        true
-    } else if tolerates > 0 {
-        // Removing first element
-        is_safe_dp(&mut report[1..], tolerates - 1, order)
-    } else {
-        false
+    for skip_past in 1..=(tolerates.min(i + 1)) {
+        let prev = i - skip_past;
+
+        if valid_neighbours(report[prev], report[i + 1], order) {
+            if is_safe_dp(report, i + 1, tolerates - skip_past, order) {
+                return true;
+            }
+        }
     }
+    return false;
 }
 
 fn valid_neighbours(prev: usize, next: usize, order: Ordering) -> bool {
