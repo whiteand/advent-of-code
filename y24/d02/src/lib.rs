@@ -1,7 +1,5 @@
 use std::cmp::Ordering;
 
-use itertools::Itertools;
-
 pub fn solve_part_1(file_content: &str) -> usize {
     solve::<0>(file_content)
 }
@@ -10,19 +8,24 @@ pub fn solve_part_2(file_content: &str) -> usize {
 }
 
 fn solve<const TOLERATES: usize>(file_content: &str) -> usize {
-    file_content
-        .lines()
-        .filter(|line| !line.is_empty())
-        .map(|line| {
-            line.split_ascii_whitespace()
-                .map(|x| x.parse::<usize>().unwrap())
-                .collect_vec()
-        })
-        .filter_map(|mut report| is_safe(&mut report, TOLERATES).then_some(1))
-        .count()
+    let mut report = Vec::with_capacity(10);
+    let mut total = 0;
+    for line in file_content.lines().filter(|line| !line.is_empty()) {
+        let nums = line
+            .split_ascii_whitespace()
+            .map(|x| x.parse::<usize>().unwrap());
+        report.extend(nums);
+        if is_safe(&mut report, TOLERATES) {
+            total += 1;
+        }
+        report.clear();
+    }
+
+    total
 }
 
 fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
+    // Trivial case
     if report.len() <= tolerates + 1 {
         return true;
     }
@@ -31,10 +34,10 @@ fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
     let order = get_order(report, tolerates);
     let mut i = 1;
 
-    // assuming that first element is good
+    // assuming that first element is valid level
     // invalid levels will be collected into `bad` variable
     while i < report.len() && bad <= tolerates {
-        if good_order(report[last], report[i], order) {
+        if valid_neighbours(report[last], report[i], order) {
             last = i;
             i += 1;
             continue;
@@ -53,15 +56,17 @@ fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
     }
 }
 
-fn good_order(prev: usize, next: usize, order: Ordering) -> bool {
+fn valid_neighbours(prev: usize, next: usize, order: Ordering) -> bool {
     next.cmp(&prev) == order && next.abs_diff(prev) <= 3
 }
+
 /// Makes a voting of first (tolerates + 1) items orderings
+/// to define what is the expected order of the report
 fn get_order(report: &[usize], tolerates: usize) -> Ordering {
     let votes = (tolerates + 2).min(report.len() - 1);
-    let incs = (0..votes).filter(|&i| report[i] < report[i + 1]).count();
+    let greaters = (0..votes).filter(|&i| report[i] < report[i + 1]).count();
 
-    if incs >= votes - incs {
+    if greaters >= votes - greaters {
         Ordering::Greater
     } else {
         Ordering::Less
