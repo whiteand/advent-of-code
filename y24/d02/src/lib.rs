@@ -24,14 +24,28 @@ fn solve<const TOLERATES: usize>(file_content: &str) -> usize {
     total
 }
 
+// [1,2,3,4]
+// table:
+//    [1,2,3,4]
+// t\i 0 1 2 3
+//   0 ?
+//   1
+// table[tolerations][index] = is_proper(index, index+1)
+//    ? table[tolerations][index + 1] || is_proper(index, index + 2) && table[tolerations][index + 2]
+//    : table[tolerations-1][index + 1]
+
 fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
     // Trivial case
     if report.len() <= tolerates + 1 {
         return true;
     }
+    let order = get_order(report, tolerates);
+    is_safe_dp(report, tolerates, order)
+}
+
+fn is_safe_dp(report: &mut [usize], tolerates: usize, order: Ordering) -> bool {
     let mut bad = 0;
     let mut last = 0;
-    let order = get_order(report, tolerates);
     let mut i = 1;
 
     // assuming that first element is valid level
@@ -50,7 +64,7 @@ fn is_safe(report: &mut [usize], tolerates: usize) -> bool {
         true
     } else if tolerates > 0 {
         // Removing first element
-        is_safe(&mut report[1..], tolerates - 1)
+        is_safe_dp(&mut report[1..], tolerates - 1, order)
     } else {
         false
     }
