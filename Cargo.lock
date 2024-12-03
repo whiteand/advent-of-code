@@ -1481,3 +1481,12 @@ dependencies = [
  "criterion",
  "itertools 0.13.0",
 ]
+
+[[package]]
+name = "y24d03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "itertools 0.13.0",
+ "regex",
+]
