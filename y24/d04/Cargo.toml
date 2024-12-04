@@ -1,18 +1,18 @@
 [package]
-name = "y{{year}}d{{day}}"
+name = "y24d04"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+advent_utils.workspace = true
 itertools.workspace = true
 criterion.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
-
 [[bench]]
-name = "y{{year}}d{{day}}"
-path = "benches/y{{year}}d{{day}}.rs"
+name = "y24d04"
+path = "benches/y24d04.rs"
 harness = false
