@@ -7,40 +7,37 @@ use nom::{
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    let (_, (comparisons, sequences)) = parse(file_content).expect("should be valid");
-    let mut buf = Vec::with_capacity(20);
-    let mut total = 0usize;
-    for seq in sequences {
-        buf.clear();
-        buf.extend_from_slice(&seq);
-        sort_by(&comparisons, &mut buf);
-        if seq.iter().enumerate().all(|(i, x)| *x == buf[i]) {
-            let middle = seq.len() / 2;
-            total += seq[middle];
-        }
-    }
-    total
+    solve(file_content, |res| {
+        res.map(|x| x[x.len() / 2]).unwrap_or_default()
+    })
 }
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let (_, (comparisons, sequences)) = parse(file_content).expect("should be valid");
-    let mut buf = Vec::with_capacity(20);
-    let mut total = 0usize;
-    for seq in sequences {
-        buf.clear();
-        buf.extend_from_slice(&seq);
-        sort_by(&comparisons, &mut buf);
-        if seq.iter().enumerate().any(|(i, x)| *x != buf[i]) {
-            let middle = buf.len() / 2;
-            total += buf[middle];
-        }
-    }
-    total
+    solve(file_content, |res| {
+        res.err().map(|x| x[x.len() / 2]).unwrap_or_default()
+    })
 }
 
-fn sort_by(comparisons: &[(usize, usize)], list: &mut [usize]) {
-    list.sort_unstable_by(|a, b| {
+fn solve(file_content: &str, f: impl Fn(Result<&[usize], &[usize]>) -> usize) -> usize {
+    let (_, (comparisons, sequences)) = parse(file_content).expect("should be valid");
+    let mut buf = Vec::with_capacity(20);
+    sequences
+        .into_iter()
+        .map(|seq| f(check(&comparisons, &mut buf, &seq)))
+        .sum()
+}
+
+/// Returs  Ok(slice) if slice was ordered
+/// Return Err(sorted_slice) if slice was not ordered
+fn check<'a, 'b>(
+    comparisons: &[(usize, usize)],
+    buf: &'a mut Vec<usize>,
+    list: &'b [usize],
+) -> Result<&'b [usize], &'a [usize]> {
+    buf.clear();
+    buf.extend_from_slice(list);
+    buf.sort_unstable_by(|a, b| {
         let a = *a;
         let b = *b;
         for (x, y) in comparisons.iter().copied() {
@@ -53,6 +50,11 @@ fn sort_by(comparisons: &[(usize, usize)], list: &mut [usize]) {
         }
         Ordering::Equal
     });
+    if list.iter().enumerate().all(|(i, x)| *x == buf[i]) {
+        return Ok(list);
+    } else {
+        return Err(buf.as_slice());
+    }
 }
 
 fn parse(input: &str) -> IResult<&str, (Vec<(usize, usize)>, Vec<Vec<usize>>)> {
