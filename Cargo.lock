@@ -1619,3 +1619,14 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "y24d05"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "itertools 0.13.0",
+ "nom",
+ "tracing",
+ "tracing-subscriber",
+]
