@@ -1630,3 +1630,14 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "y24d06"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-subscriber",
+]

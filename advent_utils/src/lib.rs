@@ -13,6 +13,13 @@ impl<T> Grid<T> {
         (0..self.rows_len())
             .flat_map(|r| (0..self.row(r).map_or(0, |r| r.len())).map(move |c| (r, c)))
     }
+    pub fn map<U>(&self, f: impl Fn(&T, usize, usize) -> U) -> Grid<U> {
+        let f = &f;
+        self.rows()
+            .enumerate()
+            .map(|(i, row)| row.into_iter().enumerate().map(move |(j, x)| f(x, i, j)))
+            .collect()
+    }
     #[inline(always)]
     pub fn cols(&self, row: usize) -> usize {
         let start = self.row_start_indexes[row];
@@ -115,6 +122,10 @@ impl<T> Grid<T> {
     #[inline(always)]
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.arr.iter()
+    }
+    #[inline(always)]
+    pub fn into_iter(self) -> impl Iterator<Item = T> {
+        self.arr.into_iter()
     }
     #[inline(always)]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
