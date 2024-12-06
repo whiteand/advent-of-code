@@ -1567,8 +1567,8 @@ dependencies = [
 name = "y23d24"
 version = "0.1.0"
 dependencies = [
+ "advent_utils",
  "criterion",
- "glam",
  "itertools 0.13.0",
  "rand",
  "rstest 0.23.0",
