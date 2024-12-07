@@ -29,14 +29,11 @@ fn solve<Ops: Operation>(file_content: &str) -> u128 {
 
 // #[tracing::instrument(ret)]
 fn can_be_constructed<Ops: Operation>(result: u128, operands: &[u128]) -> bool {
-    let Some((last, rest)) = operands.split_last() else {
-        return false;
-    };
-    let last = *last;
-    if rest.is_empty() {
-        result == last
-    } else {
-        Ops::reverse(result, last).any(|prev_result| can_be_constructed::<Ops>(prev_result, rest))
+    match operands {
+        [] => false,
+        [last] => result == *last,
+        [rest @ .., last] => Ops::reverse(result, *last)
+            .any(|prev_result| can_be_constructed::<Ops>(prev_result, rest)),
     }
 }
 
