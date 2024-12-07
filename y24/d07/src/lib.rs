@@ -11,9 +11,18 @@ pub fn solve_part_2(file_content: &str) -> u128 {
 struct AddMul;
 impl Operations for AddMul {
     fn reverse(result: u128, op: u128) -> impl Iterator<Item = u128> {
-        std::iter::from_fn(move || (result % op == 0).then(|| result / op))
-            .take(1)
-            .chain(std::iter::from_fn(move || (result >= op).then(|| result - op)).take(1))
+        let mut state = 0;
+        std::iter::from_fn(move || match state {
+            0 => {
+                state += 1;
+                (result % op == 0).then(|| result / op)
+            }
+            1 => {
+                state += 1;
+                (result >= op).then(|| result - op)
+            }
+            _ => None,
+        })
     }
 }
 struct AddMulConcat;
