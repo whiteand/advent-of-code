@@ -1,0 +1,21 @@
+[package]
+name = "y15d22"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advent_utils.workspace = true
+criterion.workspace = true
+itertools.workspace = true
+rstest.workspace = true
+smallvec = "1.13.2"
+tracing-subscriber.workspace = true
+tracing.workspace = true
+
+
+[[bench]]
+name = "y15d22"
+path = "benches/y15d22.rs"
+harness = false
