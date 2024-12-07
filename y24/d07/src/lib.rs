@@ -1,19 +1,18 @@
-use std::marker::PhantomData;
-
 type Int = u64;
 
-#[tracing::instrument(skip(file_content))]
+#[inline(always)]
 pub fn solve_part_1(file_content: &str) -> Int {
     solve::<Or<Mul, Add>>(file_content)
 }
 
-#[tracing::instrument(skip(file_content))]
+#[inline(always)]
 pub fn solve_part_2(file_content: &str) -> Int {
     solve::<Or<Concat, Or<Mul, Add>>>(file_content)
 }
 
-fn solve<O: Operation>(file_content: &str) -> Int {
-    let mut buf = Vec::with_capacity(20);
+#[inline(always)]
+fn solve<O: Op>(file_content: &str) -> Int {
+    let mut buf = Vec::with_capacity(16);
     file_content
         .lines()
         .filter_map(|line| {
@@ -30,8 +29,8 @@ fn solve<O: Operation>(file_content: &str) -> Int {
         .sum()
 }
 
-// #[tracing::instrument(ret)]
-fn can_be_constructed<O: Operation>(result: Int, operands: &[Int]) -> bool {
+#[inline(never)]
+fn can_be_constructed<O: Op>(result: Int, operands: &[Int]) -> bool {
     match operands {
         [] => false,
         [last] => result == *last,
@@ -42,10 +41,10 @@ fn can_be_constructed<O: Operation>(result: Int, operands: &[Int]) -> bool {
 }
 
 macro_rules! impl_op {
-    ($id:ident, $res:ident, $op:ident, $expr:expr) => {
+    ($id:ident, $res:ident, $operand:ident, $expr:expr) => {
         struct $id;
-        impl Operation for $id {
-            fn reverse($res: Int, $op: Int) -> impl Iterator<Item = Int> {
+        impl Op for $id {
+            fn reverse($res: Int, $operand: Int) -> impl Iterator<Item = Int> {
                 std::iter::from_fn(move || $expr).take(1)
             }
         }
@@ -55,14 +54,14 @@ impl_op!(Mul, result, op, (result % op == 0).then(|| result / op));
 impl_op!(Add, result, op, (result >= op).then(|| result - op));
 impl_op!(Concat, result, op, deconcat(result, op));
 
-struct Or<A, B>(PhantomData<(A, B)>);
-impl<A: Operation, B: Operation> Operation for Or<A, B> {
+struct Or<A, B>((A, B));
+impl<A: Op, B: Op> Op for Or<A, B> {
     fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int> {
         A::reverse(result, op).chain(B::reverse(result, op))
     }
 }
 
-trait Operation {
+trait Op {
     fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int>;
 }
 
