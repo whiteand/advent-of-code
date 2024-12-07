@@ -1,34 +1,37 @@
 use std::marker::PhantomData;
 
+type Int = u64;
+
 #[tracing::instrument(skip(file_content))]
-pub fn solve_part_1(file_content: &str) -> u128 {
+pub fn solve_part_1(file_content: &str) -> Int {
     solve::<Or<Mul, Add>>(file_content)
 }
 
 #[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> u128 {
+pub fn solve_part_2(file_content: &str) -> Int {
     solve::<Or<Concat, Or<Mul, Add>>>(file_content)
 }
 
-fn solve<Ops: Operation>(file_content: &str) -> u128 {
+fn solve<Ops: Operation>(file_content: &str) -> Int {
     let mut buf = Vec::with_capacity(20);
     file_content
         .lines()
         .filter_map(|line| {
             let (test_s, eq_s) = line.split_once(": ")?;
-            let test = test_s.parse::<u128>().ok()?;
+            let test = test_s.parse::<Int>().ok()?;
             buf.clear();
             buf.extend(
                 eq_s.split_ascii_whitespace()
-                    .map(|x| x.parse::<u128>().unwrap()),
+                    .map(|x| x.parse::<Int>().unwrap()),
             );
+
             can_be_constructed::<Ops>(test, &buf).then_some(test)
         })
         .sum()
 }
 
 // #[tracing::instrument(ret)]
-fn can_be_constructed<Ops: Operation>(result: u128, operands: &[u128]) -> bool {
+fn can_be_constructed<Ops: Operation>(result: Int, operands: &[Int]) -> bool {
     match operands {
         [] => false,
         [last] => result == *last,
@@ -41,7 +44,7 @@ macro_rules! impl_op {
     ($id:ident, $res:ident, $op:ident, $expr:expr) => {
         struct $id;
         impl Operation for $id {
-            fn reverse($res: u128, $op: u128) -> impl Iterator<Item = u128> {
+            fn reverse($res: Num, $op: Num) -> impl Iterator<Item = Num> {
                 std::iter::from_fn(move || $expr).take(1)
             }
         }
@@ -53,16 +56,16 @@ impl_op!(Concat, result, op, trim_suffix(result, op));
 
 struct Or<A, B>(PhantomData<(A, B)>);
 impl<A: Operation, B: Operation> Operation for Or<A, B> {
-    fn reverse(result: u128, op: u128) -> impl Iterator<Item = u128> {
+    fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int> {
         A::reverse(result, op).chain(B::reverse(result, op))
     }
 }
 
 trait Operation {
-    fn reverse(result: u128, op: u128) -> impl Iterator<Item = u128>;
+    fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int>;
 }
 
-fn trim_suffix(mut long: u128, mut short: u128) -> Option<u128> {
+fn trim_suffix(mut long: Int, mut short: Int) -> Option<Int> {
     if short == 0 {
         return (long % 10 == 0).then_some(long / 10);
     }
