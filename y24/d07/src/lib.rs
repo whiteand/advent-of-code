@@ -12,7 +12,7 @@ pub fn solve_part_2(file_content: &str) -> Int {
     solve::<Or<Concat, Or<Mul, Add>>>(file_content)
 }
 
-fn solve<Ops: Operation>(file_content: &str) -> Int {
+fn solve<O: Operation>(file_content: &str) -> Int {
     let mut buf = Vec::with_capacity(20);
     file_content
         .lines()
@@ -25,18 +25,19 @@ fn solve<Ops: Operation>(file_content: &str) -> Int {
                     .map(|x| x.parse::<Int>().unwrap()),
             );
 
-            can_be_constructed::<Ops>(test, &buf).then_some(test)
+            can_be_constructed::<O>(test, &buf).then_some(test)
         })
         .sum()
 }
 
 // #[tracing::instrument(ret)]
-fn can_be_constructed<Ops: Operation>(result: Int, operands: &[Int]) -> bool {
+fn can_be_constructed<O: Operation>(result: Int, operands: &[Int]) -> bool {
     match operands {
         [] => false,
         [last] => result == *last,
-        [rest @ .., last] => Ops::reverse(result, *last)
-            .any(|prev_result| can_be_constructed::<Ops>(prev_result, rest)),
+        [rest @ .., last] => {
+            O::reverse(result, *last).any(|prev_result| can_be_constructed::<O>(prev_result, rest))
+        }
     }
 }
 
@@ -44,7 +45,7 @@ macro_rules! impl_op {
     ($id:ident, $res:ident, $op:ident, $expr:expr) => {
         struct $id;
         impl Operation for $id {
-            fn reverse($res: Num, $op: Num) -> impl Iterator<Item = Num> {
+            fn reverse($res: Int, $op: Int) -> impl Iterator<Item = Int> {
                 std::iter::from_fn(move || $expr).take(1)
             }
         }
@@ -52,7 +53,7 @@ macro_rules! impl_op {
 }
 impl_op!(Mul, result, op, (result % op == 0).then(|| result / op));
 impl_op!(Add, result, op, (result >= op).then(|| result - op));
-impl_op!(Concat, result, op, trim_suffix(result, op));
+impl_op!(Concat, result, op, deconcat(result, op));
 
 struct Or<A, B>(PhantomData<(A, B)>);
 impl<A: Operation, B: Operation> Operation for Or<A, B> {
@@ -65,15 +66,15 @@ trait Operation {
     fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int>;
 }
 
-fn trim_suffix(mut long: Int, mut short: Int) -> Option<Int> {
-    if short == 0 {
-        return (long % 10 == 0).then_some(long / 10);
+fn deconcat(mut num: Int, mut suffix: Int) -> Option<Int> {
+    if suffix == 0 {
+        return (num % 10 == 0).then_some(num / 10);
     }
-    while long % 10 == short % 10 && short > 0 {
-        long /= 10;
-        short /= 10;
+    while num % 10 == suffix % 10 && suffix > 0 {
+        num /= 10;
+        suffix /= 10;
     }
-    (short == 0).then_some(long)
+    (suffix == 0).then_some(num)
 }
 
 #[cfg(test)]
