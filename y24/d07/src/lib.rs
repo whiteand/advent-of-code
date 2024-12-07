@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 type Int = u64;
 
 #[inline(always)]
@@ -35,7 +37,7 @@ fn can_be_constructed<O: Op>(result: Int, operands: &[Int]) -> bool {
         [] => false,
         [last] => result == *last,
         [rest @ .., last] => {
-            O::reverse(result, *last).any(|prev_result| can_be_constructed::<O>(prev_result, rest))
+            O::rev(result, *last).any(|prev_result| can_be_constructed::<O>(prev_result, rest))
         }
     }
 }
@@ -44,7 +46,7 @@ macro_rules! impl_op {
     ($id:ident, $res:ident, $operand:ident, $expr:expr) => {
         struct $id;
         impl Op for $id {
-            fn reverse($res: Int, $operand: Int) -> impl Iterator<Item = Int> {
+            fn rev($res: Int, $operand: Int) -> impl Iterator<Item = Int> {
                 std::iter::from_fn(move || $expr).take(1)
             }
         }
@@ -56,24 +58,29 @@ impl_op!(Concat, result, op, deconcat(result, op));
 
 struct Or<A, B>((A, B));
 impl<A: Op, B: Op> Op for Or<A, B> {
-    fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int> {
-        A::reverse(result, op).chain(B::reverse(result, op))
+    fn rev(r: Int, a: Int) -> impl Iterator<Item = Int> {
+        A::rev(r, a).chain(B::rev(r, a))
     }
 }
 
 trait Op {
-    fn reverse(result: Int, op: Int) -> impl Iterator<Item = Int>;
+    fn rev(r: Int, a: Int) -> impl Iterator<Item = Int>;
 }
 
-fn deconcat(mut num: Int, mut suffix: Int) -> Option<Int> {
-    if suffix == 0 {
-        return (num % 10 == 0).then_some(num / 10);
-    }
-    while num % 10 == suffix % 10 && suffix > 0 {
-        num /= 10;
-        suffix /= 10;
-    }
-    (suffix == 0).then_some(num)
+fn prefixes(n: Int) -> impl Iterator<Item = Int> {
+    std::iter::successors(Some(n), |&x| Some(x / 10)).take_while(|&x| x > 0)
+}
+#[inline(always)]
+fn deconcat(long: Int, suffix: Int) -> Option<Int> {
+    use itertools::EitherOrBoth::*;
+    prefixes(long)
+        .zip_longest(prefixes(suffix))
+        .take_while(|x| match x {
+            Both(a, b) => a % 10 == b % 10,
+            Left(_) => true,
+            Right(_) => false,
+        })
+        .find_map(|x| x.just_left())
 }
 
 #[cfg(test)]
@@ -81,6 +88,19 @@ mod tests {
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
+
+    #[test]
+    fn test_deconcat() {
+        let _guard = tracing::subscriber::set_default(
+            tracing_subscriber::FmtSubscriber::builder()
+                .without_time()
+                .finish(),
+        );
+        assert_eq!(super::deconcat(123, 32), None);
+        assert_eq!(super::deconcat(123, 4123), None);
+        assert_eq!(super::deconcat(123, 23), Some(1));
+    }
+
     #[test]
     fn test_part1() {
         let _guard = tracing::subscriber::set_default(

@@ -1660,6 +1660,7 @@ name = "y24d07"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "itertools 0.13.0",
  "tracing",
  "tracing-subscriber",
 ]
