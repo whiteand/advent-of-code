@@ -2,7 +2,7 @@
 
 ## TODOS
 
-- [ ] Add this crate to the global `Cargo.toml` file path.
+- [x] Add this crate to the global `Cargo.toml` file path.
 
 ```
 members = [
