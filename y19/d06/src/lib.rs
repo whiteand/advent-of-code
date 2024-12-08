@@ -1,4 +1,4 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::HashMap;
 
 use itertools::Itertools;
 use nom::{
@@ -9,7 +9,7 @@ use nom::{
     IResult,
 };
 use petgraph::{
-    graph::{DiGraph, NodeIndex},
+    graph::{DiGraph, UnGraph},
     visit::IntoNodeIdentifiers,
 };
 
@@ -50,49 +50,41 @@ pub fn solve_part_1(file_content: &str) -> usize {
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
     let (_, pairs) = parse(file_content).unwrap();
+    let planets_idx = pairs
+        .iter()
+        .flat_map(|(a, b)| [a, b].into_iter().copied())
+        .enumerate()
+        .map(|(i, p)| (p, i))
+        .collect::<HashMap<_, _>>();
     let parent_map = pairs
         .iter()
         .copied()
         .map(|(k, v)| (v, k))
         .collect::<HashMap<_, _>>();
 
-    let mut graph = petgraph::graph::UnGraph::new_undirected();
-    let mut parent_idx_map = HashMap::<NodeIndex, NodeIndex>::new();
+    let graph: UnGraph<usize, (), usize> =
+        petgraph::graph::UnGraph::from_edges(pairs.iter().copied().map(|(a, b)| {
+            (
+                planets_idx.get(a).copied().unwrap(),
+                planets_idx.get(b).copied().unwrap(),
+                (),
+            )
+        }));
 
-    let mut node_idxs: HashMap<&str, NodeIndex> = HashMap::new();
+    let you_parent = parent_map.get("YOU").copied().unwrap();
+    let san_parent = parent_map.get("SAN").copied().unwrap();
+    let you_parent_idx = planets_idx.get(you_parent).copied().unwrap();
+    let san_parent_idx = planets_idx.get(san_parent).copied().unwrap();
 
-    for a in pairs.iter().copied().flat_map(|(a, b)| [a, b]) {
-        match node_idxs.entry(a) {
-            Entry::Occupied(_) => {
-                continue;
-            }
-            Entry::Vacant(e) => {
-                let dir_node_idx = graph.add_node(a);
-                e.insert(dir_node_idx);
-            }
-        };
-    }
-    for (a, b) in parent_map {
-        let parent = node_idxs.get(b).copied().unwrap();
-        let child = node_idxs.get(a).copied().unwrap();
-        parent_idx_map.insert(child, parent);
-    }
-    for (a, b) in pairs {
-        let a_idx = node_idxs.get(a).copied().unwrap();
-        let b_idx = node_idxs.get(b).copied().unwrap();
-        graph.add_edge(a_idx, b_idx, 1usize);
-    }
-
-    let you_idx = node_idxs.get("YOU").copied().unwrap();
-    let san_idx = node_idxs.get("SAN").copied().unwrap();
-    let you_parent_idx = parent_idx_map.get(&you_idx).copied().unwrap();
-    let san_parent_idx = parent_idx_map.get(&san_idx).copied().unwrap();
-
-    let distances =
-        petgraph::algo::dijkstra::dijkstra(&graph, you_parent_idx, Some(san_parent_idx), |_| 1);
+    let distances = petgraph::algo::dijkstra::dijkstra(
+        &graph,
+        you_parent_idx.into(),
+        Some(san_parent_idx.into()),
+        |_| 1,
+    );
 
     distances
-        .get(&san_parent_idx)
+        .get(&san_parent_idx.into())
         .copied()
         .unwrap_or(usize::MAX)
 }
