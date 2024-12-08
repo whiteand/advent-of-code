@@ -24,12 +24,12 @@ pub fn solve_part_1(file_content: &str) -> usize {
         .map(|(i, x)| (x, i))
         .collect::<HashMap<_, _>>();
 
-    let dir_graph: DiGraph<usize, usize, usize> =
+    let dir_graph: DiGraph<usize, (), usize> =
         petgraph::graph::DiGraph::from_edges(pairs.into_iter().map(|(parent, child)| {
             (
                 planets.get(child).copied().unwrap(),
                 planets.get(parent).copied().unwrap(),
-                1usize,
+                (),
             )
         }));
 
