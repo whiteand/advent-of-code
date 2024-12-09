@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Write};
+use std::fmt::Write;
 
 use itertools::Itertools;
 
@@ -29,13 +29,11 @@ fn checksum(map: &[usize]) -> usize {
     let mut res = Vec::new();
     let res_len: usize = map.into_iter().step_by(2).sum();
 
-    tracing::info!(N = ?map.len(), res_len);
     'check: loop {
         while left_n > 0 {
             if ind >= res_len {
                 break 'check;
             }
-            tracing::info!(pos=?ind, id=?left/2);
             total += (left / 2) * ind;
             ind += 1;
             left_n -= 1;
@@ -52,7 +50,6 @@ fn checksum(map: &[usize]) -> usize {
             }
             if right_n > 0 {
                 right_n -= 1;
-                tracing::info!(pos=?ind, id=right/2);
                 total += (right / 2) * ind;
                 ind += 1;
                 empty_n -= 1;
@@ -68,7 +65,6 @@ fn checksum(map: &[usize]) -> usize {
         }
         empty_n = map[empty];
     }
-    tracing::info!(r = res.into_iter().join(""));
     total
 }
 #[derive(Debug, Clone, Copy)]
@@ -79,9 +75,6 @@ enum Segment {
 impl Segment {
     fn is_void(&self) -> bool {
         return matches!(self, Segment::Void(_));
-    }
-    fn is_file(&self) -> bool {
-        return matches!(self, Segment::File { .. });
     }
     fn resize(&mut self, new_len: usize) {
         match self {
@@ -97,8 +90,8 @@ impl Segment {
     }
     fn id(&self) -> Option<usize> {
         match self {
-            Segment::Void(len) => None,
-            Segment::File { len, id } => Some(*id),
+            Segment::Void(_) => None,
+            Segment::File { id, .. } => Some(*id),
         }
     }
     fn iter(&self) -> impl Iterator<Item = Option<usize>> {
@@ -106,6 +99,10 @@ impl Segment {
             Segment::Void(len) => std::iter::repeat_n(None, *len),
             Segment::File { len, id } => std::iter::repeat_n(Some(*id), *len),
         }
+    }
+
+    fn has_id(&self, id: usize) -> bool {
+        self.id().map_or(false, |x| x == id)
     }
 }
 
@@ -128,30 +125,12 @@ impl std::fmt::Display for Segment {
 fn checksum2(map: &[usize]) -> usize {
     let mut segments = get_segments(map);
 
-    let mut moved = HashSet::new();
-    for right in (0..segments.len()).rev() {
-        if right >= segments.len() {
-            continue;
-        }
-        if segments[right].is_void() {
-            continue;
-        }
-        if moved.contains(&segments[right].id().unwrap()) {
-            continue;
-        }
-        moved.insert(segments[right].id().unwrap());
-
-        tracing::info!(segment = ?segments[right], "try to move");
-        for left in 0..right {
-            if segments[left].is_file() {
-                continue;
-            }
-            if segments[left].len() >= segments[right].len() {
-                // tracing::info!(?right, ?left, "moving");
-                move_entity(&mut segments, right, left);
-                break;
-            }
-        }
+    let mut to_move = segments.iter().flat_map(|x| x.id()).collect_vec();
+    while let Some(id) = to_move.pop() {
+        let Some(src) = segments.iter().position(|x| x.has_id(id)) else {
+            unreachable!("failed to find a file with id: {id}");
+        };
+        try_move_file(&mut segments, src);
     }
 
     segments
@@ -162,8 +141,17 @@ fn checksum2(map: &[usize]) -> usize {
         .map(|(a, b)| a * b)
         .sum()
 }
+fn try_move_file(segments: &mut Vec<Segment>, src: usize) {
+    let file_len = segments[src].len();
+    let Some(dst) = (0..src).find(|x| segments[*x].is_void() && segments[*x].len() >= file_len)
+    else {
+        return;
+    };
 
-fn move_entity(segments: &mut Vec<Segment>, src: usize, dst: usize) {
+    move_file(segments, src, dst);
+}
+
+fn move_file(segments: &mut Vec<Segment>, src: usize, dst: usize) {
     debug_assert!(src > dst);
     debug_assert!(segments[dst].is_void());
     let right_void_len = if src + 1 < segments.len() && segments[src + 1].is_void() {
@@ -185,9 +173,14 @@ fn move_entity(segments: &mut Vec<Segment>, src: usize, dst: usize) {
         (false, false) => (src)..(src + 1),
     };
     let file = segments[src];
-    segments.drain(voids_range.clone());
-    if new_void_len > 0 && voids_range.start < segments.len() {
-        segments.insert(voids_range.start, Segment::Void(new_void_len));
+    if voids_range.end == segments.len() {
+        segments.drain(voids_range.clone());
+    } else {
+        segments.drain((voids_range.start + 1)..voids_range.end);
+        let _ = std::mem::replace(
+            &mut segments[voids_range.start],
+            Segment::Void(new_void_len),
+        );
     }
     let new_dst_len = segments[dst].len() - file.len();
     segments[dst].resize(new_dst_len);
@@ -210,6 +203,7 @@ fn get_segments(map: &[usize]) -> Vec<Segment> {
             i += 1;
             is_empty = false;
         } else {
+            debug_assert_ne!(map[i], 0, "file should not be zero len");
             entities.push(Segment::File { len: map[i], id });
             i += 1;
             id += 1;
@@ -265,6 +259,6 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "6323761685944");
     }
 }
