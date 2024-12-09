@@ -11,6 +11,7 @@ criterion.workspace = true
 itertools.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
+tracing-chrome.workspace = true
 
 
 [[bench]]

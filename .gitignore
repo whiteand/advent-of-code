@@ -5,3 +5,4 @@ benches/**/y*d*.txt
 work.nu
 y*/d*/input.txt
 cron.sh
+trace-*.json
