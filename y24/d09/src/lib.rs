@@ -71,7 +71,9 @@ fn checksum2(map: &[usize]) -> usize {
     let mut id = 0;
     let mut files = Vec::with_capacity(map.len());
     const SIZES: usize = 10;
-    let mut empties: [Vec<usize>; SIZES] = [
+    let default_cap = (disc.len() / SIZES / 9).max(5);
+    tracing::info!(?default_cap, len = disc.len());
+    let mut voides_per_size: [Vec<usize>; SIZES] = [
         Vec::with_capacity(map.len() / 2),
         Vec::with_capacity(map.len() / 2),
         Vec::with_capacity(map.len() / 2),
@@ -90,29 +92,26 @@ fn checksum2(map: &[usize]) -> usize {
             i += x;
             id += 1;
         } else {
-            empties[x as usize].push(i);
+            voides_per_size[x as usize].push(i);
             i += x;
         }
     }
-    for e in &mut empties {
-        e.reverse();
+    for void_ptr in &mut voides_per_size {
+        void_ptr.reverse();
     }
+    tracing::info!(emptiness=?voides_per_size.iter().map(|x| x.len()).collect_vec());
 
     'file: while let Some((src, file_len)) = files.pop() {
-        let Some(void_len) = (file_len..empties.len())
-            .map(|void_len| {
-                (
-                    void_len,
-                    empties[void_len].last().copied().unwrap_or(usize::MAX),
-                )
-            })
+        let Some(void_len) = (file_len..voides_per_size.len())
+            .filter(|n| !voides_per_size[*n].is_empty())
+            .map(|void_len| (void_len, voides_per_size[void_len].last().copied().unwrap()))
             .filter(|(_, ptr)| *ptr < src)
             .min_by_key(|(_, n)| *n)
             .map(|(x, _)| x)
         else {
             continue;
         };
-        let dst_ptr = empties[void_len].pop().unwrap();
+        let dst_ptr = voides_per_size[void_len].pop().unwrap();
 
         debug_assert!(dst_ptr + file_len <= src, "{dst_ptr} + {file_len} <= {src}");
         disc.copy_within(src..(src + file_len), dst_ptr);
@@ -121,7 +120,7 @@ fn checksum2(map: &[usize]) -> usize {
         if new_len == 0 {
             continue 'file;
         }
-        let target = &mut empties[new_len];
+        let target = &mut voides_per_size[new_len];
         let new_ptr = dst_ptr + file_len;
         target.push(new_ptr);
         let mut i = target.len() - 1;
