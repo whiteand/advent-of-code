@@ -66,44 +66,73 @@ fn checksum(map: &[usize]) -> usize {
 }
 
 fn checksum2(map: &[usize]) -> usize {
-    let mut disc = Vec::from_iter(std::iter::repeat_n(None, map.iter().copied().sum()));
+    let mut disc = Vec::from_iter(std::iter::repeat_n(0, map.iter().copied().sum()));
     let mut i = 0;
     let mut id = 0;
     let mut files = Vec::with_capacity(map.len());
-    let mut empties = Vec::with_capacity(map.len());
+    const SIZES: usize = 10;
+    let mut empties: [Vec<usize>; SIZES] = [
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+        Vec::with_capacity(map.len() / 2),
+    ];
     for (place, x) in map.iter().copied().enumerate() {
         if place % 2 == 0 {
-            disc[i..(i + x)].fill(Some(id));
+            disc[i..(i + x)].fill(id);
             files.push((i, x));
             i += x;
             id += 1;
         } else {
-            empties.push((i, x));
+            empties[x as usize].push(i);
             i += x;
         }
     }
-    'file: while let Some((src, file_len)) = files.pop() {
-        for (dst, void_len) in &mut empties {
-            let dst_ptr = *dst;
-
-            if dst_ptr >= src {
-                break;
-            }
-
-            if *void_len >= file_len {
-                disc.copy_within(src..(src + file_len), dst_ptr);
-                disc[src..(src + file_len)].fill(None);
-                *dst += file_len;
-                *void_len -= file_len;
-                continue 'file;
-            }
-        }
+    for e in &mut empties {
+        e.reverse();
     }
 
-    disc.into_iter()
-        .enumerate()
-        .filter_map(|(i, x)| x.map(move |x| i * x))
-        .sum()
+    'file: while let Some((src, file_len)) = files.pop() {
+        let Some(void_len) = (file_len..empties.len())
+            .map(|void_len| {
+                (
+                    void_len,
+                    empties[void_len].last().copied().unwrap_or(usize::MAX),
+                )
+            })
+            .filter(|(_, ptr)| *ptr < src)
+            .min_by_key(|(_, n)| *n)
+            .map(|(x, _)| x)
+        else {
+            continue;
+        };
+        let dst_ptr = empties[void_len].pop().unwrap();
+
+        debug_assert!(dst_ptr + file_len <= src, "{dst_ptr} + {file_len} <= {src}");
+        disc.copy_within(src..(src + file_len), dst_ptr);
+        disc[src..(src + file_len)].fill(0);
+        let new_len = void_len - file_len;
+        if new_len == 0 {
+            continue 'file;
+        }
+        let target = &mut empties[new_len];
+        let new_ptr = dst_ptr + file_len;
+        target.push(new_ptr);
+        let mut i = target.len() - 1;
+        while i > 0 && target[i - 1] < new_ptr {
+            target.swap(i, i - 1);
+            i -= 1
+        }
+        debug_assert!(target.is_sorted_by(|a, b| a > b));
+    }
+
+    disc.into_iter().enumerate().map(|(i, x)| i * x).sum()
 }
 
 #[tracing::instrument(skip(file_content))]
