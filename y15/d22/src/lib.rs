@@ -196,6 +196,126 @@ fn parse_boss(input: &str) -> Boss {
     boss
 }
 
+// Magic Missile  (-53 mana) (boss.hp -= 4)
+// Drain          (-73 mana) (boss.hp -= 2) (player.hp += 2)
+// Recharge      (-229 mana) (player.mana += 101)            (effect 5 turns)
+// Poison        (-173 mana) (boss.hp -= 3)                  (effect 6 turns)
+// Shield        (-113 mana) (+7 armor)                      (effect 6 turns)
+
+/// 127 max hp              = 7  bit
+/// 2047 max mana           = 12 bit
+/// shield-effect counter   = 3  bit
+/// recharge-effect counter = 3  bit
+/// poison-effect counter   = 3  bit
+/// 127 boss_hp             = 7  bit
+#[derive(Copy, Clone, Eq, PartialEq)]
+struct BitState(u64);
+
+macro_rules! bit_field {
+    ($get:ident, $set:ident, $dec:ident,$inc:ident, $offset:expr, $mask:expr, $typ:ty) => {
+        impl BitState {
+            #[allow(dead_code)]
+            pub fn $get(&self) -> $typ {
+                ((self.0 >> $offset) & $mask) as $typ
+            }
+            #[allow(dead_code)]
+            pub fn $set(&self, new_value: $typ) -> Self {
+                let disabled = ($mask << $offset) & self.0;
+                let enabled = disabled | ((new_value as u64) << $offset);
+                Self(enabled)
+            }
+            #[allow(dead_code)]
+            pub fn $dec(&self, amount: $typ) -> Self {
+                let value = self.$get();
+                if value <= amount {
+                    return self.$set(0);
+                } else {
+                    return self.$set(unsafe { value.unchecked_sub(1) });
+                }
+            }
+            #[allow(dead_code)]
+            pub fn $inc(&self, amount: $typ) -> Self {
+                let value = self.$get();
+                let new_value = value + amount;
+                debug_assert!(new_value <= $mask);
+                self.$set(value + amount)
+            }
+        }
+    };
+}
+
+const PLAYER_HP_BIT_SIZE: usize = 7;
+const PLAYER_MANA_BIT_SIZE: usize = 12;
+const PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE: usize = 3;
+const PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE: usize = 3;
+const PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE: usize = 3;
+const PLAYER_SPENT_MANA_BIT_SIZE: usize = 13;
+const BOSS_HP_BIT_SIZE: usize = 12;
+
+bit_field!(
+    get_player_hp,
+    set_player_hp,
+    dec_player_hp,
+    inc_player_hp,
+    0,
+    ((1 << (PLAYER_HP_BIT_SIZE + 1)) - 1),
+    u8
+);
+bit_field!(
+    get_player_mana,
+    set_player_mana,
+    dec_player_mana,
+    inc_player_mana,
+    PLAYER_HP_BIT_SIZE,
+    ((1 << (PLAYER_MANA_BIT_SIZE + 1)) - 1),
+    u8
+);
+bit_field!(
+    get_shield_effect_counter,
+    set_shield_effect_counter,
+    dec_shield_effect_counter,
+    inc_shield_effect_counter,
+    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE),
+    ((1 << (PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
+    u16
+);
+bit_field!(
+    get_recharge_effect_counter,
+    set_recharge_effect_counter,
+    dec_recharge_effect_counter,
+    inc_recharge_effect_counter,
+    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE),
+    ((1 << (PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
+    u8
+);
+bit_field!(
+    get_poison_effect_counter,
+    set_poison_effect_counter,
+    dec_poison_effect_counter,
+    inc_poison_effect_counter,
+    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE),
+    ((1 << (PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
+    u8
+);
+bit_field!(
+    get_spent_mana,
+    set_spent_mana,
+    dec_spent_mana,
+    inc_spent_mana,
+    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE+PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE),
+    ((1 << (PLAYER_SPENT_MANA_BIT_SIZE + 1)) - 1),
+    u16
+);
+bit_field!(
+    get_boss_hp,
+    set_boss_hp,
+    dec_boss_hp,
+    inc_boss_hp,
+    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE+PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE+PLAYER_SPENT_MANA_BIT_SIZE),
+    ((1 << (BOSS_HP_BIT_SIZE + 1)) - 1),
+    u8
+);
+
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct State {
     player: Player,
@@ -270,6 +390,13 @@ enum Turn {
 fn least_mana_spent(player: Player, boss: Boss) -> usize {
     let mut heap = BinaryHeap::new();
 
+    let state = {
+        player.
+        let mut res = BitState(0)
+            .player
+        res.
+    }
+    
     heap.push(State {
         player,
         effects: SmallVec::new(),
@@ -341,8 +468,7 @@ mod tests {
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
     #[case(10, 250, 13, 8, 226)]
-    // #[case(10, 250, 14, 8, 641)]
-    #[case(10, 250, 14, 8, 574)]
+    #[case(10, 250, 14, 8, 641)]
     #[case(50, 500, 71, 10, 0)]
     fn test_part1(
         #[case] player_hp: usize,

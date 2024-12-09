@@ -27,6 +27,9 @@ test-watch year day:
 bench year day:
     cargo bench --package y{{year}}d{{day}}
 
+# test-watch but with specified test
+tw year day test:
+    cargo watch test --package y{{year}}d{{day}} --lib -- tests::{{test}} --exact --show-output
 test-p1-example-watch year day:
     cargo watch test --package y{{year}}d{{day}} --lib -- tests::test_part1 --exact --show-output
 test-p1-example year day:
