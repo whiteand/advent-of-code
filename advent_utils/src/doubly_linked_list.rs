@@ -1,6 +1,7 @@
-pub struct List<T> {
+pub struct DoublyLinkedList<T> {
     nodes: Vec<Node<T>>,
     meta: Option<Meta>,
+    len: usize,
 }
 
 #[derive(Debug)]
@@ -12,7 +13,6 @@ pub struct Node<T> {
 
 #[derive(Clone, Debug)]
 struct Meta {
-    len: usize,
     first: NodeIndex,
     last: NodeIndex,
 }
@@ -20,11 +20,12 @@ struct Meta {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct NodeIndex(usize);
 
-impl<T> List<T> {
+impl<T> DoublyLinkedList<T> {
     pub const fn new() -> Self {
         Self {
             nodes: Vec::new(),
             meta: None,
+            len: 0,
         }
     }
     pub fn get(&self, node_index: NodeIndex) -> Option<&Node<T>> {
@@ -34,15 +35,15 @@ impl<T> List<T> {
         self.nodes.get_mut(node_index.0)
     }
     pub fn len(&self) -> usize {
-        self.meta.as_ref().map(|x| x.len).unwrap_or_default()
+        self.len
     }
     pub fn first(&self) -> Option<NodeIndex> {
         self.meta.as_ref().map(|x| x.first)
     }
     pub fn push_back(&mut self, value: T) -> NodeIndex {
+        self.len += 1;
         match &mut self.meta {
             Some(meta) => {
-                meta.len += 1;
                 let id = NodeIndex(self.nodes.len());
                 self.nodes[meta.last.0].next = Some(id);
                 self.nodes.push(Node {
@@ -57,7 +58,6 @@ impl<T> List<T> {
             None => {
                 let id = NodeIndex(0);
                 self.meta = Some(Meta {
-                    len: 1,
                     first: id,
                     last: id,
                 });
@@ -82,8 +82,8 @@ impl<T> List<T> {
         if let Some(NodeIndex(next)) = self.nodes[node_index].next {
             self.nodes[next].prev = self.nodes[node_index].prev;
         }
-
-        if self.len() == 1 {
+        self.len -= 1;
+        if self.len == 0 {
             self.meta = None;
         } else {
             match &mut self.meta {
@@ -93,7 +93,6 @@ impl<T> List<T> {
                     } else if meta.last.0 == node_index {
                         meta.last = self.nodes[node_index].prev.unwrap();
                     }
-                    meta.len -= 1;
                 }
                 None => {}
             }
@@ -131,7 +130,7 @@ impl<T> List<T> {
 }
 
 pub struct ListIter<'t, T> {
-    list: &'t List<T>,
+    list: &'t DoublyLinkedList<T>,
     node_index: Option<NodeIndex>,
 }
 

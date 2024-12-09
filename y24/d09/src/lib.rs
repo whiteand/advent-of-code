@@ -2,9 +2,8 @@ use std::fmt::Write;
 
 use itertools::Itertools;
 pub mod arr_part2;
-mod list;
 
-use list::{List, NodeIndex};
+use advent_utils::doubly_linked_list::{DoublyLinkedList, NodeIndex};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -146,8 +145,8 @@ fn checksum2(map: &[usize]) -> usize {
     let segments_vec = get_segments(map);
 
     let mut to_move = Vec::new();
+    let mut segments = DoublyLinkedList::new();
 
-    let mut segments = list::List::new();
     for segment in segments_vec {
         match segment {
             Segment::Void(x) => {
@@ -189,7 +188,7 @@ fn checksum2(map: &[usize]) -> usize {
     checksum_from_segments(segments.iter())
 }
 
-pub fn checksum_from_segments<'a>(mut segments: impl Iterator<Item = &'a Segment>) -> usize {
+fn checksum_from_segments<'a>(mut segments: impl Iterator<Item = &'a Segment>) -> usize {
     let mut pos = 0;
     let mut total = 0;
     while let Some(seg) = segments.next() {
@@ -200,7 +199,7 @@ pub fn checksum_from_segments<'a>(mut segments: impl Iterator<Item = &'a Segment
 }
 
 #[tracing::instrument(skip(segments))]
-fn remove_file(segments: &mut List<Segment>, src: NodeIndex) -> File {
+fn remove_file(segments: &mut DoublyLinkedList<Segment>, src: NodeIndex) -> File {
     let file = segments.get(src).and_then(|x| x.value.as_file()).unwrap();
     let prev_void_idx = segments
         .get(src)
@@ -256,7 +255,7 @@ fn remove_file(segments: &mut List<Segment>, src: NodeIndex) -> File {
     file
 }
 #[tracing::instrument(skip(segments))]
-fn move_file(segments: &mut List<Segment>, src: NodeIndex, dst: NodeIndex) {
+fn move_file(segments: &mut DoublyLinkedList<Segment>, src: NodeIndex, dst: NodeIndex) {
     let file = remove_file(segments, src);
     let dst_void = &mut segments.get_mut(dst).unwrap().value;
     let dst_void_len = dst_void.len();
