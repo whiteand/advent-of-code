@@ -1,0 +1,270 @@
+use std::{collections::HashSet, fmt::Write};
+
+use itertools::Itertools;
+
+#[tracing::instrument(skip(file_content))]
+pub fn solve_part_1(file_content: &str) -> usize {
+    solve(file_content, checksum)
+}
+pub fn solve(file_content: &str, get_checksum: impl FnOnce(&[usize]) -> usize) -> usize {
+    let map = file_content
+        .trim()
+        .bytes()
+        .map(|x| (x - b'0') as usize)
+        .collect_vec();
+    return get_checksum(&map);
+}
+
+fn checksum(map: &[usize]) -> usize {
+    let mut left = 0;
+    let mut empty = 1;
+    let mut right = map.len() - 1;
+    let mut ind = 0;
+
+    let mut total = 0;
+
+    let mut left_n = map[left];
+    let mut empty_n = map[empty];
+    let mut right_n = map[right];
+    let mut res = Vec::new();
+    let res_len: usize = map.into_iter().step_by(2).sum();
+
+    tracing::info!(N = ?map.len(), res_len);
+    'check: loop {
+        while left_n > 0 {
+            if ind >= res_len {
+                break 'check;
+            }
+            tracing::info!(pos=?ind, id=?left/2);
+            total += (left / 2) * ind;
+            ind += 1;
+            left_n -= 1;
+            res.push(left / 2);
+        }
+        left += 2;
+        if left >= map.len() {
+            break;
+        }
+        left_n = map[left];
+        while empty_n > 0 {
+            if ind >= res_len {
+                break 'check;
+            }
+            if right_n > 0 {
+                right_n -= 1;
+                tracing::info!(pos=?ind, id=right/2);
+                total += (right / 2) * ind;
+                ind += 1;
+                empty_n -= 1;
+                res.push(right / 2);
+            } else {
+                right -= 2;
+                right_n = map[right];
+            }
+        }
+        empty += 2;
+        if empty >= map.len() {
+            break;
+        }
+        empty_n = map[empty];
+    }
+    tracing::info!(r = res.into_iter().join(""));
+    total
+}
+#[derive(Debug, Clone, Copy)]
+enum Segment {
+    Void(usize),
+    File { len: usize, id: usize },
+}
+impl Segment {
+    fn is_void(&self) -> bool {
+        return matches!(self, Segment::Void(_));
+    }
+    fn is_file(&self) -> bool {
+        return matches!(self, Segment::File { .. });
+    }
+    fn resize(&mut self, new_len: usize) {
+        match self {
+            Segment::Void(x) => *x = new_len,
+            Segment::File { len, .. } => *len = new_len,
+        }
+    }
+    fn len(&self) -> usize {
+        match self {
+            Segment::Void(len) => *len,
+            Segment::File { len, .. } => *len,
+        }
+    }
+    fn id(&self) -> Option<usize> {
+        match self {
+            Segment::Void(len) => None,
+            Segment::File { len, id } => Some(*id),
+        }
+    }
+    fn iter(&self) -> impl Iterator<Item = Option<usize>> {
+        match self {
+            Segment::Void(len) => std::iter::repeat_n(None, *len),
+            Segment::File { len, id } => std::iter::repeat_n(Some(*id), *len),
+        }
+    }
+}
+
+impl std::fmt::Display for Segment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Segment::Void(len) => {
+                for _ in 0..*len {
+                    f.write_char('.')?;
+                }
+            }
+            Segment::File { len, id } => {
+                write!(f, "[{id};{len}]")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+fn checksum2(map: &[usize]) -> usize {
+    let mut segments = get_segments(map);
+
+    let mut moved = HashSet::new();
+    for right in (0..segments.len()).rev() {
+        if right >= segments.len() {
+            continue;
+        }
+        if segments[right].is_void() {
+            continue;
+        }
+        if moved.contains(&segments[right].id().unwrap()) {
+            continue;
+        }
+        moved.insert(segments[right].id().unwrap());
+
+        tracing::info!(segment = ?segments[right], "try to move");
+        for left in 0..right {
+            if segments[left].is_file() {
+                continue;
+            }
+            if segments[left].len() >= segments[right].len() {
+                // tracing::info!(?right, ?left, "moving");
+                move_entity(&mut segments, right, left);
+                break;
+            }
+        }
+    }
+
+    segments
+        .into_iter()
+        .flat_map(|x| x.iter())
+        .enumerate()
+        .filter_map(|(i, id)| id.map(move |id| (i, id)))
+        .map(|(a, b)| a * b)
+        .sum()
+}
+
+fn move_entity(segments: &mut Vec<Segment>, src: usize, dst: usize) {
+    debug_assert!(src > dst);
+    debug_assert!(segments[dst].is_void());
+    let right_void_len = if src + 1 < segments.len() && segments[src + 1].is_void() {
+        debug_assert!(segments[src + 1].is_void());
+        segments[src + 1].len()
+    } else {
+        0
+    };
+    let left_void_len = if src > 0 && segments[src - 1].is_void() {
+        segments[src - 1].len()
+    } else {
+        0
+    };
+    let new_void_len = segments[src].len() + right_void_len + left_void_len;
+    let voids_range = match (left_void_len > 0, right_void_len > 0) {
+        (true, true) => (src - 1)..(src + 2),
+        (true, false) => (src - 1)..(src + 1),
+        (false, true) => (src)..(src + 2),
+        (false, false) => (src)..(src + 1),
+    };
+    let file = segments[src];
+    segments.drain(voids_range.clone());
+    if new_void_len > 0 && voids_range.start < segments.len() {
+        segments.insert(voids_range.start, Segment::Void(new_void_len));
+    }
+    let new_dst_len = segments[dst].len() - file.len();
+    segments[dst].resize(new_dst_len);
+    segments.insert(dst, file);
+}
+
+fn get_segments(map: &[usize]) -> Vec<Segment> {
+    let mut entities = Vec::new();
+    let mut i = 0;
+    let mut is_empty = false;
+    let mut id = 0;
+    while i < map.len() {
+        if is_empty {
+            if map[i] == 0 {
+                i += 1;
+                is_empty = false;
+                continue;
+            }
+            entities.push(Segment::Void(map[i]));
+            i += 1;
+            is_empty = false;
+        } else {
+            entities.push(Segment::File { len: map[i], id });
+            i += 1;
+            id += 1;
+            is_empty = true;
+        }
+    }
+    entities
+}
+#[tracing::instrument(skip(file_content))]
+pub fn solve_part_2(file_content: &str) -> usize {
+    solve(file_content, checksum2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{solve_part_1, solve_part_2};
+    const EXAMPLE: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
+    #[test]
+    fn test_part1() {
+        let _guard = tracing::subscriber::set_default(
+            tracing_subscriber::FmtSubscriber::builder()
+                .without_time()
+                .finish(),
+        );
+        assert_eq!(solve_part_1(EXAMPLE), 1928);
+    }
+
+    #[test]
+    fn test_part1_actual() {
+        let _guard = tracing::subscriber::set_default(
+            tracing_subscriber::FmtSubscriber::builder()
+                .without_time()
+                .finish(),
+        );
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "6301895872542");
+    }
+
+    #[test]
+    fn test_part2() {
+        let _guard = tracing::subscriber::set_default(
+            tracing_subscriber::FmtSubscriber::builder()
+                .without_time()
+                .finish(),
+        );
+        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "2858");
+    }
+
+    #[test]
+    fn test_part2_actual() {
+        let _guard = tracing::subscriber::set_default(
+            tracing_subscriber::FmtSubscriber::builder()
+                .without_time()
+                .finish(),
+        );
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+    }
+}
