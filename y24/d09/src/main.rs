@@ -1,7 +1,7 @@
 use std::io::Read;
 use tracing_chrome::ChromeLayerBuilder;
 use tracing_subscriber::prelude::*;
-use y24d09::{arr_part2, solve, solve_part_1, solve_part_2};
+use y24d09::{solve_part_1, solve_part_2};
 
 fn main() {
     let (chrome_layer, _guard) = ChromeLayerBuilder::new().build();
@@ -22,12 +22,5 @@ fn main() {
     instant = std::time::Instant::now();
     let result = solve_part_2(&input);
     println!("Part 2 (Linked list): {}", result);
-    println!("Time: {:?}", instant.elapsed());
-
-    println!();
-
-    instant = std::time::Instant::now();
-    let result = solve(&input, arr_part2::checksum2);
-    println!("Part 2 (Array): {}", result);
     println!("Time: {:?}", instant.elapsed());
 }
