@@ -26,7 +26,6 @@ fn checksum(map: &[usize]) -> usize {
     let mut left_n = map[left];
     let mut empty_n = map[empty];
     let mut right_n = map[right];
-    let mut res = Vec::new();
     let res_len: usize = map.into_iter().step_by(2).sum();
 
     'check: loop {
@@ -37,7 +36,6 @@ fn checksum(map: &[usize]) -> usize {
             total += (left / 2) * ind;
             ind += 1;
             left_n -= 1;
-            res.push(left / 2);
         }
         left += 2;
         if left >= map.len() {
@@ -53,7 +51,6 @@ fn checksum(map: &[usize]) -> usize {
                 total += (right / 2) * ind;
                 ind += 1;
                 empty_n -= 1;
-                res.push(right / 2);
             } else {
                 right -= 2;
                 right_n = map[right];
