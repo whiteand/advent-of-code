@@ -10,43 +10,6 @@ struct Player {
     spent_mana: usize,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
-struct Effects {
-    active: usize,
-}
-
-impl Effects {
-    #[inline(always)]
-    fn is_active(&self, spell: Spell) -> bool {
-        self.active & (spell as usize) != 0
-    }
-    #[inline(always)]
-    fn activate(&mut self, spell: Spell) {
-        self.active = self.active | (spell as usize)
-    }
-    #[inline(always)]
-    fn deactivate(&mut self, spell: Spell) {
-        self.active = self.active & !(spell as usize)
-    }
-}
-
-impl Player {
-    fn can_spell(&self, spell: Spell) -> bool {
-        self.mana >= spell.mana_cost()
-    }
-
-    fn inc_mana(&mut self, new_mana: usize) {
-        self.mana += new_mana;
-    }
-
-    /// Returns true if player is dead
-    fn take_damage(&mut self, damage: usize) -> bool {
-        let damage = damage.saturating_sub(self.armor).max(1);
-        self.hp = self.hp.saturating_sub(damage);
-        self.hp == 0
-    }
-}
-
 impl Player {
     fn new(hp: usize, mana: usize) -> Self {
         Self {
@@ -62,117 +25,6 @@ impl Player {
 struct Boss {
     hp: usize,
     damage: usize,
-}
-
-impl Boss {
-    fn take_damage(&mut self, damage: usize) {
-        self.hp = self.hp.saturating_sub(damage);
-    }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-enum Spell {
-    MagicMissile = 1,
-    Drain = 2,
-    Shield = 4,
-    Poison = 8,
-    Recharge = 16,
-}
-
-impl Spell {
-    fn all() -> [Spell; 5] {
-        use Spell::*;
-        [MagicMissile, Drain, Shield, Poison, Recharge]
-    }
-
-    fn mana_cost(&self) -> usize {
-        match self {
-            Spell::MagicMissile => 53,
-            Spell::Drain => 73,
-            Spell::Shield => 113,
-            Spell::Poison => 173,
-            Spell::Recharge => 229,
-        }
-    }
-    fn duration(&self) -> usize {
-        match self {
-            Spell::MagicMissile => 0,
-            Spell::Drain => 0,
-            Spell::Shield => 6,
-            Spell::Poison => 6,
-            Spell::Recharge => 5,
-        }
-    }
-    fn cast(&self, player: &mut Player, boss: &mut Boss) -> Option<Effect> {
-        let cost = self.mana_cost();
-        player.mana -= cost;
-        player.spent_mana += cost;
-
-        match self {
-            Spell::MagicMissile => {
-                boss.hp = boss.hp.saturating_sub(4);
-                None
-            }
-            Spell::Drain => {
-                boss.hp = boss.hp.saturating_sub(2);
-                player.hp = boss.hp.saturating_add(2);
-                None
-            }
-            x => Some(Effect {
-                spell: *x,
-                remaining: x.duration(),
-            }),
-        }
-    }
-}
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
-struct Effect {
-    spell: Spell,
-    remaining: usize,
-}
-
-impl Effect {
-    /// returns true when the effect should be removed
-    fn cast(&mut self, effects: &mut Effects, player: &mut Player, boss: &mut Boss) -> bool {
-        match self.spell {
-            Spell::MagicMissile | Spell::Drain => {}
-            Spell::Shield => {
-                if !effects.is_active(Spell::Shield) {
-                    player.armor += 7;
-                    effects.activate(Spell::Shield);
-                }
-            }
-            Spell::Poison => {
-                effects.activate(Spell::Poison);
-                boss.take_damage(3);
-            }
-            Spell::Recharge => {
-                effects.activate(Spell::Poison);
-                player.inc_mana(101);
-            }
-        }
-        self.remaining -= 1;
-        let cancelled = self.remaining == 0;
-        if cancelled {
-            match self.spell {
-                Spell::MagicMissile | Spell::Drain => {}
-                Spell::Shield => {
-                    if effects.is_active(self.spell) {
-                        effects.deactivate(self.spell);
-                        player.armor = player.armor.saturating_sub(7);
-                    }
-                }
-                Spell::Poison => {
-                    effects.deactivate(Spell::Poison);
-                }
-                Spell::Recharge => {
-                    effects.deactivate(Spell::Recharge);
-                }
-            }
-        }
-        cancelled
-    }
 }
 
 #[tracing::instrument]
@@ -208,6 +60,7 @@ fn parse_boss(input: &str) -> Boss {
 /// recharge-effect counter = 3  bit
 /// poison-effect counter   = 3  bit
 /// 127 boss_hp             = 7  bit
+/// 15 boss_damage          = 4  bit
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct BitState(u64);
 
@@ -220,9 +73,7 @@ macro_rules! bit_field {
             }
             #[allow(dead_code)]
             pub fn $set(&self, new_value: $typ) -> Self {
-                let disabled = ($mask << $offset) & self.0;
-                let enabled = disabled | ((new_value as u64) << $offset);
-                Self(enabled)
+                Self(((new_value as u64) << $offset) | (self.0 & !($mask << $offset)))
             }
             #[allow(dead_code)]
             pub fn $dec(&self, amount: $typ) -> Self {
@@ -250,7 +101,8 @@ const PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE: usize = 3;
 const PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE: usize = 3;
 const PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE: usize = 3;
 const PLAYER_SPENT_MANA_BIT_SIZE: usize = 13;
-const BOSS_HP_BIT_SIZE: usize = 12;
+const BOSS_HP_BIT_SIZE: usize = 7;
+const _BOSS_DAMAGE_BIT_SIZE: usize = 4;
 
 bit_field!(
     get_player_hp,
@@ -258,7 +110,7 @@ bit_field!(
     dec_player_hp,
     inc_player_hp,
     0,
-    ((1 << (PLAYER_HP_BIT_SIZE + 1)) - 1),
+    0b0111_1111,
     u8
 );
 bit_field!(
@@ -267,25 +119,25 @@ bit_field!(
     dec_player_mana,
     inc_player_mana,
     PLAYER_HP_BIT_SIZE,
-    ((1 << (PLAYER_MANA_BIT_SIZE + 1)) - 1),
-    u8
+    0b1111_1111_1111,
+    u16
 );
 bit_field!(
     get_shield_effect_counter,
     set_shield_effect_counter,
     dec_shield_effect_counter,
     inc_shield_effect_counter,
-    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE),
-    ((1 << (PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
-    u16
+    (PLAYER_HP_BIT_SIZE + PLAYER_MANA_BIT_SIZE),
+    0b0111,
+    u8
 );
 bit_field!(
     get_recharge_effect_counter,
     set_recharge_effect_counter,
     dec_recharge_effect_counter,
     inc_recharge_effect_counter,
-    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE),
-    ((1 << (PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
+    (PLAYER_HP_BIT_SIZE + PLAYER_MANA_BIT_SIZE + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE),
+    0b111,
     u8
 );
 bit_field!(
@@ -293,8 +145,11 @@ bit_field!(
     set_poison_effect_counter,
     dec_poison_effect_counter,
     inc_poison_effect_counter,
-    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE),
-    ((1 << (PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE + 1)) - 1),
+    (PLAYER_HP_BIT_SIZE
+        + PLAYER_MANA_BIT_SIZE
+        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE),
+    0b111,
     u8
 );
 bit_field!(
@@ -302,8 +157,12 @@ bit_field!(
     set_spent_mana,
     dec_spent_mana,
     inc_spent_mana,
-    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE+PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE),
-    ((1 << (PLAYER_SPENT_MANA_BIT_SIZE + 1)) - 1),
+    (PLAYER_HP_BIT_SIZE
+        + PLAYER_MANA_BIT_SIZE
+        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE),
+    0b0001_1111_1111_1111,
     u16
 );
 bit_field!(
@@ -311,138 +170,216 @@ bit_field!(
     set_boss_hp,
     dec_boss_hp,
     inc_boss_hp,
-    (PLAYER_HP_BIT_SIZE+PLAYER_MANA_BIT_SIZE+PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE+PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE+PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE+PLAYER_SPENT_MANA_BIT_SIZE),
-    ((1 << (BOSS_HP_BIT_SIZE + 1)) - 1),
+    (PLAYER_HP_BIT_SIZE
+        + PLAYER_MANA_BIT_SIZE
+        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_SPENT_MANA_BIT_SIZE),
+    0b1111111,
+    u8
+);
+bit_field!(
+    get_boss_damage,
+    set_boss_damage,
+    dec_boss_damage,
+    inc_boss_damage,
+    (PLAYER_HP_BIT_SIZE
+        + PLAYER_MANA_BIT_SIZE
+        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE
+        + PLAYER_SPENT_MANA_BIT_SIZE
+        + BOSS_HP_BIT_SIZE),
+    0b1111,
     u8
 );
 
-#[derive(Eq, PartialEq, Debug, Clone)]
-struct State {
-    player: Player,
-    effects: smallvec::SmallVec<[Effect; 5]>,
-    active: Effects,
-    boss: Boss,
-    turn: Turn,
-    spells: smallvec::SmallVec<[Spell; 32]>,
-}
-impl State {
-    fn apply_effects(&mut self) {
-        let effects = std::mem::replace(&mut self.effects, SmallVec::new());
-        for mut effect in effects {
-            if !effect.cast(&mut self.active, &mut self.player, &mut self.boss) {
-                self.effects.push(effect);
-            }
-        }
-    }
-
-    /// Returns true if player is dead
-    fn boss_turn(&mut self) -> bool {
-        let res = self.player.take_damage(self.boss.damage);
-        self.turn = Turn::Player;
-        res
-    }
-
-    fn player_turn(&self) -> SmallVec<[Self; 5]> {
-        let mut res = SmallVec::new();
-
-        for spell in Spell::all() {
-            if !self.player.can_spell(spell) {
-                continue;
-            }
-            if self.active.is_active(spell) {
-                continue;
-            }
-            let mut new_state = self.clone();
-            if let Some(effect) = spell.cast(&mut new_state.player, &mut new_state.boss) {
-                new_state.effects.push(effect);
-            }
-            new_state.turn = Turn::Boss;
-            new_state.spells.push(spell);
-            res.push(new_state);
-        }
-
-        res
+impl std::fmt::Debug for BitState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "player_hp={}, player_mana={}, shield_effect_counter={}, recharge_effect_counter={}, poison_effect_counter={}, spent_mana={}, boss_hp={}, boss_damage={}",
+            self.get_player_hp(),
+            self.get_player_mana(),
+            self.get_shield_effect_counter(),
+            self.get_recharge_effect_counter(),
+            self.get_poison_effect_counter(),
+            self.get_spent_mana(),
+            self.get_boss_hp(),
+            self.get_boss_damage(),
+        )
     }
 }
 
-impl PartialOrd for State {
+impl BitState {
+    fn apply_effects(&self, armor: &mut u8) -> Self {
+        let mut new_state = *self;
+        if new_state.get_shield_effect_counter() > 0 {
+            *armor = 7;
+            new_state = new_state.dec_shield_effect_counter(1);
+        } else {
+            *armor = 0;
+        }
+        if new_state.get_poison_effect_counter() > 0 {
+            new_state = new_state.dec_boss_damage(3).dec_poison_effect_counter(1);
+        }
+        if new_state.get_recharge_effect_counter() > 0 {
+            new_state = new_state
+                .inc_player_mana(101)
+                .dec_recharge_effect_counter(1);
+        }
+        new_state
+    }
+}
+
+impl PartialOrd for BitState {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
-impl Ord for State {
+impl Ord for BitState {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         other
-            .boss
-            .hp
-            .cmp(&self.boss.hp)
-            .then_with(|| other.player.spent_mana.cmp(&self.player.spent_mana))
+            .get_boss_hp()
+            .cmp(&self.get_boss_hp())
+            .then_with(|| other.get_spent_mana().cmp(&self.get_spent_mana()))
     }
-}
-
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
-enum Turn {
-    Boss,
-    Player,
 }
 
 #[tracing::instrument]
 fn least_mana_spent(player: Player, boss: Boss) -> usize {
     let mut heap = BinaryHeap::new();
 
-    let state = {
-        player.
-        let mut res = BitState(0)
-            .player
-        res.
-    }
-    
-    heap.push(State {
-        player,
-        effects: SmallVec::new(),
-        boss,
-        spells: SmallVec::new(),
-        active: Effects { active: 0 },
-        turn: Turn::Player,
-    });
+    let state = BitState(0)
+        .set_player_hp(player.hp as u8)
+        .set_player_mana(player.mana as u16)
+        .set_boss_hp(boss.hp as u8)
+        .set_boss_damage(boss.damage as u8);
 
-    let mut min_spent_mana_at_boss_death = usize::MAX;
+    heap.push(state);
+
+    let mut min_spent_mana_at_boss_death = u16::MAX;
 
     while let Some(mut state) = heap.pop() {
-        state.apply_effects();
-        if state.boss.hp == 0 {
-            tracing::info!(
-                ?state.spells,
-                spent_mana = state.player.spent_mana,
-                "boss dead"
-            );
-            if state.player.spent_mana < min_spent_mana_at_boss_death {
-                min_spent_mana_at_boss_death = state.player.spent_mana;
-            }
+        if state.get_spent_mana() >= min_spent_mana_at_boss_death {
             continue;
         }
-        if state.player.hp == 0 {
-            // dead player
-            continue;
-        }
-        if state.player.spent_mana >= min_spent_mana_at_boss_death {
-            continue;
-        }
-        match state.turn {
-            Turn::Boss => {
-                if state.boss_turn() {
-                    // dead player
-                    continue;
-                }
 
-                heap.push(state);
+        // before player move we should apply effects
+        let mut armor = 0;
+
+        state = state.apply_effects(&mut armor);
+
+        // player moves
+        let mana = state.get_player_mana();
+        const MAGIC_MISSILE_COST: u16 = 53;
+        if mana >= MAGIC_MISSILE_COST {
+            let mut move_armor = armor;
+            // try to cast magic missile
+            let after_player_move = state
+                .dec_player_mana(MAGIC_MISSILE_COST)
+                .inc_spent_mana(MAGIC_MISSILE_COST)
+                .dec_boss_hp(4);
+
+            if after_player_move.get_boss_hp() == 0 {
+                min_spent_mana_at_boss_death =
+                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+            } else {
+                let after_boss_effects = state.apply_effects(&mut move_armor);
+                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
+                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
+                if after_boss_move.get_player_hp() > 0 {
+                    heap.push(after_boss_move);
+                }
             }
-            Turn::Player => {
-                for new_state in state.player_turn() {
-                    if new_state.player.spent_mana >= min_spent_mana_at_boss_death {
-                        continue;
-                    }
-                    heap.push(new_state);
+        }
+        const DRAIN_COST: u16 = 73;
+        if mana >= DRAIN_COST {
+            let mut move_armor = armor;
+            // try to cast magic missile
+            let after_player_move = state
+                .dec_player_mana(DRAIN_COST)
+                .inc_spent_mana(DRAIN_COST)
+                .dec_boss_hp(2)
+                .inc_player_hp(2);
+
+            if after_player_move.get_boss_hp() == 0 {
+                min_spent_mana_at_boss_death =
+                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+            } else {
+                let after_boss_effects = state.apply_effects(&mut move_armor);
+                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
+                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
+                if after_boss_move.get_player_hp() > 0 {
+                    heap.push(after_boss_move);
+                }
+            }
+        }
+        const RECHARGE_COST: u16 = 229;
+        const RECHARGE_TURNS: u8 = 5;
+        if mana >= RECHARGE_COST && state.get_recharge_effect_counter() == 0 {
+            let mut move_armor = armor;
+
+            // try to cast magic missile
+            let after_player_move = state
+                .dec_player_mana(RECHARGE_COST)
+                .inc_spent_mana(RECHARGE_COST)
+                .set_recharge_effect_counter(RECHARGE_TURNS);
+
+            if after_player_move.get_boss_hp() == 0 {
+                min_spent_mana_at_boss_death =
+                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+            } else {
+                let after_boss_effects = state.apply_effects(&mut move_armor);
+                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
+                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
+                if after_boss_move.get_player_hp() > 0 {
+                    heap.push(after_boss_move);
+                }
+            }
+        }
+        const POISON_COST: u16 = 173;
+        const POISON_TURNS: u8 = 6;
+        if mana >= POISON_COST && state.get_poison_effect_counter() == 0 {
+            let mut move_armor = armor;
+
+            // try to cast magic missile
+            let after_player_move = state
+                .dec_player_mana(POISON_COST)
+                .inc_spent_mana(POISON_COST)
+                .set_poison_effect_counter(POISON_TURNS);
+
+            if after_player_move.get_boss_hp() == 0 {
+                min_spent_mana_at_boss_death =
+                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+            } else {
+                let after_boss_effects = state.apply_effects(&mut move_armor);
+                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
+                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
+                if after_boss_move.get_player_hp() > 0 {
+                    heap.push(after_boss_move);
+                }
+            }
+        }
+        const SHIELD_COST: u16 = 113;
+        const SHIELD_TURNS: u8 = 6;
+        if mana >= SHIELD_COST && state.get_poison_effect_counter() == 0 {
+            let mut move_armor = armor;
+
+            // try to cast magic missile
+            let after_player_move = state
+                .dec_player_mana(SHIELD_COST)
+                .inc_spent_mana(SHIELD_COST)
+                .set_shield_effect_counter(SHIELD_TURNS);
+
+            if after_player_move.get_boss_hp() == 0 {
+                min_spent_mana_at_boss_death =
+                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+            } else {
+                let after_boss_effects = state.apply_effects(&mut move_armor);
+                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
+                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
+                if after_boss_move.get_player_hp() > 0 {
+                    heap.push(after_boss_move);
                 }
             }
         }
@@ -450,7 +387,7 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
 
     // 5 actions
     // effects
-    min_spent_mana_at_boss_death
+    min_spent_mana_at_boss_death as usize
 }
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
@@ -461,7 +398,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 mod tests {
     use rstest::rstest;
 
-    use crate::least_mana_spent;
+    use crate::{least_mana_spent, BitState};
 
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -525,5 +462,50 @@ mod tests {
                 .finish(),
         );
         assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+    }
+
+    #[test]
+    fn test_bit_state() {
+        let mut state = BitState(0);
+        //
+        state = state.set_player_hp(3);
+        assert_eq!(state.get_player_hp(), 3);
+        state = state.set_player_hp(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_player_mana(3);
+        assert_eq!(state.get_player_mana(), 3);
+        state = state.set_player_mana(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_shield_effect_counter(3);
+        assert_eq!(state.get_shield_effect_counter(), 3);
+        state = state.set_shield_effect_counter(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_recharge_effect_counter(3);
+        assert_eq!(state.get_recharge_effect_counter(), 3);
+        state = state.set_recharge_effect_counter(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_poison_effect_counter(3);
+        assert_eq!(state.get_poison_effect_counter(), 3);
+        state = state.set_poison_effect_counter(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_spent_mana(3);
+        assert_eq!(state.get_spent_mana(), 3);
+        state = state.set_spent_mana(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_boss_hp(3);
+        assert_eq!(state.get_boss_hp(), 3);
+        state = state.set_boss_hp(0);
+        assert_eq!(state.0, 0);
+
+        state = state.set_boss_damage(3);
+        assert_eq!(state.get_boss_damage(), 3);
+        state = state.set_boss_damage(0);
+        assert_eq!(state.0, 0);
     }
 }
