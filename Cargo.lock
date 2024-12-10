@@ -10,6 +10,7 @@ version = "0.1.0"
 name = "advent_utils"
 version = "0.1.0"
 dependencies = [
+ "glam",
  "itertools 0.13.0",
  "tracing",
 ]
@@ -1607,6 +1608,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
+ "glam",
  "itertools 0.13.0",
  "tracing",
  "tracing-subscriber",
@@ -1658,6 +1660,18 @@ dependencies = [
 
 [[package]]
 name = "y24d09"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y24d10"
 version = "0.1.0"
 dependencies = [
  "advent_utils",

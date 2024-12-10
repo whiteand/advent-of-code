@@ -1,27 +1,30 @@
-use advent_utils::Grid;
+use advent_utils::grid::Grid;
+use glam::IVec2;
 use itertools::Itertools;
 
-const DIRS: [(isize, isize); 8] = [
-    (-1, -1),
-    (-1, 0),
-    (-1, 1),
-    (0, 1),
-    (0, -1),
-    (1, -1),
-    (1, 0),
-    (1, 1),
-];
+fn get_dirs() -> [IVec2; 8] {
+    [
+        IVec2::NEG_X + IVec2::NEG_Y,
+        IVec2::NEG_X,
+        IVec2::NEG_X + IVec2::Y,
+        IVec2::NEG_Y,
+        IVec2::Y,
+        IVec2::X + IVec2::NEG_Y,
+        IVec2::X,
+        IVec2::X + IVec2::Y,
+    ]
+}
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content.trim());
 
     let mut total = 0;
-    for (i, j) in grid.coords() {
-        total += DIRS
+    for pos in grid.coords() {
+        total += get_dirs()
             .iter()
             .copied()
-            .filter(|dir| grid.matches("XMAS", i, j, *dir))
+            .filter(|dir| grid.matches("XMAS", pos, *dir))
             .count();
     }
     total
@@ -32,11 +35,15 @@ pub fn solve_part_2(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content.trim());
 
     let mut total = 0;
-    for (i, j) in grid.coords() {
-        if !grid.matches("MAS", i, j, (1, 1)) && !grid.matches("SAM", i, j, (1, 1)) {
+    for pos in grid.coords() {
+        if !grid.matches("MAS", pos, IVec2::new(1, 1))
+            && !grid.matches("SAM", pos, IVec2::new(1, 1))
+        {
             continue;
         }
-        if !grid.matches("MAS", i, j + 2, (1, -1)) && !grid.matches("SAM", i, j + 2, (1, -1)) {
+        if !grid.matches("MAS", pos + IVec2::new(0, 2), IVec2::new(1, -1))
+            && !grid.matches("SAM", pos + IVec2::new(0, 2), IVec2::new(1, -1))
+        {
             continue;
         }
         total += 1;
@@ -45,12 +52,12 @@ pub fn solve_part_2(file_content: &str) -> usize {
 }
 
 trait GridExt {
-    fn matches(&self, str: &str, i: usize, j: usize, dir: (isize, isize)) -> bool;
+    fn matches(&self, str: &str, pos: IVec2, dir: IVec2) -> bool;
 }
 
 impl GridExt for Grid<u8> {
-    fn matches(&self, str: &str, i: usize, j: usize, dir: (isize, isize)) -> bool {
-        self.iter_line(i as isize, j as isize, dir.0, dir.1)
+    fn matches(&self, str: &str, pos: IVec2, dir: IVec2) -> bool {
+        self.iter_line(pos, dir)
             .zip_longest(str.as_bytes().into_iter())
             .take_while(|r| r.has_right())
             .all(|r| r.both().map_or(false, |(a, b)| a == b))

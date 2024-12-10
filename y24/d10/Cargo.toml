@@ -1,5 +1,5 @@
 [package]
-name = "y24d04"
+name = "y24d10"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,13 +7,14 @@ edition = "2021"
 
 [dependencies]
 advent_utils.workspace = true
-itertools.workspace = true
 criterion.workspace = true
-glam.workspace = true
-tracing.workspace = true
+itertools.workspace = true
 tracing-subscriber.workspace = true
+tracing.workspace = true
+tracing-chrome.workspace = true
+
 
 [[bench]]
-name = "y24d04"
-path = "benches/y24d04.rs"
+name = "y24d10"
+path = "benches/y24d10.rs"
 harness = false

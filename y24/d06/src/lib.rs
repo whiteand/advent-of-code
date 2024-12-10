@@ -1,10 +1,10 @@
-use advent_utils::Grid;
+use advent_utils::{glam::IVec2, grid::Grid};
 
 pub fn solve_part_1(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content);
     let pos = grid
         .coords()
-        .find(|x| grid.get(x.0, x.1).copied().unwrap() == b'^')
+        .find(|x| grid.get(*x).copied().unwrap() == b'^')
         .unwrap();
 
     let (positions, _) = traverse(&grid, pos, Dir::Up);
@@ -15,18 +15,18 @@ pub fn solve_part_2(file_content: &str) -> usize {
     let mut grid = Grid::from_ascii_grid(file_content);
     let pos = grid
         .coords()
-        .find(|x| grid.get(x.0, x.1).copied().unwrap() == b'^')
+        .find(|x| grid.get(*x).copied().unwrap() == b'^')
         .unwrap();
 
     let (positions, _) = traverse(&grid, pos, Dir::Up);
 
     positions
         .coords()
-        .filter(|p| positions.get(p.0, p.1).copied() == Some(true))
-        .filter(|(r, c)| {
-            grid.set(*r, *c, b'#');
+        .filter(|p| positions.get(*p).copied() == Some(true))
+        .filter(|p| {
+            grid.set(*p, b'#');
             let (_, has_loop) = traverse(&grid, pos, Dir::Up);
-            grid.set(*r, *c, b'.');
+            grid.set(*p, b'.');
             has_loop
         })
         .count()
@@ -41,12 +41,12 @@ enum Dir {
 }
 
 impl Dir {
-    fn apply(&self, pos: (usize, usize)) -> Option<(usize, usize)> {
+    fn apply(&self, pos: IVec2) -> Option<IVec2> {
         match self {
-            Dir::Up => pos.0.checked_sub(1).map(|r| (r, pos.1)),
-            Dir::Right => pos.1.checked_add(1).map(|c| (pos.0, c)),
-            Dir::Down => pos.0.checked_add(1).map(|r| (r, pos.1)),
-            Dir::Left => pos.1.checked_sub(1).map(|c| (pos.0, c)),
+            Dir::Up => (pos.y > 0).then_some(pos + IVec2::NEG_Y),
+            Dir::Right => Some(pos + IVec2::X),
+            Dir::Down => Some(pos + IVec2::Y),
+            Dir::Left => (pos.x > 0).then_some(pos + IVec2::NEG_X),
         }
     }
     fn next(&self) -> Dir {
@@ -94,22 +94,22 @@ impl State {
     }
 }
 
-fn traverse(grid: &Grid<u8>, mut pos: (usize, usize), mut dir: Dir) -> (Grid<bool>, bool) {
+fn traverse(grid: &Grid<u8>, mut pos: IVec2, mut dir: Dir) -> (Grid<bool>, bool) {
     let mut positions = grid.map(|_, _, _| false);
     let mut states = grid.map(|_, _, _| State::default());
     let mut has_loop = false;
     loop {
-        if let Some(s) = states.get_mut(pos.0, pos.1) {
+        if let Some(s) = states.get_mut(pos) {
             if s.visit(dir) {
                 has_loop = true;
                 break;
             }
         }
-        positions.set(pos.0, pos.1, true);
+        positions.set(pos, true);
         let Some(next_pos) = dir.apply(pos) else {
             break;
         };
-        let Some(next_cell) = grid.get(next_pos.0, next_pos.1).copied() else {
+        let Some(next_cell) = grid.get(next_pos).copied() else {
             break;
         };
         if next_cell == b'#' {

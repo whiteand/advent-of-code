@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use glam::IVec2;
 use itertools::Itertools;
 
 #[derive(Debug)]
@@ -9,9 +10,10 @@ pub struct Grid<T> {
 }
 
 impl<T> Grid<T> {
-    pub fn coords(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
-        (0..self.rows_len())
-            .flat_map(|r| (0..self.row(r).map_or(0, |r| r.len())).map(move |c| (r, c)))
+    pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
+        (0..self.rows_len()).flat_map(|r| {
+            (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(r as i32, c as i32))
+        })
     }
     pub fn map<U>(&self, f: impl Fn(&T, usize, usize) -> U) -> Grid<U> {
         let f = &f;
@@ -78,21 +80,11 @@ impl<T> Grid<T> {
             Some(row)
         })
     }
-    pub fn iter_line(
-        &self,
-        row: isize,
-        col: isize,
-        delta_row: isize,
-        delta_col: isize,
-    ) -> impl Iterator<Item = &T> {
-        let mut r = row;
-        let mut c = col;
+    pub fn iter_line(&self, pos: IVec2, v: IVec2) -> impl Iterator<Item = &T> {
+        let mut p = pos;
         std::iter::from_fn(move || {
-            let r_u: usize = if r < 0 { return None } else { Some(r as usize) }?;
-            let c_u: usize = if c < 0 { return None } else { Some(c as usize) }?;
-            let value = self.get(r_u, c_u)?;
-            r += delta_row;
-            c += delta_col;
+            let value = self.get(p)?;
+            p += v;
             Some(value)
         })
     }
@@ -104,19 +96,39 @@ impl<T> Grid<T> {
         let range = self.row_range(row)?;
         Some(&mut self.arr[range])
     }
-    pub fn set(&mut self, row: usize, col: usize, value: T) -> Option<T> {
-        match self.get_mut(row, col) {
+    pub fn set(&mut self, pos: IVec2, value: T) -> Option<T> {
+        match self.get_mut(pos) {
             Some(prev) => Some(std::mem::replace(prev, value)),
-            None => unreachable!("You cannot set value at {row} and {col}"),
+            None => unreachable!("You cannot set value at {pos}"),
         }
     }
     #[inline(always)]
-    pub fn get(&self, row: usize, col: usize) -> Option<&T> {
-        self.row(row).and_then(|r| r.get(col))
+    pub fn get(&self, pos: IVec2) -> Option<&T> {
+        let row = pos.y;
+        if row < 0 {
+            return None;
+        }
+        self.row(row as usize).and_then(|r| {
+            let col = pos.x;
+            if col < 0 {
+                return None;
+            }
+            r.get(col as usize)
+        })
     }
     #[inline(always)]
-    pub fn get_mut(&mut self, row: usize, col: usize) -> Option<&mut T> {
-        self.row_mut(row).and_then(|r| r.get_mut(col))
+    pub fn get_mut(&mut self, pos: IVec2) -> Option<&mut T> {
+        let row = pos.y;
+        if row < 0 {
+            return None;
+        }
+        self.row_mut(row as usize).and_then(|r| {
+            let col = pos.x;
+            if col < 0 {
+                return None;
+            }
+            r.get_mut(col as usize)
+        })
     }
 
     #[inline(always)]
@@ -191,6 +203,7 @@ where
 
 #[cfg(test)]
 mod tests {
+    use glam::IVec2;
     use itertools::Itertools;
 
     use super::Grid;
@@ -198,15 +211,15 @@ mod tests {
     #[test]
     fn test_get() {
         let grid = Grid::from_ascii_grid("123\n456\n789");
-        assert_eq!(grid.get(0, 0).copied(), Some(b'1'));
-        assert_eq!(grid.get(0, 1).copied(), Some(b'2'));
-        assert_eq!(grid.get(0, 2).copied(), Some(b'3'));
-        assert_eq!(grid.get(1, 0).copied(), Some(b'4'));
-        assert_eq!(grid.get(1, 1).copied(), Some(b'5'));
-        assert_eq!(grid.get(1, 2).copied(), Some(b'6'));
-        assert_eq!(grid.get(2, 0).copied(), Some(b'7'));
-        assert_eq!(grid.get(2, 1).copied(), Some(b'8'));
-        assert_eq!(grid.get(2, 2).copied(), Some(b'9'));
+        assert_eq!(grid.get(IVec2::new(0, 0)).copied(), Some(b'1'));
+        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'2'));
+        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'3'));
+        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'4'));
+        assert_eq!(grid.get(IVec2::new(1, 1)).copied(), Some(b'5'));
+        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'6'));
+        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'7'));
+        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), Some(b'8'));
+        assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
         assert_eq!(grid.cols(0), 3);
         assert_eq!(grid.cols(1), 3);
         assert_eq!(grid.cols(2), 3);
@@ -217,15 +230,15 @@ mod tests {
         assert_eq!(grid.cols(1), 2);
         assert_eq!(grid.cols(2), 3);
         assert_eq!(grid.rows_len(), 3);
-        assert_eq!(grid.get(0, 0).copied(), Some(b'1'));
-        assert_eq!(grid.get(0, 1).copied(), Some(b'2'));
-        assert_eq!(grid.get(0, 2).copied(), Some(b'3'));
-        assert_eq!(grid.get(1, 0).copied(), Some(b'4'));
-        assert_eq!(grid.get(1, 1).copied(), Some(b'6'));
-        assert_eq!(grid.get(1, 2).copied(), None);
-        assert_eq!(grid.get(2, 0).copied(), Some(b'7'));
-        assert_eq!(grid.get(2, 1).copied(), Some(b'8'));
-        assert_eq!(grid.get(2, 2).copied(), Some(b'9'));
+        assert_eq!(grid.get(IVec2::new(0, 0)).copied(), Some(b'1'));
+        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'2'));
+        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'3'));
+        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'4'));
+        assert_eq!(grid.get(IVec2::new(1, 1)).copied(), Some(b'6'));
+        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), None);
+        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'7'));
+        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), Some(b'8'));
+        assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
         assert_eq!(grid.rows_ranges().collect_vec(), vec![0..3, 3..5, 5..8]);
     }
 }
