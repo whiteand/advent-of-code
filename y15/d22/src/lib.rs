@@ -28,7 +28,12 @@ struct Boss {
 #[tracing::instrument]
 pub fn solve_part_1(file_content: &str) -> usize {
     let boss = parse_boss(file_content);
-    least_mana_spent(Player::new(50, 500), boss)
+    least_mana_spent(Player::new(50, 500), boss, 0)
+}
+#[tracing::instrument]
+pub fn solve_part_2(file_content: &str) -> usize {
+    let boss = parse_boss(file_content);
+    least_mana_spent(Player::new(50, 500), boss, 1)
 }
 
 fn parse_boss(input: &str) -> Boss {
@@ -284,11 +289,34 @@ impl BitState {
         const RECHARGE_COST: u16 = 229;
         const RECHARGE_TURNS: u8 = 5;
 
-        let mana = self.get_player_mana();
-        (mana >= RECHARGE_COST).then(|| {
-            self.spend_mana(RECHARGE_COST)
-                .set_recharge_effect_counter(RECHARGE_TURNS)
-        })
+        (self.get_player_mana() >= RECHARGE_COST && self.get_recharge_effect_counter() == 0).then(
+            || {
+                self.spend_mana(RECHARGE_COST)
+                    .set_recharge_effect_counter(RECHARGE_TURNS)
+            },
+        )
+    }
+    fn try_cast_poison(&self) -> Option<Self> {
+        const POISON_COST: u16 = 173;
+        const POISON_TURNS: u8 = 6;
+
+        (self.get_player_mana() >= POISON_COST && self.get_poison_effect_counter() == 0).then(
+            || {
+                self.spend_mana(POISON_COST)
+                    .set_poison_effect_counter(POISON_TURNS)
+            },
+        )
+    }
+    fn try_cast_shield(&self) -> Option<Self> {
+        const SHIELD_COST: u16 = 113;
+        const SHIELD_TURNS: u8 = 6;
+
+        (self.get_player_mana() >= SHIELD_COST && self.get_shield_effect_counter() == 0).then(
+            || {
+                self.spend_mana(SHIELD_COST)
+                    .set_shield_effect_counter(SHIELD_TURNS)
+            },
+        )
     }
 }
 
@@ -335,7 +363,7 @@ impl Game {
 }
 
 #[tracing::instrument(skip(player, boss))]
-fn least_mana_spent(player: Player, boss: Boss) -> usize {
+fn least_mana_spent(player: Player, boss: Boss, player_hp_per_move: u8) -> usize {
     let mut heap = BinaryHeap::new();
 
     let state = BitState(0)
@@ -349,8 +377,6 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
 
     let mut min_spent_mana_at_boss_death = u16::MAX;
 
-    let mut min_boss_hp = boss.hp as u8;
-
     let mut visited = HashSet::new();
 
     while let Some(state) = heap.pop() {
@@ -358,6 +384,12 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             continue;
         }
         if !visited.insert(state) {
+            continue;
+        }
+
+        let state = state.dec_player_hp(player_hp_per_move);
+
+        if state.get_player_hp() == 0 {
             continue;
         }
 
@@ -408,87 +440,39 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             }
             _ => {}
         }
-
-        let state = match game {
-            Game::Win(s) => {
+        match game
+            .map_maybe(|s| s.try_cast_poison())
+            .map(|x| x.and_then(|x| x.boss_move()))
+        {
+            Some(Game::Win(s)) => {
                 if s.get_spent_mana() < min_spent_mana_at_boss_death {
                     min_spent_mana_at_boss_death = s.get_spent_mana();
                 }
-                continue;
             }
-            Game::Playing(s) => s,
-            Game::Loser => {
-                continue;
+            Some(Game::Playing(s)) => {
+                heap.push(s);
             }
-        };
-
-        let mana = state.get_player_mana();
-
-        const POISON_COST: u16 = 173;
-        const POISON_TURNS: u8 = 6;
-        if mana >= POISON_COST && state.get_poison_effect_counter() == 0 {
-            // try to cast magic missile
-            let state = state
-                .spend_mana(POISON_COST)
-                .set_poison_effect_counter(POISON_TURNS);
-
-            if state.get_boss_hp() == 0 {
-                min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
-            } else {
-                match state.boss_move() {
-                    Game::Playing(state) => {
-                        heap.push(state);
-                    }
-                    Game::Win(state) => {
-                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
-                            min_spent_mana_at_boss_death = state.get_spent_mana();
-                        }
-                    }
-                    Game::Loser => {
-                        // do nothing
-                    }
-                };
-            }
+            _ => {}
         }
-        const SHIELD_COST: u16 = 113;
-        const SHIELD_TURNS: u8 = 6;
-        if mana >= SHIELD_COST && state.get_poison_effect_counter() == 0 {
-            let mut move_armor = armor;
-
-            // try to cast magic missile
-            let state = state
-                .spend_mana(SHIELD_COST)
-                .set_shield_effect_counter(SHIELD_TURNS);
-
-            if state.get_boss_hp() == 0 {
-                min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
-            } else {
-                match state.boss_move() {
-                    Game::Playing(state) => {
-                        heap.push(state);
-                    }
-                    Game::Win(state) => {
-                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
-                            min_spent_mana_at_boss_death = state.get_spent_mana();
-                        }
-                    }
-                    Game::Loser => {
-                        // do nothing
-                    }
-                };
+        match game
+            .map_maybe(|s| s.try_cast_shield())
+            .map(|x| x.and_then(|x| x.boss_move()))
+        {
+            Some(Game::Win(s)) => {
+                if s.get_spent_mana() < min_spent_mana_at_boss_death {
+                    min_spent_mana_at_boss_death = s.get_spent_mana();
+                }
             }
+            Some(Game::Playing(s)) => {
+                heap.push(s);
+            }
+            _ => {}
         }
     }
 
     // 5 actions
     // effects
     min_spent_mana_at_boss_death as usize
-}
-#[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> usize {
-    todo!("part 2 is not implemented yet: {file_content}")
 }
 
 #[cfg(test)]
@@ -497,18 +481,17 @@ mod tests {
 
     use crate::{least_mana_spent, BitState};
 
-    use super::{solve_part_1, solve_part_2};
-    const EXAMPLE: &str = include_str!("../example.txt");
-    const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
-    #[case(10, 250, 13, 8, 226)]
-    #[case(10, 250, 14, 8, 641)]
-    #[case(50, 500, 71, 10, 1242)] // 1242 is too low
+    #[case(10, 250, 13, 8, 0, 226)]
+    #[case(10, 250, 14, 8, 0, 641)]
+    #[case(50, 500, 71, 10, 0, 1824)]
+    #[case(50, 500, 71, 10, 1, 1937)]
     fn test_part1(
         #[case] player_hp: usize,
         #[case] player_mana: usize,
         #[case] boss_hp: usize,
         #[case] boss_damage: usize,
+        #[case] hp_per_move: u8,
         #[case] expected_result: usize,
     ) {
         let _guard = tracing::subscriber::set_default(
@@ -523,52 +506,20 @@ mod tests {
                 super::Boss {
                     hp: boss_hp,
                     damage: boss_damage,
-                }
+                },
+                hp_per_move
             )
         );
     }
 
     #[test]
-    #[ignore]
-    fn test_part1_actual() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_part2() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_part2_actual() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
-    }
-
-    #[test]
     fn test_bit_state() {
-        let mut state = BitState(u64::MAX);
+        let mut state = BitState(0);
         //
-        assert_eq!(state.get_player_hp(), 127);
         state = state.set_player_hp(3);
         assert_eq!(state.get_player_hp(), 3);
-        assert_eq!(state.0, 0);
+        state = state.set_player_hp(0);
+        assert_eq!(state.get_player_hp(), 0);
 
         state = state.set_player_mana(3);
         assert_eq!(state.get_player_mana(), 3);
