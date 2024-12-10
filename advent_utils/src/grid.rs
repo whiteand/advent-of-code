@@ -15,11 +15,15 @@ impl<T> Grid<T> {
             (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(r as i32, c as i32))
         })
     }
-    pub fn map<U>(&self, f: impl Fn(&T, usize, usize) -> U) -> Grid<U> {
+    pub fn map<U>(&self, f: impl Fn(&T, IVec2) -> U) -> Grid<U> {
         let f = &f;
         self.rows()
             .enumerate()
-            .map(|(i, row)| row.into_iter().enumerate().map(move |(j, x)| f(x, i, j)))
+            .map(|(i, row)| {
+                row.into_iter()
+                    .enumerate()
+                    .map(move |(j, x)| f(x, IVec2::new(i as i32, j as i32)))
+            })
             .collect()
     }
 

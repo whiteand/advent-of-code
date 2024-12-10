@@ -95,8 +95,8 @@ impl State {
 }
 
 fn traverse(grid: &Grid<u8>, mut pos: IVec2, mut dir: Dir) -> (Grid<bool>, bool) {
-    let mut positions = grid.map(|_, _, _| false);
-    let mut states = grid.map(|_, _, _| State::default());
+    let mut positions = grid.map(|_, _| false);
+    let mut states = grid.map(|_, _| State::default());
     let mut has_loop = false;
     loop {
         if let Some(s) = states.get_mut(pos) {

@@ -3,7 +3,7 @@ use advent_utils::{glam::IVec2, grid::Grid};
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content);
-    let mut visited = grid.map(|_, _, _| false);
+    let mut visited = grid.map(|_, _| false);
 
     grid.coords()
         .filter(|pos| grid.get(*pos).copied() == Some(b'0'))
@@ -33,7 +33,7 @@ fn load_finish_positions(grid: &Grid<u8>, pos: IVec2, visited: &mut Grid<bool>) 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content);
-    let mut dp = grid.map(|x, _, _| (*x == b'9').then_some(1));
+    let mut dp = grid.map(|x, _| (*x == b'9').then_some(1));
     grid.coords()
         .filter(|pos| grid.get(*pos).copied() == Some(b'0'))
         .map(|pos| get_rating(&grid, pos, &mut dp))
