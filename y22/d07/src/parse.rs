@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 
-use nom::{
-    branch, bytes,
+use advent_utils::nom::{
+    self, branch, bytes,
     character::{self, complete::space1},
     sequence, IResult,
 };

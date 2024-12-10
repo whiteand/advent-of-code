@@ -9,7 +9,7 @@ fn file_content_to_tree(file_content: &str) -> Tree {
 }
 
 // 1581595
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     file_content_to_tree(file_content)
         .into_iter()
         .filter_map(|x| {
@@ -26,7 +26,7 @@ pub fn solve_task1(file_content: &str) -> usize {
 }
 
 // 1544176
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let tree = file_content_to_tree(file_content);
 
     const TOTAL: usize = 70000000;
@@ -80,13 +80,11 @@ $ ls
 5626152 d.ext
 7214296 k";
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "95437");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "95437");
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "24933642");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "24933642");
     }
 }
