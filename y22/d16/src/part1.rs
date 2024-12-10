@@ -45,7 +45,7 @@ impl FullState {
     }
 }
 
-pub fn solve_task1(file_content: &str, minutes: usize) -> usize {
+pub fn solve_part_1(file_content: &str, minutes: usize) -> usize {
     let valves = parse::parse(file_content);
     let valves_map = valves
         .into_iter()

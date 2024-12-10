@@ -215,7 +215,7 @@ impl Node {
     }
 }
 
-pub(crate) fn solve_task2(file_content: &str, minutes: usize) -> usize {
+pub(crate) fn solve_part_2(file_content: &str, minutes: usize) -> usize {
     let valves = parse::parse(file_content)
         .into_iter()
         .map(|valve| (valve.name, valve))
