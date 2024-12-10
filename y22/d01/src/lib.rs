@@ -1,4 +1,4 @@
-use crate::y22::reduces::Reduces;
+use advent_utils::reduces::Reduces;
 
 fn parse_elfes_calories(file_content: &str) -> impl Iterator<Item = u32> + '_ {
     file_content
@@ -14,11 +14,11 @@ fn parse_elfes_calories(file_content: &str) -> impl Iterator<Item = u32> + '_ {
         })
 }
 
-pub fn solve_part1(file_content: &str) -> u32 {
+pub fn solve_part_1(file_content: &str) -> u32 {
     parse_elfes_calories(file_content).max().unwrap_or_default()
 }
 
-pub fn solve_part2(file_content: &str) -> u32 {
+pub fn solve_part_2(file_content: &str) -> u32 {
     let mut top1 = 0;
     let mut top2 = 0;
     let mut top3 = 0;
@@ -61,14 +61,13 @@ mod tests {
     
     10000";
 
-    #[ignore]
     #[test]
-    fn test_part1() {
-        assert_eq!(solve_part1(INPUT), 24000);
+    fn test_part_1() {
+        assert_eq!(solve_part_1(INPUT), 24000);
     }
-    #[ignore]
+
     #[test]
-    fn test_part2() {
-        assert_eq!(solve_part2(INPUT), 45000);
+    fn test_part_2() {
+        assert_eq!(solve_part_2(INPUT), 45000);
     }
 }
