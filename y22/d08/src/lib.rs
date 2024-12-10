@@ -10,7 +10,7 @@ fn nullify(arr: &[Vec<u8>]) -> Vec<Vec<u8>> {
 }
 
 // 1705
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let grid = parse_grid(file_content);
 
     let rows = grid.len();
@@ -156,7 +156,7 @@ fn get_score(grid: &[Vec<u8>], row: usize, col: usize) -> usize {
     top * right * bottom * left
 }
 // 371200
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let grid = parse_grid(file_content);
     let mut res = 0;
     for (row, line) in grid.iter().enumerate() {
@@ -170,8 +170,6 @@ pub fn solve_task2(file_content: &str) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-
     use super::*;
     const INPUT: &str = "30373
 25512
@@ -179,37 +177,32 @@ mod tests {
 33549
 35390";
 
-    #[ignore]
     #[test]
     fn test_actual() {
-        let str = fs::read_to_string("benches/y22/y22d8.txt").unwrap_or_default();
-        let res = solve_task1(&str);
+        let str = include_str!("../input.txt");
+        let res = solve_part_1(&str);
         assert_eq!(res, 1705);
     }
 
-    #[ignore]
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT.trim())), "21");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT.trim())), "21");
     }
 
-    #[ignore]
     #[test]
     fn test_score_1() {
         let grid = parse_grid(INPUT);
         let score = get_score(&grid, 1, 2);
         assert_eq!(score, 4)
     }
-    #[ignore]
     #[test]
     fn test_score_2() {
         let grid = parse_grid(INPUT);
         let score = get_score(&grid, 3, 2);
         assert_eq!(score, 8)
     }
-    #[ignore]
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "8");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "8");
     }
 }
