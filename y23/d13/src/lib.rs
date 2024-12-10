@@ -259,7 +259,7 @@ impl Pattern {
     }
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     parse_patterns(file_content)
         .map(|mut pattern| {
             match pattern
@@ -272,7 +272,7 @@ pub fn solve_task1(file_content: &str) -> usize {
         })
         .sum()
 }
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     parse_patterns(file_content)
         .map(|mut pattern| {
             match pattern
@@ -308,25 +308,26 @@ fn parse_patterns(rocks: &str) -> impl Iterator<Item = Pattern> + '_ {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d13/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d13.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
+
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "405");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "405");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "33122");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "33122");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(solve_task2(INPUT), 400);
+    fn test_part_2() {
+        assert_eq!(solve_part_2(INPUT), 400);
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "32312");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "32312");
     }
 }
