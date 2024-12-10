@@ -1,11 +1,11 @@
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
     grid.tilt::<North>(&mut coords);
     grid.get_value(&coords)
 }
 
-pub fn solve_task2<const N: usize>(file_content: &str) -> usize {
+pub fn solve_part_2<const N: usize>(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let mut coords = grid.round_rocks_coords();
     let mut visited: Vec<(Vec<(usize, usize)>, usize)> = Vec::new();
@@ -160,25 +160,28 @@ impl TiltDirection for East {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d14/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d14.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "136");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "136");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "106997");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "106997");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2::<1_000_000_000>(INPUT)), "64");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2::<1_000_000_000>(INPUT)), "64");
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2::<1_000_000_000>(ACTUAL)), "99641");
+    fn test_part_2_actual() {
+        assert_eq!(
+            format!("{}", solve_part_2::<1_000_000_000>(ACTUAL)),
+            "99641"
+        );
     }
 }
