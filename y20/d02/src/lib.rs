@@ -87,10 +87,10 @@ where
     res
 }
 
-pub fn solve_task1(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_1(file_content: &str) -> impl std::fmt::Display {
     count_password::<OldWorkRule>(file_content)
 }
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2(file_content: &str) -> impl std::fmt::Display {
     count_password::<CurrentRule>(file_content)
 }
 #[cfg(test)]
@@ -99,14 +99,12 @@ mod tests {
     const INPUT: &str = "1-3 a: abcde
 1-3 b: cdefg
 2-9 c: ccccccccc";
-    #[ignore]
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "2");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "2");
     }
-    #[ignore]
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "1");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "1");
     }
 }
