@@ -1,8 +1,9 @@
-use nom::{
-    bytes::complete::tag, character::complete, multi::separated_list0, sequence::delimited, IResult,
+use advent_utils::nom::{
+    self, bytes::complete::tag, character::complete, multi::separated_list0, sequence::delimited,
+    IResult,
 };
 
-use crate::y22::reduces::Reduces;
+use advent_utils::reduces::Reduces;
 
 #[derive(PartialEq, Eq, Clone)]
 enum PacketData {
@@ -42,7 +43,7 @@ impl Ord for PacketData {
     }
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     parse_groups(file_content)
         .enumerate()
         .filter_map(|(ind, group)| {
@@ -64,7 +65,7 @@ fn is_greater_last_sorted<T: Ord>(list: Vec<T>) -> bool {
     true
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let mut packets = file_content
         .lines()
         .filter(|line| !line.is_empty())
@@ -120,27 +121,23 @@ fn parse_packet_data(line: &str) -> IResult<&str, PacketData> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y22d13/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y22/y22d13.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "13");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "13");
     }
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "5003");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "5003");
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "140");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "140");
     }
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "20280");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "20280");
     }
 }
