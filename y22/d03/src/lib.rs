@@ -40,7 +40,7 @@ fn calculate_score(parts: &[&[char]]) -> u32 {
     score as u32
 }
 
-pub fn solve_part1(file_content: &str) -> u32 {
+pub fn solve_part_1(file_content: &str) -> u32 {
     let mut res = 0;
     for line in parse_lines(file_content) {
         let compartments = [&line[..line.len() / 2], &line[line.len() / 2..]];
@@ -49,7 +49,7 @@ pub fn solve_part1(file_content: &str) -> u32 {
     res
 }
 
-pub fn solve_part2(file_content: &str) -> u32 {
+pub fn solve_part_2(file_content: &str) -> u32 {
     let mut score = 0;
 
     let mut lines = parse_lines(file_content);
@@ -72,7 +72,6 @@ pub fn solve_part2(file_content: &str) -> u32 {
 mod tests {
     use super::*;
 
-    #[ignore]
     #[test]
     fn test_value() {
         assert_eq!(get_value('a'), 1);
@@ -91,15 +90,13 @@ wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
 ttgJtRGJQctTZtZT
 CrZsJsPPZsGzwwsLwLmpwMDw";
 
-    #[ignore]
     #[test]
-    fn test_part1() {
-        assert_eq!(solve_part1(INPUT), 157);
+    fn test_part_1() {
+        assert_eq!(solve_part_1(INPUT), 157);
     }
 
-    #[ignore]
     #[test]
-    fn test_part2() {
-        assert_eq!(solve_part2(INPUT), 70);
+    fn test_part_2() {
+        assert_eq!(solve_part_2(INPUT), 70);
     }
 }
