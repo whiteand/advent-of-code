@@ -1,5 +1,6 @@
 use super::{condition::Condition, item::Item, monkey::Monkey, operation::Expression};
-use nom::{
+use advent_utils::nom::{
+    self,
     branch::alt,
     bytes::complete::tag,
     character::{self, complete::newline},

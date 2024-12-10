@@ -68,11 +68,11 @@ pub fn solve<const LOOPS: u64, const DIVIDER: u64>(file_content: &str) -> u64 {
     a * b
 }
 
-pub fn solve_task1(file_content: &str) -> u64 {
+pub fn solve_part_1(file_content: &str) -> u64 {
     solve::<20, 3>(file_content)
 }
 
-pub fn solve_task2(file_content: &str) -> u64 {
+pub fn solve_part_2(file_content: &str) -> u64 {
     solve::<10_000, 1>(file_content)
 }
 
@@ -135,22 +135,19 @@ Monkey 7:
     If true: throw to monkey 1
     If false: throw to monkey 6";
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "50830");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "50830");
     }
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "14399640002");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "14399640002");
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
+    fn test_part_2() {
         assert_eq!(
             format!(
                 "{}",
-                solve_task2(
+                solve_part_2(
                     "Monkey 0:
   Starting items: 79, 98
   Operation: new = old * 19
