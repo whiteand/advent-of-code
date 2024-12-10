@@ -4,7 +4,7 @@ fn parse_nums_list(s: &str) -> impl Iterator<Item = usize> + '_ {
     s.lines().map(|s| s.parse().unwrap())
 }
 
-pub fn solve_task1(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_1(file_content: &str) -> impl std::fmt::Display {
     let nums = parse_nums_list(file_content);
     let mut occurred_set = HashSet::new();
     for num in nums {
@@ -21,7 +21,7 @@ pub fn solve_task1(file_content: &str) -> impl std::fmt::Display {
 }
 // Right answer: 51810360
 // Iterations: 977104
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2(file_content: &str) -> impl std::fmt::Display {
     let nums = parse_nums_list(file_content).collect::<Vec<_>>();
     let n = nums.len();
     let mut iter = 0;
@@ -51,14 +51,12 @@ mod tests {
 675
 1456";
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "514579");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "514579");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "241861950");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "241861950");
     }
 }
