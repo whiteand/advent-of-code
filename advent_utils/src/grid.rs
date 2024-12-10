@@ -212,13 +212,13 @@ mod tests {
     fn test_get() {
         let grid = Grid::from_ascii_grid("123\n456\n789");
         assert_eq!(grid.get(IVec2::new(0, 0)).copied(), Some(b'1'));
-        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'2'));
-        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'3'));
-        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'4'));
+        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'2'));
+        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'3'));
+        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'4'));
         assert_eq!(grid.get(IVec2::new(1, 1)).copied(), Some(b'5'));
-        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'6'));
-        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'7'));
-        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), Some(b'8'));
+        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), Some(b'6'));
+        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'7'));
+        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'8'));
         assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
         assert_eq!(grid.cols(0), 3);
         assert_eq!(grid.cols(1), 3);
@@ -231,13 +231,13 @@ mod tests {
         assert_eq!(grid.cols(2), 3);
         assert_eq!(grid.rows_len(), 3);
         assert_eq!(grid.get(IVec2::new(0, 0)).copied(), Some(b'1'));
-        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'2'));
-        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'3'));
-        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'4'));
+        assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'2'));
+        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'3'));
+        assert_eq!(grid.get(IVec2::new(0, 1)).copied(), Some(b'4'));
         assert_eq!(grid.get(IVec2::new(1, 1)).copied(), Some(b'6'));
-        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), None);
-        assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'7'));
-        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), Some(b'8'));
+        assert_eq!(grid.get(IVec2::new(2, 1)).copied(), None);
+        assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'7'));
+        assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'8'));
         assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
         assert_eq!(grid.rows_ranges().collect_vec(), vec![0..3, 3..5, 5..8]);
     }

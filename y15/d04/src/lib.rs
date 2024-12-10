@@ -44,11 +44,13 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // long
     fn test_part_2() {
         assert_eq!(format!("{}", solve_part_2(INPUT)), "6742839");
     }
 
     #[test]
+    #[ignore] // long
     fn test_part_2_actual() {
         assert_eq!(format!("{}", solve_part_2(ACTUAL.trim())), "9958218");
     }

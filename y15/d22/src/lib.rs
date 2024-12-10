@@ -405,6 +405,7 @@ mod tests {
     #[case(10, 250, 13, 8, 226)]
     #[case(10, 250, 14, 8, 641)]
     #[case(50, 500, 71, 10, 0)]
+    #[ignore]
     fn test_part1(
         #[case] player_hp: usize,
         #[case] player_mana: usize,

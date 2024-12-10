@@ -120,13 +120,11 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn test_parse_list_query() {
         assert_eq!(parse_query("$ ls"), Ok(("", Query::List)));
     }
 
     #[test]
-    #[ignore]
     fn test_parse_change_dir_query_parent() {
         assert_eq!(
             parse_query("$ cd .."),
@@ -134,7 +132,6 @@ mod tests {
         );
     }
     #[test]
-    #[ignore]
     fn test_parse_change_dir_query_root() {
         assert_eq!(
             parse_query("$ cd /"),
@@ -142,7 +139,6 @@ mod tests {
         );
     }
     #[test]
-    #[ignore]
     fn test_parse_change_dir_query_directory() {
         assert_eq!(
             parse_query("$ cd a"),

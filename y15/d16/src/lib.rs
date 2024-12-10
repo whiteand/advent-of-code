@@ -119,7 +119,6 @@ fn parse_sue(line: &str) -> nom::IResult<&str, Sue> {
 #[cfg(test)]
 mod tests {
     use super::{solve_part_1, solve_part_2};
-    const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]

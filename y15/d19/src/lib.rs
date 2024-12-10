@@ -118,6 +118,6 @@ HOHOHO"#
 
     #[test]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "200");
     }
 }

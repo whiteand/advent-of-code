@@ -15,15 +15,18 @@ clippy:
 clear:
     rm -rf ./**/target
 
-
 solve year day:
     cat ./y{{year}}/d{{day}}/input.txt | cargo run --release --package y{{year}}d{{day}}
+
 example year day:
     cat ./y{{year}}/d{{day}}/example.txt | cargo run --release --package y{{year}}d{{day}}
+
 test year day:
     cargo test --package y{{year}}d{{day}} --lib -- --nocapture tests
+
 test-watch year day:
     cargo watch test --package y{{year}}d{{day}} --lib -- --nocapture tests
+
 bench year day:
     cargo bench --package y{{year}}d{{day}}
 
