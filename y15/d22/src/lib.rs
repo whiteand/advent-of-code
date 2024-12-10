@@ -253,14 +253,26 @@ impl BitState {
             Game::Playing(state)
         }
     }
-    fn spent_mana(&self, mana: u16) -> Self {
+    fn spend_mana(&self, mana: u16) -> Self {
         self.dec_player_mana(mana).inc_spent_mana(mana)
     }
     fn cast_magic_missile(&self) -> Option<Game> {
         let mana = self.get_player_mana();
         const MAGIC_MISSILE_COST: u16 = 53;
         (mana >= MAGIC_MISSILE_COST).then(|| {
-            let state = self.spent_mana(MAGIC_MISSILE_COST).dec_boss_hp(4);
+            let state = self.spend_mana(MAGIC_MISSILE_COST).dec_boss_hp(4);
+            if state.get_boss_hp() == 0 {
+                Game::Win(state)
+            } else {
+                Game::Playing(state)
+            }
+        })
+    }
+    fn cast_drain(&self) -> Option<Game> {
+        const DRAIN_COST: u16 = 73;
+        let mana = self.get_player_mana();
+        (mana >= DRAIN_COST).then(|| {
+            let state = self.spend_mana(DRAIN_COST).dec_boss_hp(2).inc_player_hp(2);
             if state.get_boss_hp() == 0 {
                 Game::Win(state)
             } else {
@@ -352,6 +364,20 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             }
             _ => {}
         }
+        match game
+            .and_then_maybe(|s| s.cast_drain())
+            .map(|x| x.and_then(|x| x.boss_move()))
+        {
+            Some(Game::Win(s)) => {
+                if s.get_spent_mana() < min_spent_mana_at_boss_death {
+                    min_spent_mana_at_boss_death = s.get_spent_mana();
+                }
+            }
+            Some(Game::Playing(s)) => {
+                heap.push(s);
+            }
+            _ => {}
+        }
 
         let state = match game {
             Game::Win(s) => {
@@ -366,43 +392,13 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             }
         };
 
-        const DRAIN_COST: u16 = 73;
-        let mana = state.get_player_mana();
-        if mana >= DRAIN_COST {
-            let mut move_armor = armor;
-            // try to cast magic missile
-            let state = state
-                .dec_player_mana(DRAIN_COST)
-                .inc_spent_mana(DRAIN_COST)
-                .dec_boss_hp(2)
-                .inc_player_hp(2);
-
-            if state.get_boss_hp() == 0 {
-                min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
-            } else {
-                match state.boss_move() {
-                    Game::Playing(state) => {
-                        heap.push(state);
-                    }
-                    Game::Win(state) => {
-                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
-                            min_spent_mana_at_boss_death = state.get_spent_mana();
-                        }
-                    }
-                    Game::Loser => {
-                        // do nothing
-                    }
-                };
-            }
-        }
         const RECHARGE_COST: u16 = 229;
         const RECHARGE_TURNS: u8 = 5;
+        let mana = state.get_player_mana();
         if mana >= RECHARGE_COST && state.get_recharge_effect_counter() == 0 {
             // try to cast magic missile
             let state = state
-                .dec_player_mana(RECHARGE_COST)
-                .inc_spent_mana(RECHARGE_COST)
+                .spend_mana(RECHARGE_COST)
                 .set_recharge_effect_counter(RECHARGE_TURNS);
 
             if state.get_boss_hp() == 0 {
@@ -431,8 +427,7 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
 
             // try to cast magic missile
             let state = state
-                .dec_player_mana(POISON_COST)
-                .inc_spent_mana(POISON_COST)
+                .spend_mana(POISON_COST)
                 .set_poison_effect_counter(POISON_TURNS);
 
             if state.get_boss_hp() == 0 {
@@ -461,8 +456,7 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
 
             // try to cast magic missile
             let state = state
-                .dec_player_mana(SHIELD_COST)
-                .inc_spent_mana(SHIELD_COST)
+                .spend_mana(SHIELD_COST)
                 .set_shield_effect_counter(SHIELD_TURNS);
 
             if state.get_boss_hp() == 0 {
