@@ -78,7 +78,7 @@ impl<'i, Dirs: Iterator<Item = Direction>> Iterator for FallingFigure<'i, Dirs> 
     }
 }
 
-pub fn solve_task1<const W: usize>(file_content: &str, stop: usize) -> usize {
+pub fn solve_part_1<const W: usize>(file_content: &str, stop: usize) -> usize {
     let figures = get_figures();
     let dirs = parse::parse(file_content).collect::<Vec<_>>();
     let dirs = infinite(&dirs);
@@ -96,40 +96,40 @@ pub fn solve_task1<const W: usize>(file_content: &str, stop: usize) -> usize {
     });
     heights.nth(stop - 1).unwrap()
 }
-pub fn solve_task2<const N: usize>(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2<const N: usize>(file_content: &str) -> impl std::fmt::Display {
     const CYCLE: usize = 1725;
     const ADDITION: usize = 2659;
     let rem = N / CYCLE;
     let q = N % CYCLE;
 
     println!("rem = {rem}, q = {q}");
-    ADDITION * rem + solve_task1::<7>(file_content, q)
+    ADDITION * rem + solve_part_1::<7>(file_content, q)
 }
 #[cfg(test)]
 mod tests {
     use super::*;
     // COMMON: 35, addition: 53
-    const INPUT: &str = include_str!("./example.txt");
+    const INPUT: &str = include_str!("../example.txt");
     // COMMON: 1725, addition: 2659
-    const ACTUAL: &str = include_str!("../../../benches/y22/y22d17.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1::<7>(INPUT, 2022)), "3068");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1::<7>(INPUT.trim(), 2022)), "3068");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1::<7>(ACTUAL, 2022)), "3109");
-    }
-
-    #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2::<2022>(ACTUAL)), "3109");
+    fn test_part_1_actual() {
         assert_eq!(
-            format!("{}", solve_task2::<1_000_000_000_000>(ACTUAL)),
+            format!("{}", solve_part_1::<7>(ACTUAL.trim(), 2022)),
+            "3109"
+        );
+    }
+
+    #[test]
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2::<2022>(ACTUAL.trim())), "3109");
+        assert_eq!(
+            format!("{}", solve_part_2::<1_000_000_000_000>(ACTUAL.trim())),
             "1541449275365"
         );
     }

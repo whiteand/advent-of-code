@@ -29,7 +29,7 @@ impl TryFrom<char> for Direction {
             '<' => Ok(Direction::Left),
             '>' => Ok(Direction::Right),
             'v' => Ok(Direction::Down),
-            _ => Err("invalid direction char".to_owned()),
+            ch => Err(format!("invalid direction char: {ch}")),
         }
     }
 }
