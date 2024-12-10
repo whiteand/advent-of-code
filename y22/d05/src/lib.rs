@@ -1,4 +1,4 @@
-use nom::IResult;
+use advent_utils::nom::{self, IResult};
 
 type Board = Vec<Vec<char>>;
 
@@ -105,7 +105,7 @@ fn solve(file_content: &str, apply_move: impl Fn(Move, &mut [Vec<char>])) -> Str
     result
 }
 
-pub fn solve_task1(file_content: &str) -> String {
+pub fn solve_part_1(file_content: &str) -> String {
     solve(file_content, apply_move_one_by_one)
 }
 
@@ -122,7 +122,7 @@ fn apply_move_with_multiple_at_once(m: Move, stacks: &mut [Vec<char>]) {
     stacks[m.to].extend(items);
 }
 
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2(file_content: &str) -> impl std::fmt::Display {
     solve(file_content, apply_move_with_multiple_at_once)
 }
 #[cfg(test)]
@@ -138,13 +138,11 @@ move 3 from 1 to 3
 move 2 from 2 to 1
 move 1 from 1 to 2";
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "CMZ");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "CMZ");
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "MCD");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "MCD");
     }
 }
