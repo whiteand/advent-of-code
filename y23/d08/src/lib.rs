@@ -1,6 +1,7 @@
 use std::{fmt::Write, ops::Deref, str::FromStr};
 
-use nom::{
+use advent_utils::nom::{
+    self,
     branch::alt,
     character::complete,
     character::complete::newline,
@@ -106,7 +107,7 @@ fn parse_input(file_content: &str) -> (Vec<Direction>, Vec<(Position, Position, 
     (directions, nodes)
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let (turns, nodes) = parse_input(file_content);
     let mut network = vec![(Position::START, Position::START); 26 * 26 * 26];
     for node in nodes {
@@ -176,7 +177,7 @@ fn nok(a: usize, b: usize) -> usize {
     a / gcd(a, b) * b
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let (turns, nodes) = parse_input(file_content);
     let turns_per_cycle = turns.len();
 
@@ -196,15 +197,15 @@ pub fn solve_task2(file_content: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d08/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d08.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "2");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "2");
         assert_eq!(
             format!(
                 "{}",
-                solve_task1(
+                solve_part_1(
                     "LLR
 
 AAA = (BBB, BBB)
@@ -217,18 +218,18 @@ ZZZ = (ZZZ, ZZZ)"
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "16043");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "16043");
     }
 
     #[test]
-    fn test_task2() {
+    fn test_part_2() {
         // KKA -> KKB -> KKZ -> KKB -> KKZ
         // | 0           | 1           | 2
         assert_eq!(
             format!(
                 "{}",
-                solve_task2(
+                solve_part_2(
                     "LR
 
 KKA = (KKB, XXX)
@@ -246,7 +247,7 @@ XXX = (XXX, XXX)"
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "15726453850399");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "15726453850399");
     }
 }
