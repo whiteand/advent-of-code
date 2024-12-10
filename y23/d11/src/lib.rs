@@ -50,30 +50,30 @@ pub fn solve<const N: usize>(file_content: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d11/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d11.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]
-    fn test_task1() {
+    fn test_part_1() {
         assert_eq!(format!("{}", solve::<2>(INPUT)), "374");
     }
 
     #[test]
-    fn test_task1_actual() {
+    fn test_part_1_actual() {
         assert_eq!(format!("{}", solve::<2>(ACTUAL)), "10033566");
     }
 
     #[test]
-    fn test_task2() {
+    fn test_part_2() {
         assert_eq!(format!("{}", solve::<10>(INPUT)), "1030");
     }
     #[test]
-    fn test_task2_2() {
+    fn test_part_2_2() {
         assert_eq!(format!("{}", solve::<100>(INPUT)), "8410");
     }
 
     #[test]
-    fn test_task2_actual() {
+    fn test_part_2_actual() {
         assert_eq!(format!("{}", solve::<1000000>(ACTUAL)), "560822911938");
     }
 }
