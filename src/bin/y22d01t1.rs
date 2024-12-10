@@ -1,4 +1,4 @@
-use advent::y22::day1::solve_part1;
+use advent::y22::y22d01::solve_part1;
 use std::{env::args, fs::read_to_string};
 
 fn main() {

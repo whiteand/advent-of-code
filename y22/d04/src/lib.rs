@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use nom::IResult;
+use advent_utils::nom::{self, IResult};
 
 fn parse_next<'a, T, U>(x: &mut T) -> U
 where
@@ -84,11 +84,11 @@ fn solve(file_content: &str, predicate: impl Fn(&Pair) -> bool) -> usize {
         .count()
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     solve(file_content, Pair::one_contains_other)
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     solve(file_content, Pair::has_overlaps)
 }
 #[cfg(test)]
@@ -102,14 +102,12 @@ mod tests {
 2-6,4-8";
 
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "2");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "2");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "4");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "4");
     }
 }
