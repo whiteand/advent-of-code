@@ -3,14 +3,6 @@
 version = 4
 
 [[package]]
-name = "advent"
-version = "0.1.0"
-dependencies = [
- "itertools 0.13.0",
- "nom",
-]
-
-[[package]]
 name = "advent_utils"
 version = "0.1.0"
 dependencies = [

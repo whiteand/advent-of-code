@@ -30,7 +30,7 @@ fn best_of_spoons(
     best_total
 }
 
-fn go<'i>(
+fn go(
     ingredients: &[Ingredient],
     spoons: usize,
     ind: usize,
@@ -41,7 +41,7 @@ fn go<'i>(
     let remaining = spoons - amount[..ind].iter().sum::<usize>();
     if ind == amount.len() - 1 {
         amount[ind] = remaining;
-        let total = get_total(ingredients, &amount);
+        let total = get_total(ingredients, amount);
         if total > *best_total {
             *best_total = total;
         }
@@ -53,7 +53,7 @@ fn go<'i>(
     }
 }
 
-fn get_total<'i>(ingredients: &[Ingredient], amounts: &[usize]) -> i64 {
+fn get_total(ingredients: &[Ingredient], amounts: &[usize]) -> i64 {
     macro_rules! sum_with_amounts {
         ($ings:ident, $amounts:ident, $field:ident) => {
             $ings
@@ -72,7 +72,7 @@ fn get_total<'i>(ingredients: &[Ingredient], amounts: &[usize]) -> i64 {
 
     capacity * durability * flavor * texture
 }
-fn get_total_2<'i>(ingredients: &[Ingredient], amounts: &[usize], total_calories: i64) -> i64 {
+fn get_total_2(ingredients: &[Ingredient], amounts: &[usize], total_calories: i64) -> i64 {
     macro_rules! sum_with_amounts {
         ($ings:ident, $amounts:ident, $field:ident) => {
             $ings

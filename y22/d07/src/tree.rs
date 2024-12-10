@@ -9,7 +9,7 @@ pub enum Tree<'input> {
     File(File<'input>),
 }
 
-impl<'input> Default for Tree<'input> {
+impl Default for Tree<'_> {
     fn default() -> Self {
         Tree::Directory("", Vec::default())
     }

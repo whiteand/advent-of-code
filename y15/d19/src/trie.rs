@@ -7,9 +7,9 @@ struct Node {
 
 impl Node {
     fn letter_index(ch: u8) -> usize {
-        if ch >= b'a' && ch <= b'z' {
+        if ch.is_ascii_lowercase() {
             (ch - b'a') as usize
-        } else if ch >= b'A' && ch <= b'Z' {
+        } else if ch.is_ascii_uppercase() {
             (ch - b'A') as usize + ALPHABET_SIZE
         } else {
             panic!("Unkonwn char: {:?}", ch as char);

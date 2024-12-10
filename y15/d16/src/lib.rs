@@ -48,7 +48,7 @@ fn is_sus(draft: &BTreeMap<&str, usize>, actual: &BTreeMap<&str, usize>) -> bool
             }
         }
     }
-    return true;
+    true
 }
 fn is_sus2(draft: &BTreeMap<&str, usize>, actual: &BTreeMap<&str, usize>) -> bool {
     for (k, v) in actual {
@@ -76,7 +76,7 @@ fn is_sus2(draft: &BTreeMap<&str, usize>, actual: &BTreeMap<&str, usize>) -> boo
             }
         }
     }
-    return true;
+    true
 }
 
 #[derive(Debug)]

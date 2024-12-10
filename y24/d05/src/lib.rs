@@ -51,13 +51,15 @@ fn check<'a, 'b>(
         Ordering::Equal
     });
     if list.iter().enumerate().all(|(i, x)| *x == buf[i]) {
-        return Ok(list);
+        Ok(list)
     } else {
-        return Err(buf.as_slice());
+        Err(buf.as_slice())
     }
 }
 
-fn parse(input: &str) -> IResult<&str, (Vec<(usize, usize)>, Vec<Vec<usize>>)> {
+type Orderings = Vec<(usize, usize)>;
+type Reports = Vec<Vec<usize>>;
+fn parse(input: &str) -> IResult<&str, (Orderings, Reports)> {
     separated_pair(parse_ordering, tag("\n\n"), parse_lists)(input)
 }
 fn parse_ordering(input: &str) -> IResult<&str, Vec<(usize, usize)>> {

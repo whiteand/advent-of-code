@@ -55,7 +55,7 @@ struct Horse<'i> {
     rest: usize,
 }
 
-impl<'i> Horse<'i> {
+impl Horse<'_> {
     fn get_distance_at(&self, mut time: usize) -> usize {
         let cycle = self.duration + self.rest;
         let cycle_len = self.velocity * self.duration;

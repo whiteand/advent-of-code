@@ -191,8 +191,8 @@ fn parse_node(input: &str) -> Node {
         .map(|s| s.parse::<NodeId>().unwrap())
         .collect::<Vec<_>>();
 
-    if decl_str.starts_with('%') {
-        let id = NodeId::from_str(&decl_str[1..]).unwrap();
+    if let Some(stripped) = decl_str.strip_prefix('%') {
+        let id = NodeId::from_str(stripped).unwrap();
 
         return Node::FlipFlow(FlipFlop {
             id,
@@ -200,8 +200,8 @@ fn parse_node(input: &str) -> Node {
             outputs,
         });
     }
-    if decl_str.starts_with('&') {
-        let id = NodeId::from_str(&decl_str[1..]).unwrap();
+    if let Some(stripped) = decl_str.strip_prefix('&') {
+        let id = NodeId::from_str(stripped).unwrap();
 
         return Node::Conjunction(Conjunction {
             id,
@@ -212,11 +212,11 @@ fn parse_node(input: &str) -> Node {
 
     let id = NodeId::from_str(decl_str).unwrap();
 
-    return Node::Broadcaster(Broadcaster {
+    Node::Broadcaster(Broadcaster {
         id,
         inputs: Vec::new(),
         outputs,
-    });
+    })
 }
 
 fn parse_nodes(input: &str) -> BTreeMap<NodeId, Node> {
@@ -240,13 +240,7 @@ fn parse_nodes(input: &str) -> BTreeMap<NodeId, Node> {
     );
 
     for node_id in node_ids.iter().copied() {
-        let outputs = nodes
-            .get(&node_id)
-            .unwrap()
-            .outputs()
-            .iter()
-            .copied()
-            .collect::<Vec<_>>();
+        let outputs = nodes.get(&node_id).unwrap().outputs().to_vec();
 
         for output in outputs {
             let node = nodes.get_mut(&output).unwrap();
@@ -314,26 +308,6 @@ pub fn solve_part_1(file_content: &str) -> usize {
     signals.total_high * signals.total_low
 }
 
-#[derive(Clone, PartialEq, Eq)]
-struct Frequency {
-    divisor: usize,
-    remainders: Vec<usize>,
-}
-
-impl std::fmt::Debug for Frequency {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[")?;
-        for (i, r) in self.remainders.iter().enumerate() {
-            if i == 0 {
-                write!(f, "{}", r)?;
-            } else {
-                write!(f, ", {}", r)?;
-            }
-        }
-        write!(f, "; {}]", self.divisor)
-    }
-}
-
 pub fn solve_part_2(_file_content: &str) -> usize {
     // I didn't found the abstract way to solve all kinds of this problem
     //  I've just found that necesary inputs occur in loops:
@@ -343,7 +317,7 @@ pub fn solve_part_2(_file_content: &str) -> usize {
     // js -high-> cl: 4018 + 4019 * d
 
     // I just found when all of those inputs are high at the same time and (added 1 because started from 0)
-    return 250628960065793;
+    250628960065793
 }
 
 #[cfg(test)]

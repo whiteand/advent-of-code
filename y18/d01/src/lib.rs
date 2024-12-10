@@ -14,7 +14,7 @@ pub fn solve_part_1(file_content: &str) -> isize {
 pub fn solve_part_2(file_content: &str) -> isize {
     let mut freq = 0isize;
     let mut seen = HashSet::new();
-    let mut dvs = file_content
+    let dvs = file_content
         .lines()
         .map(|x| x.parse::<isize>().unwrap())
         .collect::<Vec<_>>();

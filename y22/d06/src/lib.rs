@@ -38,10 +38,10 @@ fn solve<const N: usize>(file_content: &str) -> usize {
     }
     0
 }
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     solve::<4>(file_content)
 }
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2(file_content: &str) -> impl std::fmt::Display {
     solve::<14>(file_content)
 }
 #[cfg(test)]
@@ -50,21 +50,21 @@ mod tests {
 
     #[test]
     fn test_task1() {
-        assert_eq!(format!("{}", solve_task1("abcd")), "4");
+        assert_eq!(format!("{}", solve_part_1("abcd")), "4");
         assert_eq!(
-            format!("{}", solve_task1("bvwbjplbgvbhsrlpgdmjqwftvncz")),
+            format!("{}", solve_part_1("bvwbjplbgvbhsrlpgdmjqwftvncz")),
             "5"
         );
         assert_eq!(
-            format!("{}", solve_task1("nppdvjthqldpwncqszvftbrmjlhg")),
+            format!("{}", solve_part_1("nppdvjthqldpwncqszvftbrmjlhg")),
             "6"
         );
         assert_eq!(
-            format!("{}", solve_task1("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg")),
+            format!("{}", solve_part_1("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg")),
             "10"
         );
         assert_eq!(
-            format!("{}", solve_task1("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw")),
+            format!("{}", solve_part_1("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw")),
             "11"
         );
     }
@@ -72,23 +72,23 @@ mod tests {
     #[test]
     fn test_task2() {
         assert_eq!(
-            format!("{}", solve_task2("mjqjpqmgbljsphdztnvjfqwrcgsmlb")),
+            format!("{}", solve_part_2("mjqjpqmgbljsphdztnvjfqwrcgsmlb")),
             "19"
         );
         assert_eq!(
-            format!("{}", solve_task2("bvwbjplbgvbhsrlpgdmjqwftvncz")),
+            format!("{}", solve_part_2("bvwbjplbgvbhsrlpgdmjqwftvncz")),
             "23"
         );
         assert_eq!(
-            format!("{}", solve_task2("nppdvjthqldpwncqszvftbrmjlhg")),
+            format!("{}", solve_part_2("nppdvjthqldpwncqszvftbrmjlhg")),
             "23"
         );
         assert_eq!(
-            format!("{}", solve_task2("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg")),
+            format!("{}", solve_part_2("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg")),
             "29"
         );
         assert_eq!(
-            format!("{}", solve_task2("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw")),
+            format!("{}", solve_part_2("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw")),
             "26"
         );
     }

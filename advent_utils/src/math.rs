@@ -392,7 +392,7 @@ impl Equations {
             self.lefts[non_zero_row][j] = tmp;
         }
         let tmp = self.rights[var_index].clone();
-        self.rights[var_index] = self.rights[non_zero_row].clone();
+        self.rights[var_index] = self.rights[non_zero_row];
         self.rights[non_zero_row] = tmp;
     }
 }

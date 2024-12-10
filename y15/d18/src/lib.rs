@@ -100,7 +100,7 @@ impl FromStr for Grid {
                 x.as_bytes()
                     .iter()
                     .copied()
-                    .map(|x| if x == b'#' { true } else { false })
+                    .map(|x| x == b'#')
                     .collect_vec()
             })
             .collect_vec();

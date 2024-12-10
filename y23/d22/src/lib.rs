@@ -185,8 +185,8 @@ fn get_relations(bricks: impl Iterator<Item = Brick>) -> Relations {
         }
     }
 
-    for id in 0..bricks.len() {
-        for supporter_id in supported_by[id].iter() {
+    for (id, supporter) in supported_by.iter().take(bricks.len()).enumerate() {
+        for supporter_id in supporter.iter() {
             if supports[*supporter_id].contains(&id) {
                 continue;
             }
@@ -228,7 +228,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 fn parse(input: &str) -> impl Iterator<Item = Brick> + '_ {
     input.lines().map(|line| {
         let mut coordinates = line
-            .split(|x| x == ',' || x == '~')
+            .split([',', '~'])
             .map(|s| s.parse::<usize>().expect("invalid number"));
         let p0 = P3::from_iter(&mut coordinates).unwrap();
         let p1 = P3::from_iter(&mut coordinates).unwrap();

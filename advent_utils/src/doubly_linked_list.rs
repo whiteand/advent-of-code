@@ -20,6 +20,12 @@ struct Meta {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct NodeIndex(usize);
 
+impl<T> Default for DoublyLinkedList<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> DoublyLinkedList<T> {
     pub const fn new() -> Self {
         Self {

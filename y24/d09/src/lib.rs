@@ -26,7 +26,7 @@ fn checksum(map: &[usize]) -> usize {
     let mut left_n = map[left];
     let mut empty_n = map[empty];
     let mut right_n = map[right];
-    let res_len: usize = map.into_iter().step_by(2).sum();
+    let res_len: usize = map.iter().step_by(2).sum();
 
     'check: loop {
         while left_n > 0 {
@@ -92,7 +92,7 @@ fn checksum2(map: &[usize]) -> usize {
             i += x;
             id += 1;
         } else {
-            voides_per_size[x as usize].push(i);
+            voides_per_size[x].push(i);
             i += x;
         }
     }

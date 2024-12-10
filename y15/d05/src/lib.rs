@@ -93,7 +93,7 @@ impl<'t> ForbidenSeq<'t> {
         }
     }
 }
-impl<'t> Rule for ForbidenSeq<'t> {
+impl Rule for ForbidenSeq<'_> {
     fn next(&mut self, byte: u8) -> Poll<bool> {
         if self.found {
             return Poll::Ready(false);
@@ -129,10 +129,10 @@ impl<'t> Rule for ForbidenSeq<'t> {
 fn is_nice_1(line: &str) -> bool {
     let mut three_vowels = ThreeVowels::new();
     let mut appears_twice = AppearsTwice::new();
-    let mut ab_rule = ForbidenSeq::new(&[b'a', b'b']);
-    let mut cd_rule = ForbidenSeq::new(&[b'c', b'd']);
-    let mut pq_rule = ForbidenSeq::new(&[b'p', b'q']);
-    let mut xy_rule = ForbidenSeq::new(&[b'x', b'y']);
+    let mut ab_rule = ForbidenSeq::new(b"ab");
+    let mut cd_rule = ForbidenSeq::new(b"cd");
+    let mut pq_rule = ForbidenSeq::new(b"pq");
+    let mut xy_rule = ForbidenSeq::new(b"xy");
     for b in line.as_bytes().iter().copied() {
         let _ = three_vowels.next(b);
         let _ = ab_rule.next(b);
@@ -142,14 +142,15 @@ fn is_nice_1(line: &str) -> bool {
         let _ = appears_twice.next(b);
     }
 
-    match (
-        three_vowels.last(),
-        ab_rule.last(),
-        cd_rule.last(),
-        pq_rule.last(),
-        xy_rule.last(),
-        appears_twice.last(),
-    ) {
+    matches!(
+        (
+            three_vowels.last(),
+            ab_rule.last(),
+            cd_rule.last(),
+            pq_rule.last(),
+            xy_rule.last(),
+            appears_twice.last(),
+        ),
         (
             Poll::Ready(true),
             Poll::Pending,
@@ -157,9 +158,8 @@ fn is_nice_1(line: &str) -> bool {
             Poll::Pending,
             Poll::Pending,
             Poll::Ready(true),
-        ) => true,
-        _ => false,
-    }
+        )
+    )
 }
 // It contains a pair of any two letters that appears at least twice in the string without overlapping, like xyxy (xy) or aabcdefgaa (aa), but not like aaa (aa, but it overlaps).
 
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_part1_actual() {
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "255");
     }
 
     #[test]
@@ -209,6 +209,6 @@ mod tests {
 
     #[test]
     fn test_part2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "55");
     }
 }

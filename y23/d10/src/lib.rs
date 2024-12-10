@@ -158,7 +158,7 @@ struct GridIter<'a> {
     previous_col: usize,
 }
 
-impl<'t> Iterator for GridIter<'t> {
+impl Iterator for GridIter<'_> {
     type Item = (usize, usize);
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -29,8 +29,8 @@ enum Source<'i> {
     Or((&'i str, &'i str)),
     And((&'i str, &'i str)),
     AndConst((&'i str, u16)),
-    RSHIFT((&'i str, usize)),
-    LSHIFT((&'i str, usize)),
+    RShift((&'i str, usize)),
+    LShift((&'i str, usize)),
 }
 
 #[derive(Debug, Clone)]
@@ -42,9 +42,8 @@ struct Wire<'i> {
 fn resolve<'t>(wires: &mut HashMap<&'t str, Vec<Wire<'t>>>, id: &'t str) -> u16 {
     let wire = wires
         .get_mut(id)
-        .map(|r| r.first_mut())
-        .flatten()
-        .expect(&format!("{id} is absent"))
+        .and_then(|r| r.first_mut())
+        .unwrap_or_else(|| panic!("{id} is absent"))
         .clone();
 
     let value = match wire.source {
@@ -54,8 +53,8 @@ fn resolve<'t>(wires: &mut HashMap<&'t str, Vec<Wire<'t>>>, id: &'t str) -> u16 
         Source::Or((a, b)) => resolve(wires, a) | resolve(wires, b),
         Source::And((a, b)) => resolve(wires, a) & resolve(wires, b),
         Source::AndConst((a, b)) => resolve(wires, a) & b,
-        Source::RSHIFT((a, shift)) => resolve(wires, a) >> shift,
-        Source::LSHIFT((a, shift)) => resolve(wires, a) << shift,
+        Source::RShift((a, shift)) => resolve(wires, a) >> shift,
+        Source::LShift((a, shift)) => resolve(wires, a) << shift,
     };
 
     let x = wires.get_mut(id).unwrap();
@@ -74,7 +73,7 @@ fn parse_wire_maps(input: &str) -> HashMap<&str, Vec<Wire<'_>>> {
     wires.into_iter().into_group_map_by(|x| x.destination)
 }
 
-fn parse_and_const_source<'i>(input: &'i str) -> nom::IResult<&str, Source<'i>> {
+fn parse_and_const_source(input: &str) -> nom::IResult<&str, Source<'_>> {
     let (input, value) = nom::character::complete::u16(input)?;
     let (input, _) = nom::bytes::complete::tag(" AND ")(input)?;
     let (input, id) = nom::character::complete::alpha1(input)?;
@@ -82,14 +81,12 @@ fn parse_and_const_source<'i>(input: &'i str) -> nom::IResult<&str, Source<'i>> 
     Ok((input, Source::AndConst((id, value))))
 }
 
-fn parse_wires<'i>(input: &'i str) -> nom::IResult<&str, Vec<Wire<'i>>> {
+fn parse_wires(input: &str) -> nom::IResult<&str, Vec<Wire<'_>>> {
     let parse_id = || nom::character::complete::alpha1;
-    let parse_value_source = || nom::character::complete::u16.map(|v| Source::Value(v));
+    let parse_value_source = || nom::character::complete::u16.map(Source::Value);
 
-    let parse_not_source = || {
-        nom::sequence::preceded(nom::bytes::complete::tag("NOT "), parse_id())
-            .map(|id| Source::Not(id))
-    };
+    let parse_not_source =
+        || nom::sequence::preceded(nom::bytes::complete::tag("NOT "), parse_id()).map(Source::Not);
     let parse_and_source = || {
         nom::sequence::separated_pair(parse_id(), nom::bytes::complete::tag(" AND "), parse_id())
             .map(|(id, id2)| Source::And((id, id2)))
@@ -105,7 +102,7 @@ fn parse_wires<'i>(input: &'i str) -> nom::IResult<&str, Vec<Wire<'i>>> {
             nom::bytes::complete::tag(" LSHIFT "),
             nom::character::complete::u8,
         )
-        .map(|(id, shift)| Source::LSHIFT((id, shift as usize)))
+        .map(|(id, shift)| Source::LShift((id, shift as usize)))
     };
     let parse_rshift_source = || {
         nom::sequence::separated_pair(
@@ -113,7 +110,7 @@ fn parse_wires<'i>(input: &'i str) -> nom::IResult<&str, Vec<Wire<'i>>> {
             nom::bytes::complete::tag(" RSHIFT "),
             nom::character::complete::u8,
         )
-        .map(|(id, shift)| Source::RSHIFT((id, shift as usize)))
+        .map(|(id, shift)| Source::RShift((id, shift as usize)))
     };
 
     let parse_source = || {
@@ -125,7 +122,7 @@ fn parse_wires<'i>(input: &'i str) -> nom::IResult<&str, Vec<Wire<'i>>> {
             parse_lshift_source(),
             parse_rshift_source(),
             parse_value_source(),
-            parse_id().map(|x| Source::Id(x)),
+            parse_id().map(Source::Id),
         ))
     };
     let parse_wire = || {

@@ -39,7 +39,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
                 state = State::Empty;
                 code += 1;
             }
-            (State::Text, ch) if ch >= b'a' && ch <= b'z' => {
+            (State::Text, ch) if ch.is_ascii_lowercase() => {
                 bytes_it.next();
                 code += 1;
                 chars += 1;
@@ -66,14 +66,12 @@ pub fn solve_part_1(file_content: &str) -> usize {
                 code += 1;
                 state = State::SlashHex;
             }
-            (State::SlashHex, ch) if (b'0'..=b'9').contains(&ch) || (b'a'..=b'f').contains(&ch) => {
+            (State::SlashHex, ch) if ch.is_ascii_digit() || (b'a'..=b'f').contains(&ch) => {
                 bytes_it.next();
                 code += 1;
                 state = State::SlashHexDigit;
             }
-            (State::SlashHexDigit, ch)
-                if (b'0'..=b'9').contains(&ch) || (b'a'..=b'f').contains(&ch) =>
-            {
+            (State::SlashHexDigit, ch) if ch.is_ascii_digit() || (b'a'..=b'f').contains(&ch) => {
                 bytes_it.next();
                 code += 1;
                 chars += 1;
@@ -93,8 +91,8 @@ pub fn solve_part_2(file_content: &str) -> usize {
                 .copied()
                 .map(|b| match b {
                     b'\\' | b'"' => 1,
-                    x if (b'0'..=b'9').contains(&x) => 0,
-                    x if (b'a'..=b'z').contains(&x) => 0,
+                    x if x.is_ascii_digit() => 0,
+                    x if x.is_ascii_lowercase() => 0,
                     x if x > b'0' => panic!("Unknown character: '{}'", x as char),
                     _ => 0usize,
                 })

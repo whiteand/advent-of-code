@@ -17,15 +17,15 @@ pub fn solve(file_content: &str, n: usize) -> usize {
     expand_many(&mut seq, &mut buf, n);
     seq.len()
 }
-fn expand_many(mut seq: &mut Vec<u64>, mut buf: &mut Vec<u64>, n: usize) {
+fn expand_many(seq: &mut Vec<u64>, buf: &mut Vec<u64>, n: usize) {
     for _ in 0..(n / 2) {
-        expand(&seq, &mut buf);
-        expand(&buf, &mut seq);
+        expand(seq, buf);
+        expand(buf, seq);
     }
     if n % 2 == 1 {
-        expand(&seq, &mut buf);
+        expand(seq, buf);
         seq.truncate(buf.len());
-        seq.copy_from_slice(&buf);
+        seq.copy_from_slice(buf);
     }
 }
 fn expand(src: &[u64], dest: &mut Vec<u64>) {

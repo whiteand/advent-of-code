@@ -151,7 +151,6 @@ impl Player {
             if other_hp > other_damage_per_my_strike {
                 other_hp -= other_damage_per_my_strike;
             } else {
-                other_hp = 0;
                 return true;
             }
             if my_hp > my_damage_per_other_strike {

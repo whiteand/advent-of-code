@@ -49,25 +49,20 @@ fn parse_coords(input: &str) -> nom::IResult<&str, Coords> {
 fn parse_command(input: &str) -> nom::IResult<&str, Command> {
     let parse_turn_on =
         nom::sequence::preceded(nom::bytes::complete::tag("turn on "), parse_coords)
-            .map(|value| Command::On(value));
+            .map(Command::On);
     let parse_turn_off =
         nom::sequence::preceded(nom::bytes::complete::tag("turn off "), parse_coords)
-            .map(|value| Command::Off(value));
+            .map(Command::Off);
     let parse_toggle = nom::sequence::preceded(nom::bytes::complete::tag("toggle "), parse_coords)
-        .map(|value| Command::Toggle(value));
+        .map(Command::Toggle);
     let mut command_parser = nom::branch::alt((parse_toggle, parse_turn_off, parse_turn_on));
 
     command_parser(input)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 struct SimpleLight {
     is_on: bool,
-}
-impl Default for SimpleLight {
-    fn default() -> Self {
-        Self { is_on: false }
-    }
 }
 trait Light: Default + Copy {
     fn turn_on(&mut self);
@@ -98,14 +93,9 @@ pub fn solve_part_1(file_content: &str) -> usize {
         .count()
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 struct SmartLight {
     level: usize,
-}
-impl Default for SmartLight {
-    fn default() -> Self {
-        Self { level: 0 }
-    }
 }
 impl Light for SmartLight {
     fn turn_on(&mut self) {

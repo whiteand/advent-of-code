@@ -48,13 +48,13 @@ fn is_safe_dp(report: &mut [usize], i: usize, tolerates: usize, order: Ordering)
         return true;
     }
     for next in (1..=(tolerates + 1).min(report.len())).map(|j| i + j) {
-        if valid_neighbours(report[i], report[next], order) {
-            if is_safe_dp(report, next, tolerates + 1 - (next - i), order) {
-                return true;
-            }
+        if valid_neighbours(report[i], report[next], order)
+            && is_safe_dp(report, next, tolerates + 1 - (next - i), order)
+        {
+            return true;
         }
     }
-    if tolerates <= 0 {
+    if tolerates == 0 {
         return false;
     }
     if i == 0 {
@@ -64,13 +64,13 @@ fn is_safe_dp(report: &mut [usize], i: usize, tolerates: usize, order: Ordering)
     for skip_past in 1..=(tolerates.min(i + 1)) {
         let prev = i - skip_past;
 
-        if valid_neighbours(report[prev], report[i + 1], order) {
-            if is_safe_dp(report, i + 1, tolerates - skip_past, order) {
-                return true;
-            }
+        if valid_neighbours(report[prev], report[i + 1], order)
+            && is_safe_dp(report, i + 1, tolerates - skip_past, order)
+        {
+            return true;
         }
     }
-    return false;
+    false
 }
 
 fn valid_neighbours(prev: usize, next: usize, order: Ordering) -> bool {

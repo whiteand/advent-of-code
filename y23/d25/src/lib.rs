@@ -38,12 +38,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
 
     let to_remove = get_edges_to_remove()
         .into_iter()
-        .map(|(a, b)| {
-            (
-                node_indices.get(a).unwrap().clone(),
-                node_indices.get(b).unwrap().clone(),
-            )
-        })
+        .map(|(a, b)| (*node_indices.get(a).unwrap(), *node_indices.get(b).unwrap()))
         .collect_vec();
 
     graph.retain_edges(|g, e| {
@@ -56,11 +51,9 @@ pub fn solve_part_1(file_content: &str) -> usize {
 
     let nodes = graph.node_indices().collect_vec();
     let mut to_color = Vec::new();
-    loop {
-        let not_colored_node_index = match nodes.iter().find(|n| !node_color.contains_key(*n)) {
-            Some(n) => n.clone(),
-            None => break,
-        };
+    while let Some(not_colored_node_index) =
+        nodes.iter().find(|n| !node_color.contains_key(*n)).copied()
+    {
         let new_color = colors.len();
         colors.push(0usize);
         to_color.push((not_colored_node_index, new_color));

@@ -11,11 +11,7 @@ pub fn solve_part_2(file_content: &str) -> String {
 }
 fn solve(file_content: &str, skip: usize) -> String {
     let password: Password = file_content.parse().unwrap();
-    let next_pass = password
-        .filter(is_valid_password)
-        .skip(skip)
-        .next()
-        .unwrap();
+    let next_pass = password.filter(is_valid_password).nth(skip).unwrap();
     format!("{}", next_pass)
 }
 

@@ -1,7 +1,5 @@
 use std::collections::BinaryHeap;
 
-use smallvec::SmallVec;
-
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct Player {
     hp: usize,

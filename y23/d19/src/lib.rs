@@ -188,7 +188,7 @@ struct Workflow {
 impl Workflow {
     fn outcome(&self, obj: &[usize; 4]) -> Outcome {
         for Rule { condition, outcome } in &self.rules {
-            if condition.matches(&obj) {
+            if condition.matches(obj) {
                 return *outcome;
             }
         }
@@ -225,7 +225,7 @@ fn parse_input(input: &str) -> (BTreeMap<WorkflowId, Workflow>, Vec<[usize; 4]>)
 
             let outcome = outcome_str.parse::<Outcome>().unwrap();
 
-            let condition = parse_condition(&condition_str);
+            let condition = parse_condition(condition_str);
 
             rules.push(Rule { condition, outcome })
         }
@@ -251,7 +251,7 @@ fn parse_input(input: &str) -> (BTreeMap<WorkflowId, Workflow>, Vec<[usize; 4]>)
 
 fn parse_condition(input: &str) -> Condition {
     let (input, f) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("xmas")
-        .map(|c| Field::from(c))
+        .map(Field::from)
         .parse(input)
         .unwrap();
     let (input, o) = nom::character::complete::one_of::<_, _, (&str, ErrorKind)>("><")

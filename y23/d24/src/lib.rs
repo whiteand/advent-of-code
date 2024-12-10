@@ -18,8 +18,7 @@ fn solve_xy(
         let a = &objects[i];
         let a_pos = a.position.xy();
         let a_vel = a.velocity.xy();
-        for j in (i + 1)..objects.len() {
-            let b = &objects[j];
+        for b in objects.iter().skip(i + 1) {
             let b_pos = b.position.xy();
             let b_vel = b.velocity.xy();
             if let Some(intersection) = get_intersection_xy(&a_pos, &a_vel, &b_pos, &b_vel) {

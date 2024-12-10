@@ -74,7 +74,7 @@ impl Grid {
                         result.push(last_point.sub(axis));
                     }
                 }
-                return result;
+                result
             }
             Cell::Wall => Vec::new(),
         }
@@ -92,21 +92,21 @@ impl Grid {
                         result.push(last_point.sub(axis));
                     }
                 }
-                return result;
+                result
             }
             Cell::Slope(Direction::Down) => {
                 let mut result = Vec::new();
                 if !matches!(self.get(&(last_point.add(UVec2::Y))), Cell::Wall) {
                     result.push(last_point.add(UVec2::Y));
                 }
-                return result;
+                result
             }
             Cell::Slope(Direction::Right) => {
                 let mut result = Vec::new();
                 if !matches!(self.get(&(last_point.add(UVec2::X))), Cell::Wall) {
                     result.push(last_point.add(UVec2::X));
                 }
-                return result;
+                result
             }
             Cell::Wall => Vec::new(),
         }
@@ -133,15 +133,15 @@ struct CellPath {
 }
 impl CellPath {
     fn end(&self) -> glam::UVec2 {
-        self.end.clone()
+        self.end
     }
     fn start(&self) -> glam::UVec2 {
-        self.start.clone()
+        self.start
     }
     fn reversed(&self) -> Self {
         Self {
-            start: self.end.clone(),
-            end: self.start.clone(),
+            start: self.end,
+            end: self.start,
             length: self.length,
         }
     }
@@ -173,26 +173,28 @@ fn get_segments(
                 break;
             }
 
-            let options = get_neighbours(&grid, last_point)
+            let options = get_neighbours(grid, last_point)
                 .into_iter()
                 .filter(|p| !path.iter().rev().contains(&p))
                 .collect_vec();
 
-            if options.len() == 1 {
-                path.push(options[0]);
-                continue 'points_loop;
-            }
+            match options.as_slice() {
+                [opt] => {
+                    path.push(*opt);
+                    continue 'points_loop;
+                }
+                [] => {
+                    break;
+                }
+                options => {
+                    visited_multiple_opportuinities.push(*last_point);
 
-            if options.len() == 0 {
-                break;
+                    for opt in options {
+                        paths.push_back(vec![*last_point, *opt]);
+                    }
+                    break;
+                }
             }
-
-            visited_multiple_opportuinities.push(last_point.clone());
-
-            for opt in options {
-                paths.push_back(vec![last_point.clone(), opt]);
-            }
-            break;
         }
         segments.push(path);
     }
@@ -220,24 +222,20 @@ impl Bitmask {
             unreachable!("too big index: {}", ind);
         }
         let times = ind >> 6;
-        return (times, ind & 63);
+        (times, ind & 63)
     }
     fn insert(&mut self, ind: usize) {
         let (bit, ind) = self.get_pos(ind);
         self.bits[bit] |= 1 << ind;
     }
     fn with_inserted(&self, ind: usize) -> Self {
-        let mut res = self.clone();
+        let mut res = *self;
         res.insert(ind);
         res
     }
     fn contains(&self, ind: usize) -> bool {
         let (bit, ind) = self.get_pos(ind);
         self.bits[bit] & (1 << ind) != 0
-    }
-    fn iter(&self) -> impl Iterator<Item = usize> + '_ {
-        let n = self.bits.len() * 64;
-        (0..n).filter(move |i| self.contains(*i))
     }
 }
 
@@ -269,27 +267,17 @@ struct ConcatenatedSegments {
 }
 
 impl ConcatenatedSegments {
-    fn new(segment: usize, current_start: usize, current_length: usize) -> Self {
+    fn new(segment: usize, start: usize, current_length: usize) -> Self {
         Self {
             previous: Previous {
                 segments: Bitmask::new(),
                 starts: Bitmask::new(),
             },
-            current: Current {
-                segment: segment,
-                start: current_start,
-            },
+            current: Current { segment, start },
             length: current_length,
         }
     }
-    fn segments_count(&self) -> usize {
-        self.previous
-            .segments
-            .bits
-            .iter()
-            .fold(0usize, |acc, s| acc + s.count_ones() as usize)
-            + 1
-    }
+
     fn push(&self, next: usize, start: usize, next_len: usize) -> Self {
         Self {
             previous: self.previous.with_inserted(&self.current),

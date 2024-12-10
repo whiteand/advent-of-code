@@ -218,7 +218,7 @@ impl RangeOperations for RangeInclusive<i32> {
         }
     }
     fn len(&self) -> usize {
-        return (*self.end() - *self.start() + 1) as usize;
+        (*self.end() - *self.start() + 1) as usize
     }
 }
 

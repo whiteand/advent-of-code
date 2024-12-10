@@ -27,11 +27,6 @@ impl MinDistances for BTreeMap<(isize, isize), usize> {
     }
 }
 
-trait AggregatedMinDistances {
-    fn get_min_distances_for_row(&self, row: isize) -> Option<usize>;
-    fn get_min_distances_for_col(&self, col: isize) -> Option<usize>;
-}
-
 impl MinDistances for Vec<Vec<usize>> {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
         let (r, c) = coord;
@@ -44,22 +39,6 @@ impl MinDistances for Vec<Vec<usize>> {
                 .copied()
                 .and_then(|d| (d != usize::MAX).then_some(d))
         })
-    }
-}
-impl AggregatedMinDistances for Vec<Vec<usize>> {
-    fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
-        let r = usize::try_from(row).ok()?;
-        self.get(r)
-            .and_then(|r| r.iter().copied().min())
-            .and_then(|d| (d != usize::MAX).then_some(d))
-    }
-    fn get_min_distances_for_col(&self, col: isize) -> Option<usize> {
-        let c = usize::try_from(col).ok()?;
-        self.iter()
-            .flat_map(|r| r.get(c))
-            .copied()
-            .min()
-            .and_then(|d| (d != usize::MAX).then_some(d))
     }
 }
 
@@ -104,57 +83,6 @@ impl std::fmt::Debug for Grid {
                     write!(f, "#")?;
                 } else {
                     write!(f, ".")?;
-                }
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-struct Infinite(Grid);
-
-impl Infinite {
-    fn get_row(&self, row: isize) -> usize {
-        let rows = self.0.cells.len();
-        row.rem_euclid(rows as isize) as usize
-    }
-    fn get_col(&self, col: isize) -> usize {
-        let cols = self.0.cells[0].len();
-        col.rem_euclid(cols as isize) as usize
-    }
-    fn get_coords(&self, coord: (isize, isize)) -> (usize, usize) {
-        (self.get_row(coord.0), self.get_col(coord.1))
-    }
-}
-
-impl Field for Infinite {
-    fn is_empty(&self, coord: (isize, isize)) -> bool {
-        let (r, c) = self.get_coords(coord);
-        self.0.is_empty((r as isize, c as isize))
-    }
-    fn get_start(&self) -> (usize, usize) {
-        self.0.get_start()
-    }
-
-    fn get_original_size(&self) -> (usize, usize) {
-        self.0.get_original_size()
-    }
-}
-
-impl std::fmt::Debug for Infinite {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let min_r = -(self.0.cells.len() as isize);
-        let max_r = (self.0.cells.len() * 2) as isize;
-        let min_c = -(self.0.cells[0].len() as isize);
-        let max_c = (self.0.cells[0].len() * 2) as isize;
-
-        for i in min_r..=max_r {
-            for j in min_c..=max_c {
-                if self.is_empty((i, j)) {
-                    write!(f, ".")?;
-                } else {
-                    write!(f, "#")?;
                 }
             }
             writeln!(f)?;
@@ -581,7 +509,7 @@ impl InfiniteMinDistances {
         let right_bottom = get_minimal_distances(grid, rows, cols, std::iter::once(((0, 0), 2)));
 
         Self {
-            size: (rows as usize, cols as usize),
+            size: (rows, cols),
             left_top,
             tops,
             right_top,
@@ -632,9 +560,9 @@ impl From<&[Vec<usize>]> for DistanceMap {
             .expect("empty map");
 
         let difference = map
-            .into_iter()
+            .iter()
             .map(|r| {
-                r.into_iter()
+                r.iter()
                     .map(|d| {
                         if *d == usize::MAX {
                             *d
@@ -657,7 +585,7 @@ impl From<&[Vec<usize>]> for DistanceMap {
 impl MinDistances for InfiniteMinDistances {
     fn get_min_distance_to(&self, coord: &(isize, isize)) -> Option<usize> {
         let (rows, cols) = self.size;
-        let (mut row, mut col) = coord.clone();
+        let (mut row, mut col) = *coord;
         let rows_i = rows as isize;
         let cols_i = cols as isize;
         let mut total = 0usize;
@@ -672,8 +600,8 @@ impl MinDistances for InfiniteMinDistances {
 
             if row < 0 && col < 0 {
                 if r_rem == 0 && c_rem == 0 {
-                    let row_grid_index = row.abs() as usize / rows;
-                    let col_grid_index = col.abs() as usize / cols;
+                    let row_grid_index = row.unsigned_abs() / rows;
+                    let col_grid_index = col.unsigned_abs() / cols;
                     let steps_to_vertical_or_horizontal = row_grid_index.min(col_grid_index);
                     let next_row_grid_index = row_grid_index - steps_to_vertical_or_horizontal;
                     let next_col_grid_index = col_grid_index - steps_to_vertical_or_horizontal;
@@ -690,7 +618,7 @@ impl MinDistances for InfiniteMinDistances {
             }
 
             if row < 0 && col >= 0 && col < cols_i {
-                let top_index = (row + 1).abs() as usize / rows;
+                let top_index = (row + 1).unsigned_abs() / rows;
                 if top_index < self.tops.len() {
                     total += self.tops[top_index].get_min_distance_to(&(r_rem, c_rem))?;
                     return Some(total);
@@ -708,8 +636,8 @@ impl MinDistances for InfiniteMinDistances {
 
             if row < 0 && col >= cols_i {
                 if r_rem == 0 && c_rem == cols_i - 1 {
-                    let row_grid_index = row.abs() as usize / rows;
-                    let col_grid_index = (col.abs() as usize + 1 - cols) / cols;
+                    let row_grid_index = row.unsigned_abs() / rows;
+                    let col_grid_index = (col.unsigned_abs() + 1 - cols) / cols;
                     let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
                     let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
                     let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
@@ -726,7 +654,7 @@ impl MinDistances for InfiniteMinDistances {
             }
 
             if row >= 0 && row < rows_i && col < 0 {
-                let left_index = (col + 1).abs() as usize / cols;
+                let left_index = (col + 1).unsigned_abs() / cols;
                 if left_index < self.lefts.len() {
                     total += self.lefts[left_index].get_min_distance_to(&(r_rem, c_rem))?;
                     return Some(total);
@@ -762,8 +690,8 @@ impl MinDistances for InfiniteMinDistances {
 
             if row >= rows_i && col < 0 {
                 if r_rem == rows_i - 1 && c_rem == 0 {
-                    let row_grid_index = (row.abs() as usize + 1 - rows) / rows;
-                    let col_grid_index = col.abs() as usize / cols;
+                    let row_grid_index = (row.unsigned_abs() + 1 - rows) / rows;
+                    let col_grid_index = col.unsigned_abs() / cols;
                     let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
                     let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
                     let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
@@ -781,8 +709,8 @@ impl MinDistances for InfiniteMinDistances {
 
             if row >= rows_i && col >= cols_i {
                 if r_rem == rows_i - 1 && c_rem == cols_i - 1 {
-                    let row_grid_index = (row.abs() as usize + 1 - rows) / rows;
-                    let col_grid_index = (col.abs() as usize + 1 - cols) / cols;
+                    let row_grid_index = (row.unsigned_abs() + 1 - rows) / rows;
+                    let col_grid_index = (col.unsigned_abs() + 1 - cols) / cols;
                     let steps_to_horizontal_or_vertical = row_grid_index.min(col_grid_index);
                     let next_row_grid_index = row_grid_index - steps_to_horizontal_or_vertical;
                     let next_col_grid_index = col_grid_index - steps_to_horizontal_or_vertical;
@@ -822,21 +750,6 @@ impl MinDistances for InfiniteMinDistances {
 
             unreachable!();
         }
-    }
-}
-impl AggregatedMinDistances for InfiniteMinDistances {
-    fn get_min_distances_for_row(&self, row: isize) -> Option<usize> {
-        let (_, cols) = self.size;
-        (0..cols)
-            .flat_map(|c| self.get_min_distance_to(&(row, c as isize)))
-            .min()
-    }
-
-    fn get_min_distances_for_col(&self, col: isize) -> Option<usize> {
-        let (rows, _) = self.size;
-        (0..rows)
-            .flat_map(|r| self.get_min_distance_to(&(r as isize, col)))
-            .min()
     }
 }
 
@@ -938,7 +851,7 @@ fn get_grid_row_sum<T: MinDistances>(
         total += sum;
         totally_full_grids -= 1;
     }
-    return total + same * totally_full_grids / 2 + other * totally_full_grids / 2;
+    total + same * totally_full_grids / 2 + other * totally_full_grids / 2
 }
 
 fn get_grid_sum<T: MinDistances>(
@@ -1022,7 +935,7 @@ fn get_grid_minmax<T: MinDistances>(
     )
 }
 
-fn get_odd_count_less_then<T: MinDistances + AggregatedMinDistances>(
+fn get_odd_count_less_then<T: MinDistances>(
     (rows, cols): (usize, usize),
     distances: &T,
     steps: usize,

@@ -58,7 +58,7 @@ trait GridExt {
 impl GridExt for Grid<u8> {
     fn matches(&self, str: &str, pos: IVec2, dir: IVec2) -> bool {
         self.iter_line(pos, dir)
-            .zip_longest(str.as_bytes().into_iter())
+            .zip_longest(str.as_bytes())
             .take_while(|r| r.has_right())
             .all(|r| r.both().map_or(false, |(a, b)| a == b))
     }

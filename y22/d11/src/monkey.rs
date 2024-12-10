@@ -10,7 +10,7 @@ pub struct Monkey<'m> {
     pub inspected: u64,
 }
 
-impl<'t> Monkey<'t> {
+impl Monkey<'_> {
     pub fn new<It: IntoIterator<Item = Item>>(
         items: It,
         operation: Expression,

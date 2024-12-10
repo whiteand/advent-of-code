@@ -30,13 +30,11 @@ fn solve(pleasure: BTreeMap<&str, BTreeMap<&str, i64>>) -> i64 {
                 .map(|(i, j)| {
                     pleasure
                         .get(i)
-                        .map(|m| m.get(j).copied())
-                        .flatten()
+                        .and_then(|m| m.get(j).copied())
                         .unwrap_or_default()
                         + pleasure
                             .get(j)
-                            .map(|m| m.get(i).copied())
-                            .flatten()
+                            .and_then(|m| m.get(i).copied())
                             .unwrap_or_default()
                 })
                 .sum::<i64>()
