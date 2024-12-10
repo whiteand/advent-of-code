@@ -64,7 +64,7 @@ fn parse_char_pairs(input: &str) -> impl Iterator<Item = (char, char)> + '_ {
     })
 }
 
-pub fn solve_part1(file_content: &str) -> u32 {
+pub fn solve_part_1(file_content: &str) -> u32 {
     parse_char_pairs(file_content)
         .map(|(a, b)| (a.into(), b.into()))
         .map(get_score)
@@ -80,7 +80,7 @@ fn restore_your_move(opponent: Choice, outcome: Outcome) -> Choice {
     unreachable!("No move found")
 }
 
-pub fn solve_part2(file_content: &str) -> u32 {
+pub fn solve_part_2(file_content: &str) -> u32 {
     parse_char_pairs(file_content)
         .map(|(a, b)| (a.into(), b.into()))
         .map(|(opponent, outcome)| (opponent, restore_your_move(opponent, outcome)))
@@ -94,14 +94,13 @@ mod tests {
 
     const INPUT: &str = "A Y\nB X\nC Z";
 
-    #[ignore]
     #[test]
-    fn test_part1() {
-        assert_eq!(solve_part1(INPUT), 15);
+    fn test_part_1() {
+        assert_eq!(solve_part_1(INPUT), 15);
     }
-    #[ignore]
+
     #[test]
-    fn test_part2() {
-        assert_eq!(solve_part2(INPUT), 12);
+    fn test_part_2() {
+        assert_eq!(solve_part_2(INPUT), 12);
     }
 }
