@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use itertools::Itertools;
-use nom::{
+use advent_utils::nom::{
     bytes::complete::tag, character::complete, combinator, multi::separated_list1,
     sequence::separated_pair, IResult,
 };
+use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 enum Color {
@@ -20,7 +20,7 @@ struct Game {
 }
 
 fn parse_color(line: &str) -> IResult<&str, Color> {
-    nom::branch::alt((
+    advent_utils::nom::branch::alt((
         combinator::map(tag("red"), |_| Color::Red),
         combinator::map(tag("green"), |_| Color::Green),
         combinator::map(tag("blue"), |_| Color::Blue),
@@ -70,7 +70,7 @@ fn parse_game(line: &str) -> Game {
 
 static AVAILABLE: [(Color, usize); 3] = [(Color::Red, 12), (Color::Green, 13), (Color::Blue, 14)];
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     file_content
         .lines()
         .map(parse_game)
@@ -94,7 +94,7 @@ fn get_game_power(g: Game) -> usize {
     }
     s.values().product()
 }
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     file_content
         .lines()
         .map(parse_game)
@@ -104,25 +104,25 @@ pub fn solve_task2(file_content: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d02/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d02.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "8");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "8");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "2239");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "2239");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "2286");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "2286");
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "83435");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "83435");
     }
 }
