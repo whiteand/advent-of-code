@@ -49,7 +49,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn test_task1() {
         assert_eq!(format!("{}", solve_task1("abcd")), "4");
         assert_eq!(
@@ -71,7 +70,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_task2() {
         assert_eq!(
             format!("{}", solve_task2("mjqjpqmgbljsphdztnvjfqwrcgsmlb")),
