@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 use std::{cmp::Ordering::*, collections::BTreeSet};
 
-use nom::{
+use advent_utils::nom::{
     bytes::complete::tag,
     character,
     combinator::map,
@@ -69,13 +69,13 @@ impl Measurement {
     }
 }
 
-pub fn solve_task1(file_content: &str, row: i32) -> usize {
+pub fn solve_part_1(file_content: &str, row: i32) -> usize {
     let measurements: Vec<_> = parse_measurements(file_content).collect();
     let restricted_ranges = get_restricted_ranges(&measurements, row);
     restricted_ranges.into_iter().map(|r| r.count()).sum()
 }
 
-pub fn solve_task2(
+pub fn solve_part_2(
     file_content: &str,
     x_range: RangeInclusive<i32>,
     y_range: RangeInclusive<i32>,
@@ -225,34 +225,30 @@ impl RangeOperations for RangeInclusive<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y22d15/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y22/y22d15.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT, 10)), "26");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT, 10)), "26");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL, 2000000)), "4907780");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL, 2000000)), "4907780");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
+    fn test_part_2() {
         assert_eq!(
-            format!("{}", solve_task2(INPUT, 0..=20, 0..=20)),
+            format!("{}", solve_part_2(INPUT, 0..=20, 0..=20)),
             "56000011"
         );
     }
 
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
+    fn test_part_2_actual() {
         assert_eq!(
-            format!("{}", solve_task2(ACTUAL, 0..=4000000, 0..=4000000)),
+            format!("{}", solve_part_2(ACTUAL, 0..=4000000, 0..=4000000)),
             "13639962836448"
         );
     }
