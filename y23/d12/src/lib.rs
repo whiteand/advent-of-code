@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     file_content
         .lines()
         .map(parse_line)
@@ -17,7 +17,7 @@ pub fn unfold_line(line: &str) -> String {
     )
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     file_content
         .lines()
         .map(unfold_line)
@@ -181,11 +181,11 @@ fn parse_line(line: &str) -> (Row, Vec<usize>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d12/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d12.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]
-    fn test_task1() {
+    fn test_part_1() {
         for (line, expected) in INPUT.lines().zip([1, 4, 1, 1, 4, 10usize]) {
             let (row, ranges) = parse_line(line);
             let calculated = get_arrangements_number(row, &ranges);
@@ -203,12 +203,12 @@ mod tests {
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "7599");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "7599");
     }
 
     #[test]
-    fn test_task2() {
+    fn test_part_2() {
         for (line, expected) in INPUT.lines().zip([1, 16384, 1, 16, 2500, 506250usize]) {
             let unfolded = unfold_line(line);
             let (row, ranges) = parse_line(&unfolded);
@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "15454556629917");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "15454556629917");
     }
 }
