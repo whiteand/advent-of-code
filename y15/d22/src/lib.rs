@@ -28,23 +28,26 @@ struct Boss {
 #[tracing::instrument]
 pub fn solve_part_1(file_content: &str) -> usize {
     let boss = parse_boss(file_content);
+    tracing::info!(?boss);
     least_mana_spent(Player::new(50, 500), boss, 0)
 }
 #[tracing::instrument]
 pub fn solve_part_2(file_content: &str) -> usize {
     let boss = parse_boss(file_content);
+    tracing::info!(?boss);
     least_mana_spent(Player::new(50, 500), boss, 1)
 }
 
 fn parse_boss(input: &str) -> Boss {
     let mut lines = input.lines().filter(|x| !x.is_empty());
-    let line = lines.next().unwrap();
+
     let mut boss = Boss { hp: 0, damage: 0 };
 
-    if let Some(text) = line.strip_prefix("Hit Points: ") {
+    if let Some(text) = lines.next().unwrap().strip_prefix("Hit Points: ") {
         boss.hp = text.trim().parse().unwrap();
     }
-    if let Some(text) = line.strip_prefix("Damage: ") {
+
+    if let Some(text) = lines.next().unwrap().strip_prefix("Damage: ") {
         boss.damage = text.trim().parse().unwrap();
     }
 
@@ -373,7 +376,6 @@ fn least_mana_spent(player: Player, boss: Boss, player_hp_per_move: u8) -> usize
         .set_boss_damage(boss.damage as u8);
 
     heap.push(state);
-    tracing::info!(?state);
 
     let mut min_spent_mana_at_boss_death = u16::MAX;
 
