@@ -162,7 +162,7 @@ pub fn neighbours(
     (min_r..max_r).flat_map(move |r| (min_c..max_c).map(move |c| (r, c)))
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let map = parse_map(file_content);
     let numbers_n = map.numbers.len();
     let mut sum = 0usize;
@@ -188,7 +188,7 @@ pub fn solve_task1(file_content: &str) -> usize {
     sum
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let map = parse_map(file_content);
     let mut res = 0usize;
     'symb_loop: for sym in map.symbols {
@@ -231,25 +231,25 @@ pub fn solve_task2(file_content: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d03/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d03.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "4361");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "4361");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "556367");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "556367");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "467835");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "467835");
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "89471771");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "89471771");
     }
 }
