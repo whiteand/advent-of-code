@@ -1,4 +1,5 @@
-use nom::{
+use advent_utils::nom::{
+    self,
     bytes::complete::tag,
     character::complete::{multispace0, newline},
     multi::separated_list1,
@@ -218,42 +219,42 @@ fn get_max_geodes(blueprint: &Blueprint) -> usize {
     max_geodes
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let (_, blueprints) = separated_list1(newline, blueprint)(file_content.trim()).unwrap();
     blueprints
         .into_iter()
         .map(|b| get_max_geodes(&b) * b.id)
         .sum()
 }
-pub fn solve_task2(_file_content: &str) -> usize {
+pub fn solve_part_2(_file_content: &str) -> usize {
     0
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y22d19/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y22/y22d19.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "0");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "0");
     }
 
     #[test]
     #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "0");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
     }
 
     #[test]
     #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "0");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "0");
     }
 
     #[test]
     #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "0");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
     }
 }
