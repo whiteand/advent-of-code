@@ -1,4 +1,4 @@
-use nom::AsChar;
+use advent_utils::nom::AsChar;
 
 static WORDY_DIGITS: [&str; 10] = [
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
@@ -65,45 +65,45 @@ fn solve(file_content: &str, handle_line: impl Fn(&str) -> u32) -> u32 {
     file_content.lines().map(handle_line).sum()
 }
 
-pub fn solve_task1(file_content: &str) -> u32 {
+pub fn solve_part_1(file_content: &str) -> u32 {
     solve(file_content, process_line_1)
 }
-pub fn solve_task2(file_content: &str) -> u32 {
+pub fn solve_part_2(file_content: &str) -> u32 {
     solve(file_content, process_line_2)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d01/example.txt");
-    const INPUT2: &str = include_str!("./y23d01/example2.txt");
-    const INPUT3: &str = include_str!("./y23d01/example3.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d01.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const INPUT2: &str = include_str!("../example2.txt");
+    const INPUT3: &str = include_str!("../example3.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
     fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "142");
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "142");
     }
     #[test]
     fn test_task3() {
-        assert_eq!(format!("{}", solve_task1(INPUT3)), "142");
+        assert_eq!(format!("{}", solve_part_1(INPUT3)), "53080");
     }
 
     #[test]
     fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "54953");
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "54953");
     }
 
     #[test]
     fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT2)), "281");
+        assert_eq!(format!("{}", solve_part_2(INPUT2)), "281");
     }
 
     #[test]
     fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "53868");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "53868");
     }
     #[test]
     fn test_task2_actual2() {
-        assert_eq!(format!("{}", solve_task2(INPUT3)), "0");
+        assert_eq!(format!("{}", solve_part_2(INPUT3)), "53268");
     }
 }

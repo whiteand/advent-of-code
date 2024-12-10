@@ -7,3 +7,4 @@ edition = "2021"
 itertools = { workspace = true }
 tracing = { workspace = true }
 glam = { workspace = true }
+nom = { workspace = true }

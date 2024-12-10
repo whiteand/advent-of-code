@@ -12,6 +12,7 @@ version = "0.1.0"
 dependencies = [
  "glam",
  "itertools 0.13.0",
+ "nom",
  "tracing",
 ]
 
@@ -1490,6 +1491,18 @@ dependencies = [
  "nom",
  "petgraph",
  "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y23d01"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
  "tracing-subscriber",
 ]
 
