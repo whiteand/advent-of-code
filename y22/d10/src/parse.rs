@@ -1,4 +1,5 @@
 use super::command::Command;
+use advent_utils::nom;
 use nom::IResult;
 
 fn parse_command(line: &str) -> IResult<&str, Command> {
@@ -15,5 +16,13 @@ fn parse_command(line: &str) -> IResult<&str, Command> {
 }
 
 pub fn parse_commands(input: &str) -> impl Iterator<Item = Command> + '_ {
-    input.lines().map(|line| parse_command(line).unwrap().1)
+    input
+        .lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| match parse_command(line) {
+            Ok((_, command)) => command,
+            Err(err) => {
+                panic!("Failed to parse: '{line}' error: {err}")
+            }
+        })
 }

@@ -5,7 +5,7 @@ mod cpu;
 mod crt;
 mod parse;
 
-pub fn solve_task1(file_content: &str) -> i32 {
+pub fn solve_part_1(file_content: &str) -> i32 {
     Cpu::new(parse_commands(file_content))
         .enumerate()
         .map(|(ind, register)| ((ind + 1) as i32, register))
@@ -14,7 +14,7 @@ pub fn solve_task1(file_content: &str) -> i32 {
         .sum()
 }
 
-pub fn solve_task2(file_content: &str) -> String {
+pub fn solve_part_2(file_content: &str) -> String {
     Cpu::new(parse_commands(file_content))
         .scan(Crt::new(), |c, r| Some(c.draw(r)))
         .collect::<String>()
@@ -22,10 +22,9 @@ pub fn solve_task2(file_content: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
 
     const INPUT: &str = "addx 15
-    addx -11
+addx -11
 addx 6
 addx -3
 addx 5
@@ -171,25 +170,22 @@ noop
 noop
 noop";
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "13140");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT.trim())), "13140");
     }
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        let str = fs::read_to_string("benches/y22/y22d10.txt").unwrap_or_default();
+    fn test_part_1_actual() {
+        let str = include_str!("../input.txt");
 
-        assert_eq!(format!("{}", solve_task1(&str)), "14060");
+        assert_eq!(format!("{}", solve_part_1(&str)), "14060");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_small() {
+    fn test_part_1_small() {
         assert_eq!(
             format!(
                 "{}",
-                solve_task1(
+                solve_part_1(
                     "noop
 addx 3
 addx -5"
@@ -200,9 +196,8 @@ addx -5"
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        let res = solve_task2(INPUT);
+    fn test_part_2() {
+        let res = solve_part_2(INPUT);
         assert_eq!(
             res,
             "##..##..##..##..##..##..##..##..##..##..
