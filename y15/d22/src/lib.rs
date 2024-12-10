@@ -256,7 +256,7 @@ impl BitState {
     fn spend_mana(&self, mana: u16) -> Self {
         self.dec_player_mana(mana).inc_spent_mana(mana)
     }
-    fn cast_magic_missile(&self) -> Option<Game> {
+    fn try_cast_magic_missile(&self) -> Option<Game> {
         let mana = self.get_player_mana();
         const MAGIC_MISSILE_COST: u16 = 53;
         (mana >= MAGIC_MISSILE_COST).then(|| {
@@ -268,7 +268,7 @@ impl BitState {
             }
         })
     }
-    fn cast_drain(&self) -> Option<Game> {
+    fn try_cast_drain(&self) -> Option<Game> {
         const DRAIN_COST: u16 = 73;
         let mana = self.get_player_mana();
         (mana >= DRAIN_COST).then(|| {
@@ -278,6 +278,16 @@ impl BitState {
             } else {
                 Game::Playing(state)
             }
+        })
+    }
+    fn try_cast_recharge(&self) -> Option<Self> {
+        const RECHARGE_COST: u16 = 229;
+        const RECHARGE_TURNS: u8 = 5;
+
+        let mana = self.get_player_mana();
+        (mana >= RECHARGE_COST).then(|| {
+            self.spend_mana(RECHARGE_COST)
+                .set_recharge_effect_counter(RECHARGE_TURNS)
         })
     }
 }
@@ -316,6 +326,12 @@ impl Game {
             game => Some(*game),
         }
     }
+    fn map_maybe(&self, f: impl FnOnce(&BitState) -> Option<BitState>) -> Option<Self> {
+        match self {
+            Game::Playing(bit_state) => f(bit_state).map(Game::Playing),
+            game => Some(*game),
+        }
+    }
 }
 
 #[tracing::instrument(skip(player, boss))]
@@ -351,7 +367,7 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
         let game = state.apply_effects(&mut armor);
 
         match game
-            .and_then_maybe(|s| s.cast_magic_missile())
+            .and_then_maybe(|s| s.try_cast_magic_missile())
             .map(|x| x.and_then(|x| x.boss_move()))
         {
             Some(Game::Win(s)) => {
@@ -365,7 +381,21 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             _ => {}
         }
         match game
-            .and_then_maybe(|s| s.cast_drain())
+            .and_then_maybe(|s| s.try_cast_drain())
+            .map(|x| x.and_then(|x| x.boss_move()))
+        {
+            Some(Game::Win(s)) => {
+                if s.get_spent_mana() < min_spent_mana_at_boss_death {
+                    min_spent_mana_at_boss_death = s.get_spent_mana();
+                }
+            }
+            Some(Game::Playing(s)) => {
+                heap.push(s);
+            }
+            _ => {}
+        }
+        match game
+            .map_maybe(|s| s.try_cast_recharge())
             .map(|x| x.and_then(|x| x.boss_move()))
         {
             Some(Game::Win(s)) => {
@@ -392,39 +422,11 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             }
         };
 
-        const RECHARGE_COST: u16 = 229;
-        const RECHARGE_TURNS: u8 = 5;
         let mana = state.get_player_mana();
-        if mana >= RECHARGE_COST && state.get_recharge_effect_counter() == 0 {
-            // try to cast magic missile
-            let state = state
-                .spend_mana(RECHARGE_COST)
-                .set_recharge_effect_counter(RECHARGE_TURNS);
 
-            if state.get_boss_hp() == 0 {
-                min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
-            } else {
-                match state.boss_move() {
-                    Game::Playing(state) => {
-                        heap.push(state);
-                    }
-                    Game::Win(state) => {
-                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
-                            min_spent_mana_at_boss_death = state.get_spent_mana();
-                        }
-                    }
-                    Game::Loser => {
-                        // do nothing
-                    }
-                };
-            }
-        }
         const POISON_COST: u16 = 173;
         const POISON_TURNS: u8 = 6;
         if mana >= POISON_COST && state.get_poison_effect_counter() == 0 {
-            let mut move_armor = armor;
-
             // try to cast magic missile
             let state = state
                 .spend_mana(POISON_COST)
