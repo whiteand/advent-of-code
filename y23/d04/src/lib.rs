@@ -1,4 +1,4 @@
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     file_content
         .lines()
         .flat_map(str_to_card_matches)
@@ -6,7 +6,7 @@ pub fn solve_task1(file_content: &str) -> usize {
         .map(|matches| 1 << (matches - 1))
         .sum()
 }
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let matches = file_content
         .lines()
         .flat_map(str_to_card_matches)
@@ -50,25 +50,25 @@ fn str_to_card_matches(line: &str) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./y23d04/example.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d04.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "13");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "13");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "22193");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "22193");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "30");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "30");
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "5625994");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "5625994");
     }
 }

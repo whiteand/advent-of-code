@@ -1531,6 +1531,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "y23d04"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "y23d17"
 version = "0.1.0"
 dependencies = [
