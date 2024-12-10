@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::{collections::VecDeque, ops::RangeInclusive};
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let (grid, start, end) = parse_grid(file_content);
 
     let minimal_distances = calculate_min_distances(&grid, start, |height| 0..=height + 1);
@@ -9,7 +9,7 @@ pub fn solve_task1(file_content: &str) -> usize {
     minimal_distances[end.0][end.1]
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let (grid, _, start) = parse_grid(file_content);
     let rows = grid.len();
     let cols = grid[0].len();
@@ -139,25 +139,21 @@ abcryxxl
 accszExk
 acctuvwj
 abdefghi";
-    const ACTUAL: &str = include_str!("../../benches/y22/y22d12.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "31");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "31");
     }
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "484");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "484");
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "29");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "29");
     }
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "478");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "478");
     }
 }
