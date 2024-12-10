@@ -7,7 +7,6 @@ name = "advent"
 version = "0.1.0"
 dependencies = [
  "itertools 0.13.0",
- "md-5",
  "nom",
 ]
 
@@ -1398,6 +1397,19 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y15d04"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "md-5",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
