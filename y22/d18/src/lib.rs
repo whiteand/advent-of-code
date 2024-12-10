@@ -144,10 +144,10 @@ fn find_internal_dots(dots: &[(i32, i32, i32)]) -> Vec<(i32, i32, i32)> {
     res
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     find_exterior_area(parse(file_content))
 }
-pub fn solve_task2(file_content: &str) -> impl std::fmt::Display {
+pub fn solve_part_2(file_content: &str) -> impl std::fmt::Display {
     let dots = parse(file_content).collect_vec();
     let external_and_internal = find_exterior_area(dots.iter().cloned());
     let internal_dots = find_internal_dots(&dots);
@@ -168,29 +168,25 @@ fn parse(file_content: &str) -> impl Iterator<Item = (i32, i32, i32)> + '_ {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &str = include_str!("./example.txt");
-    const ACTUAL: &str = include_str!("../../../benches/y22/y22d18.txt");
+    const INPUT: &str = include_str!("../example.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "64");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "64");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "3432");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "3432");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "58");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "58");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "2042");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "2042");
     }
 }
