@@ -164,7 +164,7 @@ impl Node {
         valves: &'a BTreeMap<usize, Valve>,
         shortest_paths: &'a BTreeMap<(usize, usize), Vec<usize>>,
         place: usize,
-    ) -> impl Iterator<Item = usize> + '_ {
+    ) -> impl Iterator<Item = usize> + 'a {
         valves
             .iter()
             .filter(|(_, v)| v.rate > 0)

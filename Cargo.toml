@@ -79,6 +79,11 @@ tracing = "0.1.41"
 tracing-chrome = "0.7.2"
 tracing-subscriber = "0.3.19"
 
+[dependencies]
+itertools = { workspace = true }
+nom = { workspace = true }
+md-5 = { workspace = true }
+
 [[bench]]
 name = "y22d4"
 path = "benches/y22/y22d4.rs"
