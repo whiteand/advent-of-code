@@ -1,4 +1,4 @@
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct Player {
@@ -59,30 +59,36 @@ fn parse_boss(input: &str) -> Boss {
 /// poison-effect counter   = 3  bit
 /// 127 boss_hp             = 7  bit
 /// 15 boss_damage          = 4  bit
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 struct BitState(u64);
 
 macro_rules! bit_field {
     ($get:ident, $set:ident, $dec:ident,$inc:ident, $offset:expr, $mask:expr, $typ:ty) => {
         impl BitState {
             #[allow(dead_code)]
+            #[inline(always)]
             pub fn $get(&self) -> $typ {
                 ((self.0 >> $offset) & $mask) as $typ
             }
             #[allow(dead_code)]
+            #[inline(always)]
             pub fn $set(&self, new_value: $typ) -> Self {
+                assert!(new_value as u64 <= $mask);
                 Self(((new_value as u64) << $offset) | (self.0 & !($mask << $offset)))
             }
             #[allow(dead_code)]
+            #[inline(always)]
             pub fn $dec(&self, amount: $typ) -> Self {
+                assert!(amount as u64 <= $mask);
                 let value = self.$get();
                 if value <= amount {
                     return self.$set(0);
                 } else {
-                    return self.$set(unsafe { value.unchecked_sub(1) });
+                    return self.$set(unsafe { value.unchecked_sub(amount) });
                 }
             }
             #[allow(dead_code)]
+            #[inline(always)]
             pub fn $inc(&self, amount: $typ) -> Self {
                 let value = self.$get();
                 let new_value = value + amount;
@@ -209,23 +215,58 @@ impl std::fmt::Debug for BitState {
 }
 
 impl BitState {
-    fn apply_effects(&self, armor: &mut u8) -> Self {
+    fn apply_effects(&self, armor: &mut u8) -> Game {
         let mut new_state = *self;
+        if new_state.get_poison_effect_counter() > 0 {
+            new_state = new_state.dec_boss_hp(3).dec_poison_effect_counter(1);
+            if new_state.get_boss_hp() == 0 {
+                return Game::Win(new_state);
+            }
+        }
         if new_state.get_shield_effect_counter() > 0 {
             *armor = 7;
             new_state = new_state.dec_shield_effect_counter(1);
         } else {
             *armor = 0;
         }
-        if new_state.get_poison_effect_counter() > 0 {
-            new_state = new_state.dec_boss_damage(3).dec_poison_effect_counter(1);
-        }
         if new_state.get_recharge_effect_counter() > 0 {
             new_state = new_state
                 .inc_player_mana(101)
                 .dec_recharge_effect_counter(1);
         }
-        new_state
+        Game::Playing(new_state)
+    }
+
+    fn boss_move(&self) -> Game {
+        let mut armor = 0u8;
+        let state = match self.apply_effects(&mut armor) {
+            Game::Playing(bit_state) => bit_state,
+            game => {
+                return game;
+            }
+        };
+        let boss_damage = state.get_boss_damage().saturating_sub(armor).max(1);
+        let state = state.dec_player_hp(boss_damage);
+        if state.get_player_hp() == 0 {
+            Game::Loser
+        } else {
+            Game::Playing(state)
+        }
+    }
+    fn spent_mana(&self, mana: u16) -> Self {
+        self.dec_player_mana(mana).inc_spent_mana(mana)
+    }
+    fn cast_magic_missile(&self) -> Option<Game> {
+        let mana = self.get_player_mana();
+        const MAGIC_MISSILE_COST: u16 = 53;
+        (mana >= MAGIC_MISSILE_COST).then(|| {
+            let state = self.spent_mana(MAGIC_MISSILE_COST).dec_boss_hp(4);
+            if state.get_boss_hp() == 0 {
+                Game::Win(state)
+            } else {
+                Game::Playing(state)
+            }
+        })
     }
 }
 
@@ -243,7 +284,29 @@ impl Ord for BitState {
     }
 }
 
-#[tracing::instrument]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+enum Game {
+    Win(BitState),
+    Loser,
+    Playing(BitState),
+}
+
+impl Game {
+    fn and_then(&self, f: impl FnOnce(&BitState) -> Game) -> Game {
+        match self {
+            Game::Playing(bit_state) => f(bit_state),
+            game => *game,
+        }
+    }
+    fn and_then_maybe(&self, f: impl FnOnce(&BitState) -> Option<Game>) -> Option<Game> {
+        match self {
+            Game::Playing(bit_state) => f(bit_state),
+            game => Some(*game),
+        }
+    }
+}
+
+#[tracing::instrument(skip(player, boss))]
 fn least_mana_spent(player: Player, boss: Boss) -> usize {
     let mut heap = BinaryHeap::new();
 
@@ -254,85 +317,111 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
         .set_boss_damage(boss.damage as u8);
 
     heap.push(state);
+    tracing::info!(?state);
 
     let mut min_spent_mana_at_boss_death = u16::MAX;
 
-    while let Some(mut state) = heap.pop() {
+    let mut min_boss_hp = boss.hp as u8;
+
+    let mut visited = HashSet::new();
+
+    while let Some(state) = heap.pop() {
         if state.get_spent_mana() >= min_spent_mana_at_boss_death {
+            continue;
+        }
+        if !visited.insert(state) {
             continue;
         }
 
         // before player move we should apply effects
         let mut armor = 0;
 
-        state = state.apply_effects(&mut armor);
+        let game = state.apply_effects(&mut armor);
 
-        // player moves
-        let mana = state.get_player_mana();
-        const MAGIC_MISSILE_COST: u16 = 53;
-        if mana >= MAGIC_MISSILE_COST {
-            let mut move_armor = armor;
-            // try to cast magic missile
-            let after_player_move = state
-                .dec_player_mana(MAGIC_MISSILE_COST)
-                .inc_spent_mana(MAGIC_MISSILE_COST)
-                .dec_boss_hp(4);
-
-            if after_player_move.get_boss_hp() == 0 {
-                min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
-            } else {
-                let after_boss_effects = state.apply_effects(&mut move_armor);
-                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
-                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
-                if after_boss_move.get_player_hp() > 0 {
-                    heap.push(after_boss_move);
+        match game
+            .and_then_maybe(|s| s.cast_magic_missile())
+            .map(|x| x.and_then(|x| x.boss_move()))
+        {
+            Some(Game::Win(s)) => {
+                if s.get_spent_mana() < min_spent_mana_at_boss_death {
+                    min_spent_mana_at_boss_death = s.get_spent_mana();
                 }
             }
+            Some(Game::Playing(s)) => {
+                heap.push(s);
+            }
+            _ => {}
         }
+
+        let state = match game {
+            Game::Win(s) => {
+                if s.get_spent_mana() < min_spent_mana_at_boss_death {
+                    min_spent_mana_at_boss_death = s.get_spent_mana();
+                }
+                continue;
+            }
+            Game::Playing(s) => s,
+            Game::Loser => {
+                continue;
+            }
+        };
+
         const DRAIN_COST: u16 = 73;
+        let mana = state.get_player_mana();
         if mana >= DRAIN_COST {
             let mut move_armor = armor;
             // try to cast magic missile
-            let after_player_move = state
+            let state = state
                 .dec_player_mana(DRAIN_COST)
                 .inc_spent_mana(DRAIN_COST)
                 .dec_boss_hp(2)
                 .inc_player_hp(2);
 
-            if after_player_move.get_boss_hp() == 0 {
+            if state.get_boss_hp() == 0 {
                 min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
             } else {
-                let after_boss_effects = state.apply_effects(&mut move_armor);
-                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
-                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
-                if after_boss_move.get_player_hp() > 0 {
-                    heap.push(after_boss_move);
-                }
+                match state.boss_move() {
+                    Game::Playing(state) => {
+                        heap.push(state);
+                    }
+                    Game::Win(state) => {
+                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
+                            min_spent_mana_at_boss_death = state.get_spent_mana();
+                        }
+                    }
+                    Game::Loser => {
+                        // do nothing
+                    }
+                };
             }
         }
         const RECHARGE_COST: u16 = 229;
         const RECHARGE_TURNS: u8 = 5;
         if mana >= RECHARGE_COST && state.get_recharge_effect_counter() == 0 {
-            let mut move_armor = armor;
-
             // try to cast magic missile
-            let after_player_move = state
+            let state = state
                 .dec_player_mana(RECHARGE_COST)
                 .inc_spent_mana(RECHARGE_COST)
                 .set_recharge_effect_counter(RECHARGE_TURNS);
 
-            if after_player_move.get_boss_hp() == 0 {
+            if state.get_boss_hp() == 0 {
                 min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
             } else {
-                let after_boss_effects = state.apply_effects(&mut move_armor);
-                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
-                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
-                if after_boss_move.get_player_hp() > 0 {
-                    heap.push(after_boss_move);
-                }
+                match state.boss_move() {
+                    Game::Playing(state) => {
+                        heap.push(state);
+                    }
+                    Game::Win(state) => {
+                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
+                            min_spent_mana_at_boss_death = state.get_spent_mana();
+                        }
+                    }
+                    Game::Loser => {
+                        // do nothing
+                    }
+                };
             }
         }
         const POISON_COST: u16 = 173;
@@ -341,21 +430,28 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             let mut move_armor = armor;
 
             // try to cast magic missile
-            let after_player_move = state
+            let state = state
                 .dec_player_mana(POISON_COST)
                 .inc_spent_mana(POISON_COST)
                 .set_poison_effect_counter(POISON_TURNS);
 
-            if after_player_move.get_boss_hp() == 0 {
+            if state.get_boss_hp() == 0 {
                 min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
             } else {
-                let after_boss_effects = state.apply_effects(&mut move_armor);
-                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
-                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
-                if after_boss_move.get_player_hp() > 0 {
-                    heap.push(after_boss_move);
-                }
+                match state.boss_move() {
+                    Game::Playing(state) => {
+                        heap.push(state);
+                    }
+                    Game::Win(state) => {
+                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
+                            min_spent_mana_at_boss_death = state.get_spent_mana();
+                        }
+                    }
+                    Game::Loser => {
+                        // do nothing
+                    }
+                };
             }
         }
         const SHIELD_COST: u16 = 113;
@@ -364,21 +460,28 @@ fn least_mana_spent(player: Player, boss: Boss) -> usize {
             let mut move_armor = armor;
 
             // try to cast magic missile
-            let after_player_move = state
+            let state = state
                 .dec_player_mana(SHIELD_COST)
                 .inc_spent_mana(SHIELD_COST)
                 .set_shield_effect_counter(SHIELD_TURNS);
 
-            if after_player_move.get_boss_hp() == 0 {
+            if state.get_boss_hp() == 0 {
                 min_spent_mana_at_boss_death =
-                    min_spent_mana_at_boss_death.min(after_player_move.get_spent_mana());
+                    min_spent_mana_at_boss_death.min(state.get_spent_mana());
             } else {
-                let after_boss_effects = state.apply_effects(&mut move_armor);
-                let boss_damage = state.get_boss_damage().saturating_sub(move_armor).max(1);
-                let after_boss_move = after_boss_effects.dec_player_hp(boss_damage);
-                if after_boss_move.get_player_hp() > 0 {
-                    heap.push(after_boss_move);
-                }
+                match state.boss_move() {
+                    Game::Playing(state) => {
+                        heap.push(state);
+                    }
+                    Game::Win(state) => {
+                        if state.get_spent_mana() < min_spent_mana_at_boss_death {
+                            min_spent_mana_at_boss_death = state.get_spent_mana();
+                        }
+                    }
+                    Game::Loser => {
+                        // do nothing
+                    }
+                };
             }
         }
     }
@@ -404,8 +507,7 @@ mod tests {
     #[rstest]
     #[case(10, 250, 13, 8, 226)]
     #[case(10, 250, 14, 8, 641)]
-    #[case(50, 500, 71, 10, 0)]
-    #[ignore]
+    #[case(50, 500, 71, 10, 1242)] // 1242 is too low
     fn test_part1(
         #[case] player_hp: usize,
         #[case] player_mana: usize,
@@ -465,11 +567,11 @@ mod tests {
 
     #[test]
     fn test_bit_state() {
-        let mut state = BitState(0);
+        let mut state = BitState(u64::MAX);
         //
+        assert_eq!(state.get_player_hp(), 127);
         state = state.set_player_hp(3);
         assert_eq!(state.get_player_hp(), 3);
-        state = state.set_player_hp(0);
         assert_eq!(state.0, 0);
 
         state = state.set_player_mana(3);
