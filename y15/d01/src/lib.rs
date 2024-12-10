@@ -1,4 +1,4 @@
-pub fn solve_task1(file_content: &str) -> i32 {
+pub fn solve_part_1(file_content: &str) -> i32 {
     file_content
         .chars()
         .scan(0, |s, c| match c {
@@ -15,7 +15,7 @@ pub fn solve_task1(file_content: &str) -> i32 {
         .last()
         .unwrap_or_default()
 }
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let mut balance = 0;
     let mut i = 0;
     let mut chars = file_content.chars();
@@ -39,32 +39,28 @@ pub fn solve_task2(file_content: &str) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const ACTUAL: &str = include_str!("../../benches/y15/y15d01.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1("(())")), "0");
-        assert_eq!(format!("{}", solve_task1("()()")), "0");
-        assert_eq!(format!("{}", solve_task1("(((")), "3");
-        assert_eq!(format!("{}", solve_task1("(()(()(")), "3");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1("(())")), "0");
+        assert_eq!(format!("{}", solve_part_1("()()")), "0");
+        assert_eq!(format!("{}", solve_part_1("(((")), "3");
+        assert_eq!(format!("{}", solve_part_1("(()(()(")), "3");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "280");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "280");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(")")), "1");
-        assert_eq!(format!("{}", solve_task2("()())")), "5");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(")")), "1");
+        assert_eq!(format!("{}", solve_part_2("()())")), "5");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "1797");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "1797");
     }
 }

@@ -8,6 +8,7 @@ edition = "2021"
 [workspace]
 members = [
     "advent_utils",
+    "y15/d01",
     "y15/d05",
     "y15/d06",
     "y15/d07",
