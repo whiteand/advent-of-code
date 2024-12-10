@@ -1,4 +1,4 @@
-use nom::{self, bytes::complete, character, multi::separated_list1, IResult};
+use advent_utils::nom::{bytes::complete, character, multi::separated_list1, IResult};
 
 pub fn solve<F>(file_content: &str, f: F) -> u32
 where
@@ -11,12 +11,12 @@ where
         .sum()
 }
 
-pub fn solve_task1(file_content: &str) -> u32 {
+pub fn solve_part_1(file_content: &str) -> u32 {
     solve(file_content, |(l, w, h)| {
         2 * l * w + 2 * w * h + 2 * l * h + l * w
     })
 }
-pub fn solve_task2(file_content: &str) -> u32 {
+pub fn solve_part_2(file_content: &str) -> u32 {
     solve(file_content, |(l, w, h)| 2 * (l + w) + l * w * h)
 }
 
@@ -33,28 +33,24 @@ mod tests {
     use super::*;
     const INPUT: &str = "2x3x4
 1x1x10";
-    const ACTUAL: &str = include_str!("../../benches/y15/y15d02.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "101");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "101");
     }
 
     #[test]
-    #[ignore]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "1606483");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "1606483");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "48");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "48");
     }
 
     #[test]
-    #[ignore]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "3842356");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "3842356");
     }
 }
