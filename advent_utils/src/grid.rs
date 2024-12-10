@@ -22,6 +22,13 @@ impl<T> Grid<T> {
             .map(|(i, row)| row.into_iter().enumerate().map(move |(j, x)| f(x, i, j)))
             .collect()
     }
+
+    pub fn fill(&mut self, value: T)
+    where
+        T: Copy,
+    {
+        self.arr.fill(value);
+    }
     #[inline(always)]
     pub fn cols(&self, row: usize) -> usize {
         let start = self.row_start_indexes[row];
@@ -57,6 +64,19 @@ impl<T> Grid<T> {
     #[inline(always)]
     pub fn rows(&self) -> impl Iterator<Item = &[T]> + '_ {
         self.rows_ranges().map(|range| &self.arr[range])
+    }
+
+    pub fn neighbours<'t, D: IntoIterator<Item = IVec2>>(
+        &'t self,
+        pos: IVec2,
+        dirs: D,
+    ) -> impl Iterator<Item = (IVec2, &'t T)> + 't
+    where
+        D: 't,
+    {
+        dirs.into_iter()
+            .map(move |d| d + pos)
+            .filter_map(|p| self.get(p).map(|x| (p, x)))
     }
     #[inline(always)]
     pub fn rows_mut(&mut self) -> impl Iterator<Item = &mut [T]> + '_ {
@@ -220,6 +240,27 @@ mod tests {
         assert_eq!(grid.get(IVec2::new(0, 2)).copied(), Some(b'7'));
         assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'8'));
         assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
+        assert_eq!(
+            grid.neighbours(
+                IVec2::new(1, 1),
+                [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y]
+            )
+            .collect::<Vec<_>>(),
+            vec![
+                (IVec2::new(2, 1), &b'6'),
+                (IVec2::new(0, 1), &b'4'),
+                (IVec2::new(1, 2), &b'8'),
+                (IVec2::new(1, 0), &b'2')
+            ]
+        );
+        assert_eq!(
+            grid.neighbours(
+                IVec2::new(0, 0),
+                [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y]
+            )
+            .collect::<Vec<_>>(),
+            vec![(IVec2::new(1, 0), &b'2'), (IVec2::new(0, 1), &b'4'),]
+        );
         assert_eq!(grid.cols(0), 3);
         assert_eq!(grid.cols(1), 3);
         assert_eq!(grid.cols(2), 3);
