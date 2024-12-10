@@ -1,4 +1,4 @@
-use nom::{self, IResult};
+use advent_utils::nom::{self, IResult};
 
 use super::moves::{Direction, Move};
 

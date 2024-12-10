@@ -28,16 +28,15 @@ fn solve<const N: usize>(file_content: &str) -> usize {
     s.len()
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     solve::<2>(file_content)
 }
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     solve::<10>(file_content)
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     const INPUT: &str = "R 4
 U 4
 L 3
@@ -47,31 +46,27 @@ D 1
 L 5
 R 2";
     #[test]
-    #[ignore]
-    fn test_y22_d9_t1() {
-        assert_eq!(format!("{}", solve_task1(INPUT)), "13");
+    fn test_y22_d9_p1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "13");
     }
     #[test]
-    #[ignore]
-    fn test_y22_d9_t1_actual() {
-        let str = fs::read_to_string("benches/y22/y22d9.txt").unwrap_or_default();
-        let res = solve_task1(&str);
+    fn test_y22_d9_p1_actual() {
+        let str = include_str!("../input.txt");
+        let res = solve_part_1(&str);
         assert_eq!(res, 6067);
     }
     #[test]
-    #[ignore]
-    fn test_y22_d9_t2_actual() {
-        let str = fs::read_to_string("benches/y22/y22d9.txt").unwrap_or_default();
-        let res = solve_task2(&str);
+    fn test_y22_d9_p2_actual() {
+        let str = include_str!("../input.txt");
+        let res = solve_part_2(&str);
         assert_eq!(res, 2471);
     }
     #[test]
-    #[ignore]
-    fn test_task2() {
+    fn test_part_2() {
         assert_eq!(
             format!(
                 "{}",
-                solve_task2(
+                solve_part_2(
                     "R 5
 U 8
 L 8
@@ -86,8 +81,7 @@ U 20"
         );
     }
     #[test]
-    #[ignore]
-    fn test_task2_2() {
-        assert_eq!(format!("{}", solve_task2(INPUT)), "1");
+    fn test_part_2_2() {
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "1");
     }
 }
