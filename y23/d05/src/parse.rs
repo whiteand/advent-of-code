@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use nom::{
+use advent_utils::nom::{
     bytes::complete::tag,
     character::complete::{self, newline, not_line_ending, space1},
     combinator::map,
@@ -35,7 +35,7 @@ fn maps(input: &str) -> IResult<&str, MapPipeline> {
 
     Ok((input, MapPipeline::new(maps)))
 }
-pub(super) fn task1_inputs(file_content: &str) -> IResult<&str, (Vec<usize>, MapPipeline)> {
+pub(super) fn part_1_inputs(file_content: &str) -> IResult<&str, (Vec<usize>, MapPipeline)> {
     let (input, seeds) = delimited(
         tag("seeds: "),
         separated_list1(space1, map(complete::u32, |x| x as usize)),
@@ -46,7 +46,7 @@ pub(super) fn task1_inputs(file_content: &str) -> IResult<&str, (Vec<usize>, Map
     Ok((input, (seeds, maps)))
 }
 
-pub(super) fn task2_inputs(file_content: &str) -> IResult<&str, (Vec<Range<usize>>, MapPipeline)> {
+pub(super) fn part_2_inputs(file_content: &str) -> IResult<&str, (Vec<Range<usize>>, MapPipeline)> {
     let (input, seeds) = delimited(
         tag("seeds: "),
         separated_list1(

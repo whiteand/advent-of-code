@@ -1,0 +1,20 @@
+[package]
+name = "y23d05"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advent_utils.workspace = true
+criterion.workspace = true
+itertools.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+tracing-chrome.workspace = true
+
+
+[[bench]]
+name = "y23d05"
+path = "benches/y23d05.rs"
+harness = false
