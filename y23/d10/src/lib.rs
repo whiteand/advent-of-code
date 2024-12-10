@@ -209,7 +209,7 @@ impl<'t> Iterator for GridIter<'t> {
     }
 }
 
-pub fn solve_task1(file_content: &str) -> usize {
+pub fn solve_part_1(file_content: &str) -> usize {
     let grid = parse_grid(file_content);
     let (start_row, start_col) = grid.start();
     [
@@ -274,7 +274,7 @@ impl ColorTask {
     }
 }
 
-pub fn solve_task2(file_content: &str) -> usize {
+pub fn solve_part_2(file_content: &str) -> usize {
     let mut grid = parse_grid(file_content);
     let (start_row, start_col) = grid.start();
 
@@ -493,43 +493,43 @@ fn parse_grid(file_content: &str) -> Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const EXAMPLE: &str = include_str!("./y23d10/example.txt");
-    const EXAMPLE_2: &str = include_str!("./y23d10/example2.txt");
-    const EXAMPLE_3: &str = include_str!("./y23d10/example3.txt");
-    const EXAMPLE_4: &str = include_str!("./y23d10/example4.txt");
-    const EXAMPLE_5: &str = include_str!("./y23d10/example5.txt");
-    const ACTUAL: &str = include_str!("../../benches/y23/y23d10.txt");
+    const EXAMPLE: &str = include_str!("../example.txt");
+    const EXAMPLE_2: &str = include_str!("../example2.txt");
+    const EXAMPLE_3: &str = include_str!("../example3.txt");
+    const EXAMPLE_4: &str = include_str!("../example4.txt");
+    const EXAMPLE_5: &str = include_str!("../example5.txt");
+    const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    fn test_task1() {
-        assert_eq!(format!("{}", solve_task1(EXAMPLE)), "8");
+    fn test_part_1() {
+        assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "8");
     }
 
     #[test]
-    fn test_task1_2() {
-        assert_eq!(format!("{}", solve_task1(EXAMPLE_2)), "4");
+    fn test_part_1_2() {
+        assert_eq!(format!("{}", solve_part_1(EXAMPLE_2)), "4");
     }
 
     #[test]
-    fn test_task1_actual() {
-        assert_eq!(format!("{}", solve_task1(ACTUAL)), "6820");
+    fn test_part_1_actual() {
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "6820");
     }
 
     #[test]
-    fn test_task2() {
-        assert_eq!(format!("{}", solve_task2(EXAMPLE_3)), "4");
+    fn test_part_2() {
+        assert_eq!(format!("{}", solve_part_2(EXAMPLE_3)), "4");
     }
     #[test]
-    fn test_task2_2() {
-        assert_eq!(format!("{}", solve_task2(EXAMPLE_4)), "8");
+    fn test_part_2_2() {
+        assert_eq!(format!("{}", solve_part_2(EXAMPLE_4)), "8");
     }
     #[test]
-    fn test_task2_3() {
-        assert_eq!(format!("{}", solve_task2(EXAMPLE_5)), "10");
+    fn test_part_2_3() {
+        assert_eq!(format!("{}", solve_part_2(EXAMPLE_5)), "10");
     }
 
     #[test]
-    fn test_task2_actual() {
-        assert_eq!(format!("{}", solve_task2(ACTUAL)), "337");
+    fn test_part_2_actual() {
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "337");
     }
 
     #[test]
