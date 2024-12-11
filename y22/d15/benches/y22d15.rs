@@ -5,10 +5,16 @@ use y22d15::{solve_part_1, solve_part_2};
 pub fn criterion_benchmark(c: &mut Criterion) {
     let content = fs::read_to_string("input.txt").unwrap();
     c.bench_function("y22d15: part 1", |b| {
-        b.iter(|| solve_part_1(black_box(&content)))
+        b.iter(|| solve_part_1(black_box(&content), black_box(2000000)))
     });
     c.bench_function("y22d15: part 2", |b| {
-        b.iter(|| solve_part_2(black_box(&content)))
+        b.iter(|| {
+            solve_part_2(
+                black_box(&content),
+                black_box(0..=4000000),
+                black_box(0..=4000000),
+            )
+        })
     });
 }
 

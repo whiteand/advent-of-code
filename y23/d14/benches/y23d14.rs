@@ -8,7 +8,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| solve_part_1(black_box(&content)))
     });
     c.bench_function("y23d14: part 2", |b| {
-        b.iter(|| solve_part_2(black_box(&content)))
+        b.iter(|| solve_part_2::<1_000_000_000>(black_box(&content)))
     });
 }
 
