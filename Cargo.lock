@@ -1431,6 +1431,7 @@ dependencies = [
  "criterion",
  "itertools 0.13.0",
  "nom",
+ "rstest 0.23.0",
 ]
 
 [[package]]
@@ -1588,6 +1589,19 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y16d07"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "rstest 0.23.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
