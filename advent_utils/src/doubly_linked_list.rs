@@ -43,6 +43,9 @@ impl<T> DoublyLinkedList<T> {
     pub fn len(&self) -> usize {
         self.len
     }
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
     pub fn first(&self) -> Option<NodeIndex> {
         self.meta.as_ref().map(|x| x.first)
     }
@@ -59,7 +62,7 @@ impl<T> DoublyLinkedList<T> {
                 });
                 meta.last = id;
 
-                return id;
+                id
             }
             None => {
                 let id = NodeIndex(0);
@@ -72,7 +75,7 @@ impl<T> DoublyLinkedList<T> {
                     prev: None,
                     value,
                 });
-                return id;
+                id
             }
         }
     }
@@ -91,16 +94,11 @@ impl<T> DoublyLinkedList<T> {
         self.len -= 1;
         if self.len == 0 {
             self.meta = None;
-        } else {
-            match &mut self.meta {
-                Some(meta) => {
-                    if meta.first.0 == node_index {
-                        meta.first = self.nodes[node_index].next.unwrap();
-                    } else if meta.last.0 == node_index {
-                        meta.last = self.nodes[node_index].prev.unwrap();
-                    }
-                }
-                None => {}
+        } else if let Some(meta) = &mut self.meta {
+            if meta.first.0 == node_index {
+                meta.first = self.nodes[node_index].next.unwrap();
+            } else if meta.last.0 == node_index {
+                meta.last = self.nodes[node_index].prev.unwrap();
             }
         }
 

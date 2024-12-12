@@ -7,3 +7,30 @@ y24d12: part 2          time:   [717.03 µs 717.65 µs 718.32 µs]
 Found 10 outliers among 100 measurements (10.00%)
   6 (6.00%) high mild
   4 (4.00%) high severe
+
+----------------------------after bitmask
+
+y24d12: part 1          time:   [667.93 µs 668.72 µs 669.54 µs]
+                        change: [-0.4835% -0.1947% +0.1043%] (p = 0.21 > 0.05)
+                        No change in performance detected.
+Found 5 outliers among 100 measurements (5.00%)
+  1 (1.00%) high mild
+  4 (4.00%) high severe
+
+y24d12: part 2          time:   [691.02 µs 691.84 µs 692.70 µs]
+                        change: [-0.3818% +0.0660% +0.5100%] (p = 0.78 > 0.05)
+                        No change in performance detected.
+
+
+----------------------------after making while loop dfs instead of recursion
+
+y24d12: part 1          time:   [650.07 µs 651.04 µs 652.03 µs]
+                        change: [-2.8473% -2.5482% -2.2581%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 9 outliers among 100 measurements (9.00%)
+  4 (4.00%) high mild
+  5 (5.00%) high severe
+
+y24d12: part 2          time:   [694.83 µs 695.92 µs 697.16 µs]
+                        change: [-0.0898% +0.3308% +0.7004%] (p = 0.11 > 0.05)
+                        No change in performance detected.

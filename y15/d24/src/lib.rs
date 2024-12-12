@@ -32,7 +32,7 @@ fn solve(file_content: &str, groups: usize) -> usize {
             if first_group_sum != target_group_weight {
                 continue;
             }
-            indexes.retain(|x| !first_group.contains(&x));
+            indexes.retain(|x| !first_group.contains(x));
             if can_be_split(&packages, &mut indexes, target_group_weight, groups - 1) {
                 let quantum_entanglement =
                     first_group.iter().map(|i| packages[*i]).product::<usize>();
@@ -75,7 +75,7 @@ fn can_be_split(
             if sum != target_group_weight {
                 continue;
             }
-            indexes.retain(|i| !first_group.contains(&i));
+            indexes.retain(|i| !first_group.contains(i));
 
             let possible = can_be_split(packages, indexes, target_group_weight, groups - 1);
 

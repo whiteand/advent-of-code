@@ -19,8 +19,8 @@ fn parse_register(input: &str) -> nom::IResult<&str, Register> {
 }
 fn parse_offset(input: &str) -> nom::IResult<&str, Offset> {
     alt((
-        preceded(tag("+"), complete::u64.map(|x| x as usize)).map(|x| Offset::Forward(x as usize)),
-        preceded(tag("-"), complete::u64.map(|x| x as usize)).map(|x| Offset::Backward(x as usize)),
+        preceded(tag("+"), complete::u64.map(|x| x as usize)).map(Offset::Forward),
+        preceded(tag("-"), complete::u64.map(|x| x as usize)).map(Offset::Backward),
     ))(input)
 }
 fn parse_inc(input: &str) -> nom::IResult<&str, Instruction> {

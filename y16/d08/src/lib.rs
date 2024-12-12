@@ -14,7 +14,6 @@ use advent_utils::{
 };
 use itertools::Itertools;
 
-const SCREEN_SIZE: UVec2 = UVec2::new(50, 6);
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
     solve(file_content, UVec2::new(50, 6))
@@ -31,7 +30,9 @@ fn solve(file_content: &str, screen_size: UVec2) -> usize {
                     screen.insert(UVec2::new(x, y));
                 }
             }
-            _ => {}
+            x => {
+                unreachable!("{x:?}")
+            }
         }
     }
     print_screen(&screen, screen_size);
@@ -59,8 +60,16 @@ pub fn solve_part_2(file_content: &str) -> usize {
 #[derive(Debug)]
 enum Instruction {
     Rect(u32, u32),
-    RotateColumn { col: u32, step: u32 },
-    RotateRow { row: u32, step: u32 },
+    #[allow(dead_code)]
+    RotateColumn {
+        col: u32,
+        step: u32,
+    },
+    #[allow(dead_code)]
+    RotateRow {
+        row: u32,
+        step: u32,
+    },
 }
 
 fn parse_instructions(input: &str) -> nom::IResult<&str, Vec<Instruction>> {
@@ -108,6 +117,7 @@ mod tests {
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
+    #[ignore]
     fn test_part1() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

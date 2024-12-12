@@ -13,10 +13,10 @@ pub fn get_gcd(mut a: u128, mut b: u128) -> u128 {
 }
 pub fn get_gcd_i(mut a: i128, mut b: i128) -> u128 {
     if a == 0 {
-        return b.abs() as u128;
+        return b.unsigned_abs();
     }
     if b == 0 {
-        return a.abs() as u128;
+        return a.unsigned_abs();
     }
     if a < 0 {
         a = -a;
@@ -40,7 +40,7 @@ pub struct Rat {
 
 impl std::iter::Sum for Rat {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut initial = Self::ZERO.clone();
+        let mut initial = Self::ZERO;
         for x in iter {
             initial += x;
         }
@@ -105,12 +105,10 @@ impl Rat {
     }
 
     pub fn signum(&self) -> i128 {
-        if self.top < 0 {
-            -1
-        } else if self.top > 0 {
-            1
-        } else {
-            0
+        match self.top {
+            0 => 0,
+            1.. => 1,
+            _ => -1,
         }
     }
 }
@@ -190,7 +188,7 @@ impl std::ops::Div for Rat {
         let new_sign = self.signum() * rhs.signum();
 
         let top = self.top.abs() * (rhs.bottom as i128);
-        let bottom = self.bottom * (rhs.top.abs() as u128);
+        let bottom = self.bottom * (rhs.top.unsigned_abs());
 
         Self::new(top * new_sign, bottom)
     }
@@ -279,8 +277,8 @@ impl Vec3 {
     }
     pub fn xy(&self) -> Vec2 {
         Vec2 {
-            x: self.x.clone(),
-            y: self.y.clone(),
+            x: self.x,
+            y: self.y,
         }
     }
 }
@@ -322,9 +320,9 @@ impl Equations {
     fn multiply_row(&mut self, row_index: usize, k: &Rat) {
         let vars = self.lefts[0].len();
         for j in 0..vars {
-            self.lefts[row_index][j] *= k.clone();
+            self.lefts[row_index][j] *= *k;
         }
-        self.rights[row_index] *= k.clone();
+        self.rights[row_index] *= *k;
     }
 
     fn sub_row(&mut self, row_index: usize, other_row_index: usize) {
@@ -355,7 +353,7 @@ impl Equations {
             self.multiply_row(non_zero_row, &self.lefts[non_zero_row][var_index].reverse());
             self.swap_rows(var_index, non_zero_row);
             for eq_index in (var_index + 1)..eqs {
-                let own_coef = self.lefts[eq_index][var_index].clone();
+                let own_coef = self.lefts[eq_index][var_index];
                 if own_coef.is_zero() {
                     continue;
                 }
@@ -368,7 +366,7 @@ impl Equations {
 
         for var_index in (0..vars).rev() {
             for eq in (0..var_index).rev() {
-                let own_coef = self.lefts[eq][var_index].clone();
+                let own_coef = self.lefts[eq][var_index];
                 if own_coef.is_zero() {
                     continue;
                 }
@@ -387,12 +385,10 @@ impl Equations {
         }
         let vars = self.lefts[0].len();
         for j in 0..vars {
-            let tmp = self.lefts[var_index][j].clone();
-            self.lefts[var_index][j] = self.lefts[non_zero_row][j].clone();
+            let tmp = self.lefts[var_index][j];
+            self.lefts[var_index][j] = self.lefts[non_zero_row][j];
             self.lefts[non_zero_row][j] = tmp;
         }
-        let tmp = self.rights[var_index].clone();
-        self.rights[var_index] = self.rights[non_zero_row];
-        self.rights[non_zero_row] = tmp;
+        self.rights.swap(var_index, non_zero_row);
     }
 }

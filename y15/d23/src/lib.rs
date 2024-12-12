@@ -127,8 +127,10 @@ pub fn solve_part_1(file_content: &str) -> usize {
 }
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let mut cpu = Cpu::default();
-    cpu.a = 1;
+    let mut cpu = Cpu {
+        a: 1,
+        ..Cpu::default()
+    };
     cpu.execute_source(file_content);
     cpu.b
 }

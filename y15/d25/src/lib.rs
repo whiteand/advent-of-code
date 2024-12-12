@@ -42,7 +42,7 @@ fn row_coords(row: usize) -> impl Iterator<Item = UVec2> {
     (0..=row).map(move |i| UVec2::new(i as u32, row as u32 - i as u32))
 }
 fn coords() -> impl Iterator<Item = UVec2> {
-    (0..).flat_map(|r| row_coords(r))
+    (0..).flat_map(row_coords)
 }
 
 #[cfg(test)]

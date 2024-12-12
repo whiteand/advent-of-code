@@ -2,12 +2,12 @@ use advent_utils::{glam::IVec2, grid::Grid};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    solve::<AreaAndPerimeter>(file_content)
+    solve::<Perimeter>(file_content)
 }
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    solve::<AreaAndSides>(file_content)
+    solve::<Sides>(file_content)
 }
 
 #[tracing::instrument(skip(file_content))]
@@ -16,66 +16,56 @@ pub fn solve<V: GroupVisitor>(file_content: &str) -> usize {
     let mut groups = grid.map(|_, _| 0);
     let mut group_id = 0;
     let mut total = 0;
+    let mut positions = Vec::with_capacity(grid.rows_len() * grid.cols(0));
+
     for p in grid.coords() {
         let value = grid.get(p).copied().unwrap();
         if groups.get(p).copied().unwrap_or_default() == 0 {
             group_id += 1;
-            let mut res1 = 0;
+            let mut area = 0;
             let mut res2 = 0;
 
-            V::visit(&grid, &mut groups, p, value, group_id, &mut res1, &mut res2);
+            positions.push(p);
+            while let Some(p) = positions.pop() {
+                if groups.get(p).copied().unwrap() == group_id {
+                    continue;
+                }
+                groups.set(p, group_id);
 
-            total += res1 * res2;
+                area += 1;
+                V::visit(&groups, p, group_id, &mut res2);
+
+                for p in grid
+                    .neighbours(p, DIRS)
+                    .filter(|(_, v)| **v == value)
+                    .map(|(p, _)| p)
+                {
+                    positions.push(p);
+                }
+            }
+
+            total += area * res2;
         }
     }
     total
 }
 
 trait GroupVisitor {
-    fn visit(
-        grid: &Grid<u8>,
-        colors: &mut Grid<usize>,
-        p: IVec2,
-        region_value: u8,
-        color: usize,
-        res1: &mut usize,
-        res2: &mut usize,
-    );
+    fn visit(colors: &Grid<usize>, p: IVec2, color: usize, res2: &mut usize);
 }
 
 const DIRS: [IVec2; 4] = [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X];
 
-struct AreaAndPerimeter;
+struct Perimeter;
 
-impl GroupVisitor for AreaAndPerimeter {
-    fn visit(
-        grid: &Grid<u8>,
-        colors: &mut Grid<usize>,
-        p: IVec2,
-        region_value: u8,
-        color: usize,
-        area: &mut usize,
-        perimeter: &mut usize,
-    ) {
-        if colors.get(p).copied().unwrap() == color {
-            return;
-        }
-        *area += 1;
-        colors.set(p, color);
+impl GroupVisitor for Perimeter {
+    fn visit(colors: &Grid<usize>, p: IVec2, color: usize, perimeter: &mut usize) {
         *perimeter = *perimeter + 4
             - colors
                 .neighbours(p, DIRS)
                 .filter(|(_, v)| **v == color)
                 .count()
                 * 2;
-
-        for p in grid
-            .neighbours(p, DIRS)
-            .filter(|(_, v)| **v == region_value)
-            .map(|(p, _)| p)
-        {
-            AreaAndPerimeter::visit(grid, colors, p, region_value, color, area, perimeter);
-        }
     }
 }
 
@@ -102,24 +92,10 @@ const SIDES: [isize; 256] = [
     2, 4, 4, 2, 4, 0, 2, -2, -2, 0, 2, 0, 0, 0, 0, -2, 0, 2, 2, -2, 0, -4, -2, -4, -4, -2, 0, -4,
     -4,
 ];
-struct AreaAndSides;
+struct Sides;
 
-impl GroupVisitor for AreaAndSides {
-    fn visit(
-        grid: &Grid<u8>,
-        groups: &mut Grid<usize>,
-        p: IVec2,
-        region_value: u8,
-        group_id: usize,
-        area: &mut usize,
-        sides: &mut usize,
-    ) {
-        if groups.get(p).copied().unwrap() == group_id {
-            return;
-        }
-        *area += 1;
-        groups.set(p, group_id);
-
+impl GroupVisitor for Sides {
+    fn visit(groups: &Grid<usize>, p: IVec2, group_id: usize, sides: &mut usize) {
         let neighbours_bitmask = FULL_NEIGHBOURS
             .iter()
             .map(|d| {
@@ -131,14 +107,6 @@ impl GroupVisitor for AreaAndSides {
             .fold(0u8, |x, b| (x << 1) | b);
 
         *sides = ((*sides) as isize + SIDES[neighbours_bitmask as usize]) as usize;
-
-        for p in grid
-            .neighbours(p, DIRS)
-            .filter(|(_, v)| **v == region_value)
-            .map(|(p, _)| p)
-        {
-            AreaAndSides::visit(grid, groups, p, region_value, group_id, area, sides);
-        }
     }
 }
 

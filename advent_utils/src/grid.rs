@@ -20,7 +20,7 @@ impl<T> Grid<T> {
         self.rows()
             .enumerate()
             .map(|(i, row)| {
-                row.into_iter()
+                row.iter()
                     .enumerate()
                     .map(move |(j, x)| f(x, IVec2::new(i as i32, j as i32)))
             })
@@ -70,13 +70,13 @@ impl<T> Grid<T> {
         self.rows_ranges().map(|range| &self.arr[range])
     }
 
-    pub fn neighbours<'t, D: IntoIterator<Item = IVec2>>(
+    pub fn neighbours<'t, D>(
         &'t self,
         pos: IVec2,
         dirs: D,
     ) -> impl Iterator<Item = (IVec2, &'t T)> + 't
     where
-        D: 't,
+        D: IntoIterator<Item = IVec2> + 't,
     {
         dirs.into_iter()
             .map(move |d| d + pos)
@@ -96,7 +96,7 @@ impl<T> Grid<T> {
         std::iter::from_fn(move || {
             let row_len = row_lengths.next()?;
 
-            let temp = std::mem::replace(&mut remaining, &mut []);
+            let temp = std::mem::take(&mut remaining);
             let (row, rest) = temp.split_at_mut(row_len);
 
             remaining = rest;
@@ -159,10 +159,7 @@ impl<T> Grid<T> {
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.arr.iter()
     }
-    #[inline(always)]
-    pub fn into_iter(self) -> impl Iterator<Item = T> {
-        self.arr.into_iter()
-    }
+
     #[inline(always)]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.arr.iter_mut()
@@ -186,17 +183,27 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T> IntoIterator for Grid<T> {
+    type Item = T;
+
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.arr.into_iter()
+    }
+}
+
 impl Grid<u8> {
     pub fn from_ascii_grid(grid: &str) -> Self {
         grid.lines()
-            .map(|line| line.as_bytes().into_iter().copied())
+            .map(|line| line.as_bytes().iter().copied())
             .collect()
     }
 
     pub fn render_ascii(&self) -> String {
         let mut res = String::with_capacity(self.arr.len() + self.row_start_indexes.len() + 1);
         for row in self.rows() {
-            res.extend(row.into_iter().copied().map(char::from));
+            res.extend(row.iter().copied().map(char::from));
             res.push('\n');
         }
         res
