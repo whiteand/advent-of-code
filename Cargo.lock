@@ -1620,6 +1620,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "y16d09"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "rstest 0.23.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "y18d01"
 version = "0.1.0"
 dependencies = [
