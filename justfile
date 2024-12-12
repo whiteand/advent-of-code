@@ -45,3 +45,5 @@ test-p2-example year day:
     cargo test --package y{{year}}d{{day}} --lib -- tests::test_part2 --exact --show-output
 test-p2 year day:
     cargo test --package y{{year}}d{{day}} --lib -- tests::test_part2_actual --exact --show-output
+test-p2-watch year day:
+    cargo watch test --package y{{year}}d{{day}} --lib -- tests::test_part2_actual --exact --show-output

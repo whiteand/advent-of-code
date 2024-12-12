@@ -2285,3 +2285,15 @@ dependencies = [
  "tracing-chrome",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "y24d12"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
