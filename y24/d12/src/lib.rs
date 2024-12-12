@@ -1,5 +1,4 @@
 use advent_utils::{glam::IVec2, grid::Grid};
-use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -44,381 +43,188 @@ fn calculate_area_and_sides(
     *area += 1;
     colors.set(p, color);
     let neighbours = {
-        let mut res = [false; 8];
+        let mut res = 0;
         let mut it = FULL_NEIGHBOURS.iter().map(|d| colors.get(p + *d));
-        for x in &mut res {
-            *x = it.next().flatten().map(|v| *v == color).unwrap_or_default();
+        for _ in 0..FULL_NEIGHBOURS.len() {
+            res <<= 1;
+            res |= if it.next().flatten().map(|v| *v == color).unwrap_or_default() {
+                1
+            } else {
+                0
+            };
         }
         res
     };
 
-    match &neighbours {
-        [false, false, false, false, false, false, false, false] => {
-            *sides += 4;
-        }
-        [false, false, false, true, false, false, false, false]
-        | [false, true, false, false, false, false, false, false]
-        | [false, false, false, false, true, false, false, false]
-        | [false, false, false, false, false, false, true, false] => {
-            // ...
-            // #?.
-            // ...
-            *sides += 0;
-        }
-        [true, true, false, false, false, false, false, false]
-        | [false, false, true, false, true, false, false, false]
-        | [false, false, false, false, false, false, true, true]
-        | [false, false, false, true, false, true, false, false]
-        | [true, false, false, true, false, false, false, false]
-        | [false, false, false, false, false, true, true, false]
-        | [false, false, false, false, true, false, false, true]
-        | [false, true, true, false, false, false, false, false] => {
-            // ##.
-            // .?.
-            // ...
-            *sides += 2;
-        }
-        [false, false, true, false, true, false, true, true]
-        | [false, false, false, true, false, true, true, true]
-        | [true, true, false, true, false, true, false, false]
-        | [true, true, true, false, true, false, false, false]
-        | [false, false, false, false, true, true, true, true]
-        | [false, true, true, false, true, false, false, true]
-        | [true, true, true, true, false, false, false, false]
-        | [true, false, false, true, false, true, true, false] => {
-            // ..#
-            // .?#
-            // .##
-            *sides += 0;
-        }
-        [false, true, true, false, true, false, true, true]
-        | [false, false, false, true, true, true, true, true]
-        | [true, true, false, true, false, true, true, false]
-        | [true, true, true, true, true, false, false, false] => {
-            // .##
-            // .?#
-            // .##
+    match neighbours {
+        0b11010110 | 0b11111000 | 0b01101011 | 0b00011111 => {
             *sides -= 4;
         }
-        [false, false, true, false, true, false, false, true]
-        | [false, false, false, false, false, true, true, true]
-        | [true, false, false, true, false, true, false, false]
-        | [true, true, true, false, false, false, false, false] => {
-            // ..#
-            // .?#
-            // ..#
+        0b00001000 | 0b00000010 | 0b00010000 | 0b01000000 | 0b11010100 | 0b11101000
+        | 0b00101011 | 0b00010111 | 0b11110000 | 0b10010110 | 0b00001111 | 0b01101001 => {
+            *sides += 0;
+        }
+        0b00000011 | 0b00010100 | 0b11000000 | 0b00101000 | 0b00001001 | 0b01100000
+        | 0b10010000 | 0b00000110 => {
+            *sides += 2;
+        }
+        0b00000000 | 0b10010100 | 0b11100000 | 0b00101001 | 0b00000111 | 0b10010101
+        | 0b11100100 | 0b10101001 | 0b00100111 | 0b11100001 | 0b10110100 | 0b10000111
+        | 0b00101101 => {
             *sides += 4;
         }
-        [true, false, true, false, true, false, false, true]
-        | [false, false, true, false, false, true, true, true]
-        | [true, false, false, true, false, true, false, true]
-        | [true, true, true, false, false, true, false, false]
-        | [true, false, false, false, false, true, true, true]
-        | [false, false, true, false, true, true, false, true]
-        | [true, true, true, false, false, false, false, true]
-        | [true, false, true, true, false, true, false, false] => {
-            // #.#
-            // .?#
-            // ..#
-            *sides += 4;
-        }
-        [true, true, true, true, true, false, true, true]
-        | [false, true, true, true, true, true, true, true]
-        | [true, true, false, true, true, true, true, true]
-        | [true, true, true, true, true, true, true, false] => {
+
+        0b11011111 | 0b11111110 | 0b11111011 | 0b01111111 => {
             // ###
             // #?#
             // .##
             *sides -= 4;
         }
-        [false, true, true, false, true, false, false, false]
-        | [false, false, false, false, true, false, true, true]
-        | [false, false, false, true, false, true, true, false]
-        | [true, true, false, true, false, false, false, false] => {
+        0b00010110 | 0b11010000 | 0b01101000 | 0b00001011 => {
             // .##
             // .?#
             // ...
             *sides -= 2;
         }
-        [true, true, true, true, true, false, false, true]
-        | [false, true, true, false, true, true, true, true]
-        | [true, false, false, true, true, true, true, true]
-        | [true, true, true, true, false, true, true, false]
-        | [true, true, false, true, false, true, true, true]
-        | [false, false, true, true, true, true, true, true]
-        | [true, true, true, false, true, false, true, true]
-        | [true, true, true, true, true, true, false, false] => {
+        0b10011111 | 0b11110110 | 0b11111001 | 0b01101111 | 0b11101011 | 0b11111100
+        | 0b11010111 | 0b00111111 => {
             // ###
             // #?#
             // ..#
             *sides -= 2;
         }
-        [true, true, true, false, true, false, false, true]
-        | [false, false, true, false, true, true, true, true]
-        | [true, false, false, true, false, true, true, true]
-        | [true, true, true, true, false, true, false, false] => {
+        0b10010111 | 0b11110100 | 0b11101001 | 0b00101111 => {
             // ###
             // .?#
             // ..#
             *sides += 2;
         }
-        [true, false, false, false, false, true, true, false]
-        | [true, false, true, true, false, false, false, false]
-        | [false, true, true, false, false, false, false, true]
-        | [false, false, false, false, true, true, false, true]
-        | [true, false, true, false, true, false, false, false]
-        | [true, true, false, false, false, true, false, false]
-        | [false, false, false, true, false, true, false, true]
-        | [false, false, true, false, false, false, true, true] => {
+        0b01100001 | 0b00001101 | 0b10000110 | 0b10110000 | 0b00010101 | 0b00100011
+        | 0b10101000 | 0b11000100 => {
             // #..
             // .?.
             // ##.
             *sides += 2;
         }
-        [false, false, true, false, false, false, true, false]
-        | [false, false, false, true, false, false, false, true]
-        | [false, true, false, false, false, true, false, false]
-        | [true, false, false, false, true, false, false, false]
-        | [false, false, false, false, true, true, false, false]
-        | [false, true, false, false, false, false, false, true]
-        | [false, false, true, true, false, false, false, false]
-        | [true, false, false, false, false, false, true, false] => {
+        0b01000100 | 0b10001000 | 0b00100010 | 0b00010001 | 0b00110000 | 0b10000010
+        | 0b00001100 | 0b01000001 => {
             // ..#
             // .?.
             // .#.
             *sides += 0;
         }
-        [false, false, false, false, true, true, true, false]
-        | [false, false, false, true, false, false, true, true]
-        | [false, false, true, false, true, false, true, false]
-        | [false, true, false, false, true, false, false, true]
-        | [false, true, false, true, false, true, false, false]
-        | [false, true, true, true, false, false, false, false]
-        | [true, false, false, true, false, false, true, false]
-        | [true, true, false, false, true, false, false, false] => {
+        0b01110000 | 0b11001000 | 0b01010100 | 0b10010010 | 0b00101010 | 0b00001110
+        | 0b01001001 | 0b00010011 => {
             // ..#
             // .?#
             // .#.
             *sides += 0;
         }
-        [true, false, true, false, true, true, true, true]
-        | [true, false, true, true, false, true, true, true]
-        | [true, true, true, false, true, true, false, true]
-        | [true, true, true, true, false, true, false, true] => {
+        0b11110101 | 0b11101101 | 0b10110111 | 0b10101111 => {
             // ###
             // .?#
             // #.#
             *sides += 2;
         }
-        [false, false, true, true, false, true, true, true]
-        | [false, true, true, false, true, true, false, true]
-        | [true, false, false, false, true, true, true, true]
-        | [true, false, true, false, true, false, true, true]
-        | [true, false, true, true, false, true, true, false]
-        | [true, true, false, true, false, true, false, true]
-        | [true, true, true, false, true, true, false, false]
-        | [true, true, true, true, false, false, false, true] => {
+        0b11101100 | 0b10110110 | 0b11110001 | 0b11010101 | 0b01101101 | 0b10101011
+        | 0b00110111 | 0b10001111 => {
             // #.#
             // .?#
             // .##
             *sides += 0;
         }
-        [false, true, true, true, false, true, true, true]
-        | [false, true, true, true, true, true, false, true]
-        | [true, false, true, true, true, false, true, true]
-        | [true, false, true, true, true, true, true, false]
-        | [true, true, false, false, true, true, true, true]
-        | [true, true, false, true, true, true, false, true]
-        | [true, true, true, false, true, true, true, false]
-        | [true, true, true, true, false, false, true, true] => {
+        0b11101110 | 0b10111110 | 0b11011101 | 0b01111101 | 0b11110011 | 0b10111011
+        | 0b01110111 | 0b11001111 => {
             // #.#
             // #?#
             // .##
             *sides += 0;
         }
-        [true, true, true, true, true, true, true, true] => {
+        0b11111111 => {
             // ###
             // #?#
             // ###
             *sides -= 4;
         }
-        [true, false, true, true, true, true, true, true]
-        | [true, true, true, false, true, true, true, true]
-        | [true, true, true, true, false, true, true, true]
-        | [true, true, true, true, true, true, false, true] => {
+        0b11111101 | 0b11110111 | 0b11101111 | 0b10111111 => {
             // ###
             // #?#
             // #.#
             *sides += 0;
         }
-        [false, false, false, true, true, false, true, true]
-        | [false, false, false, true, true, true, true, false]
-        | [false, true, false, false, true, false, true, true]
-        | [false, true, false, true, false, true, true, false]
-        | [false, true, true, false, true, false, true, false]
-        | [false, true, true, true, true, false, false, false]
-        | [true, true, false, true, false, false, true, false]
-        | [true, true, false, true, true, false, false, false] => {
+        0b11011000 | 0b01111000 | 0b11010010 | 0b01101010 | 0b01010110 | 0b00011110
+        | 0b01001011 | 0b00011011 => {
             // .##
             // .?#
             // .#.
             *sides -= 4;
         }
-        [false, false, true, true, true, true, false, true]
-        | [false, true, true, false, false, true, true, true]
-        | [true, false, false, true, true, true, false, true]
-        | [true, false, true, true, true, false, false, true]
-        | [true, false, true, true, true, true, false, false]
-        | [true, true, false, false, false, true, true, true]
-        | [true, true, true, false, false, false, true, true]
-        | [true, true, true, false, false, true, true, false] => {
+        0b10111100 | 0b11100110 | 0b10111001 | 0b10011101 | 0b00111101 | 0b11100011
+        | 0b11000111 | 0b01100111 => {
             // #.#
             // #?#
             // #..
             *sides += 2;
         }
-        [false, false, true, true, false, true, true, false]
-        | [false, true, true, false, true, true, false, false]
-        | [true, false, false, false, true, false, true, true]
-        | [true, true, false, true, false, false, false, true] => {
+        0b01101100 | 0b00110110 | 0b11010001 | 0b10001011 => {
             // #..
             // .?#
             // .##
             *sides -= 2;
         }
-        [false, false, false, true, true, true, false, true]
-        | [false, true, true, false, false, false, true, true]
-        | [true, false, true, true, true, false, false, false]
-        | [true, true, false, false, false, true, true, false] => {
+        0b10111000 | 0b11000110 | 0b00011101 | 0b01100011 => {
             // #.#
             // #?#
             // ...
             *sides += 0;
         }
-        [true, false, true, true, true, true, false, true]
-        | [true, true, true, false, false, true, true, true] => {
+        0b10111101 | 0b11100111 => {
             // #.#
             // #?#
             // #.#
             *sides += 4;
         }
-        [false, false, false, true, true, false, false, true]
-        | [false, false, false, true, true, true, false, false]
-        | [false, false, true, true, true, false, false, false]
-        | [false, true, false, false, false, false, true, true]
-        | [false, true, false, false, false, true, true, false]
-        | [false, true, true, false, false, false, true, false]
-        | [true, false, false, true, true, false, false, false]
-        | [true, true, false, false, false, false, true, false] => {
+        0b10011000 | 0b00111000 | 0b00011100 | 0b11000010 | 0b01100010 | 0b01000110
+        | 0b00011001 | 0b01000011 => {
             // .##
             // .?.
             // .#.
             *sides -= 2;
         }
-        [false, false, true, true, true, true, true, false]
-        | [false, true, true, false, true, true, true, false]
-        | [false, true, true, true, false, true, true, false]
-        | [false, true, true, true, true, true, false, false]
-        | [true, false, false, true, true, false, true, true]
-        | [true, true, false, false, true, false, true, true]
-        | [true, true, false, true, false, false, true, true]
-        | [true, true, false, true, true, false, false, true] => {
+        0b01111100 | 0b01110110 | 0b01101110 | 0b00111110 | 0b11011001 | 0b11010011
+        | 0b11001011 | 0b10011011 => {
             // ##.
             // #?#
             // ..#
             *sides -= 2;
         }
-        [false, false, true, false, true, true, true, false]
-        | [false, true, true, true, false, true, false, false]
-        | [true, false, false, true, false, false, true, true]
-        | [true, true, false, false, true, false, false, true] => {
+        0b01110100 | 0b00101110 | 0b11001001 | 0b10010011 => {
             // ##.
             // .?#
             // ..#
             *sides += 2;
         }
-        [false, false, true, true, true, false, true, true]
-        | [false, true, false, false, true, true, true, true]
-        | [false, true, false, true, false, true, true, true]
-        | [false, true, true, true, true, false, false, true]
-        | [true, false, false, true, true, true, true, false]
-        | [true, true, false, true, true, true, false, false]
-        | [true, true, true, false, true, false, true, false]
-        | [true, true, true, true, false, false, true, false] => {
+        0b11011100 | 0b11110010 | 0b11101010 | 0b10011110 | 0b01111001 | 0b00111011
+        | 0b01010111 | 0b01001111 => {
             // .##
             // #?#
             // ..#
             *sides -= 2;
         }
-        [false, false, true, true, true, false, false, true]
-        | [false, true, false, false, false, true, true, true]
-        | [true, false, false, true, true, true, false, false]
-        | [true, true, true, false, false, false, true, false] => {
+        0b10011100 | 0b11100010 | 0b00111001 | 0b01000111 => {
             // ###
             // .?.
             // .#.
             *sides += 0;
         }
-        [false, false, true, true, true, true, false, false]
-        | [false, true, true, false, false, true, true, false]
-        | [true, false, false, true, true, false, false, true]
-        | [true, true, false, false, false, false, true, true] => {
+        0b00111100 | 0b01100110 | 0b10011001 | 0b11000011 => {
             // ##.
             // .?.
             // .##
             *sides += 0;
         }
-        c => {
-            let mut it = c.iter().copied().map(|x| if x { '#' } else { '.' });
-            macro_rules! rot90 {
-                ($v:expr) => {
-                    [$v[5], $v[3], $v[0], $v[6], $v[1], $v[7], $v[4], $v[2]]
-                };
-            }
-            // 012
-            // 3 4
-            // 567
-            // 035
-            // 1 6
-            // 247
-            macro_rules! flip {
-                ($v:expr) => {
-                    [$v[0], $v[3], $v[5], $v[1], $v[6], $v[2], $v[4], $v[7]]
-                };
-            }
-            let rot90 = rot90!(c);
-            let rot180 = rot90!(rot90);
-            let rot270 = rot90!(rot180);
-            let flip_rot90 = flip!(rot90);
-            let flip_rot180 = flip!(rot180);
-            let flip_rot270 = flip!(rot270);
-            let f = flip!(c);
-            let combos = [
-                *c,
-                rot90,
-                rot180,
-                rot270,
-                f,
-                flip_rot90,
-                flip_rot180,
-                flip_rot270,
-            ]
-            .into_iter()
-            .unique()
-            .sorted()
-            .map(|x| format!("{x:?}"))
-            .join(" | ");
-            panic!(
-                "{combos} => {{\n  // {}{}{}\n  // {}?{}\n  // {}{}{}\n  *sides += 0;\n}}",
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-                it.next().unwrap(),
-            );
+        x => {
+            panic!("Unreachable: {x:?}");
         }
     }
 

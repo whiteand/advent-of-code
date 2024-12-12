@@ -1,0 +1,9 @@
+y24d12: part 1          time:   [667.54 µs 670.89 µs 676.40 µs]
+Found 9 outliers among 100 measurements (9.00%)
+  8 (8.00%) high mild
+  1 (1.00%) high severe
+
+y24d12: part 2          time:   [717.03 µs 717.65 µs 718.32 µs]
+Found 10 outliers among 100 measurements (10.00%)
+  6 (6.00%) high mild
+  4 (4.00%) high severe
