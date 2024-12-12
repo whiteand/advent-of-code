@@ -130,8 +130,13 @@ impl GroupVisitor for AreaAndSides {
 
         let neighbours_bitmask = FULL_NEIGHBOURS
             .iter()
-            .map(|d| groups.get(p + *d).map_or(false, |v| *v == group_id))
-            .fold(0, |x, p| if p { (x << 1) | 1 } else { x << 1 });
+            .map(|d| {
+                groups
+                    .get(p + *d)
+                    .and_then(|x| (*x == group_id).then_some(1))
+                    .unwrap_or_default()
+            })
+            .fold(0, |x, b| (x << 1) | b);
 
         *sides = *sides + PLUSES[neighbours_bitmask] - MINUSES[neighbours_bitmask];
 
