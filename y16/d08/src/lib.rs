@@ -16,9 +16,11 @@ use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    solve(file_content, UVec2::new(50, 6))
+    let screen = execute(file_content, UVec2::new(50, 6));
+    screen.len()
 }
-fn solve(file_content: &str, screen_size: UVec2) -> usize {
+
+fn execute(file_content: &str, screen_size: UVec2) -> HashSet<UVec2> {
     let (_, commands) = parse_instructions(file_content).unwrap();
     let mut screen = HashSet::new();
     for command in commands {
@@ -30,31 +32,53 @@ fn solve(file_content: &str, screen_size: UVec2) -> usize {
                     screen.insert(UVec2::new(x, y));
                 }
             }
-            x => {
-                unreachable!("{x:?}")
+            Instruction::RotateColumn { col, step } => {
+                let moved = screen.iter().filter(|p| p.x == col).copied().collect_vec();
+                for x in &moved {
+                    screen.remove(x);
+                }
+                for p in moved {
+                    screen.insert(UVec2::new(p.x, (p.y + step) % screen_size.y));
+                }
+            }
+            Instruction::RotateRow { row, step } => {
+                let moved = screen.iter().filter(|p| p.y == row).copied().collect_vec();
+                for x in &moved {
+                    screen.remove(x);
+                }
+                for p in moved {
+                    screen.insert(UVec2::new((p.x + step) % screen_size.x, p.y));
+                }
             }
         }
     }
-    print_screen(&screen, screen_size);
-    0
+    screen
 }
 
-fn print_screen(screen: &HashSet<UVec2>, screen_size: UVec2) {
+fn print_screen(
+    screen: &HashSet<UVec2>,
+    screen_size: UVec2,
+    w: &mut impl std::fmt::Write,
+) -> Result<(), std::fmt::Error> {
     for r in 0..screen_size.y {
         for c in 0..screen_size.x {
             let v = UVec2::new(c, r);
             if screen.contains(&v) {
-                print!("#")
+                write!(w, "#")?;
             } else {
-                print!(".")
+                write!(w, ".")?;
             }
         }
-        println!();
+        writeln!(w)?;
     }
+    Ok(())
 }
 #[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> usize {
-    todo!("part 2 is not implemented yet: {file_content}")
+pub fn solve_part_2(file_content: &str) -> String {
+    let screen = execute(file_content, UVec2::new(50, 6));
+    let mut output = String::new();
+    print_screen(&screen, UVec2::new(50, 6), &mut output).expect("Should be valid");
+    output
 }
 
 #[derive(Debug)]
@@ -113,50 +137,72 @@ fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
 mod tests {
     use advent_utils::glam::UVec2;
 
+    use crate::execute;
+
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
-    #[ignore]
     fn test_part1() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", super::solve(EXAMPLE, UVec2::new(7, 3))), "6");
+        let screen = super::execute(EXAMPLE, UVec2::new(7, 3));
+        assert_eq!(screen.len(), 6);
     }
 
     #[test]
-    #[ignore]
     fn test_part1_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "123");
     }
 
     #[test]
-    #[ignore]
     fn test_part2() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
+        let mut output = String::new();
+        let screen_size = UVec2::new(7, 3);
+        let screen = execute(EXAMPLE, screen_size);
+        super::print_screen(&screen, screen_size, &mut output).unwrap();
+        assert_eq!(
+            output.trim(),
+            r#"
+.#..#.#
+#.#....
+.#.....
+"#
+            .trim()
+        );
     }
 
     #[test]
-    #[ignore]
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(
+            solve_part_2(ACTUAL).trim(),
+            r#"
+.##..####.###..#..#.###..####.###....##.###...###.
+#..#.#....#..#.#..#.#..#....#.#..#....#.#..#.#....
+#..#.###..###..#..#.#..#...#..###.....#.#..#.#....
+####.#....#..#.#..#.###...#...#..#....#.###...##..
+#..#.#....#..#.#..#.#....#....#..#.#..#.#.......#.
+#..#.#....###...##..#....####.###...##..#....###..
+"#
+            .trim()
+        );
     }
 }
