@@ -2,92 +2,83 @@ use advent_utils::{glam::IVec2, grid::Grid};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
+    solve::<AreaAndPerimeter>(file_content)
+}
+
+#[tracing::instrument(skip(file_content))]
+pub fn solve_part_2(file_content: &str) -> usize {
+    solve::<AreaAndSides>(file_content)
+}
+
+#[tracing::instrument(skip(file_content))]
+pub fn solve<V: GroupVisitor>(file_content: &str) -> usize {
     let grid = Grid::from_ascii_grid(file_content.trim());
-    let mut colors = grid.map(|_, _| 0);
-    let mut color = 0;
+    let mut groups = grid.map(|_, _| 0);
+    let mut group_id = 0;
     let mut total = 0;
     for p in grid.coords() {
         let value = grid.get(p).copied().unwrap();
-        if colors.get(p).copied().unwrap_or_default() == 0 {
-            color += 1;
-            let mut area = 0;
-            let mut perimeter = 0;
-            calculate_area_and_perimeter(
-                &grid,
-                &mut colors,
-                p,
-                value,
-                color,
-                &mut area,
-                &mut perimeter,
-            );
-            total += area * perimeter;
+        if groups.get(p).copied().unwrap_or_default() == 0 {
+            group_id += 1;
+            let mut res1 = 0;
+            let mut res2 = 0;
+
+            V::visit(&grid, &mut groups, p, value, group_id, &mut res1, &mut res2);
+
+            total += res1 * res2;
         }
     }
     total
 }
 
+trait GroupVisitor {
+    fn visit(
+        grid: &Grid<u8>,
+        colors: &mut Grid<usize>,
+        p: IVec2,
+        region_value: u8,
+        color: usize,
+        res1: &mut usize,
+        res2: &mut usize,
+    );
+}
+
 const DIRS: [IVec2; 4] = [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X];
-fn calculate_area_and_sides(
-    grid: &Grid<u8>,
-    colors: &mut Grid<usize>,
-    p: IVec2,
-    region_value: u8,
-    color: usize,
-    area: &mut usize,
-    sides: &mut usize,
-) {
-    if colors.get(p).copied().unwrap() == color {
-        return;
-    }
-    *area += 1;
-    colors.set(p, color);
-    let neighbours = {
-        let mut res = 0;
-        let mut it = FULL_NEIGHBOURS.iter().map(|d| colors.get(p + *d));
-        for _ in 0..FULL_NEIGHBOURS.len() {
-            res <<= 1;
-            res |= if it.next().flatten().map(|v| *v == color).unwrap_or_default() {
-                1
-            } else {
-                0
-            };
+
+struct AreaAndPerimeter;
+
+impl GroupVisitor for AreaAndPerimeter {
+    fn visit(
+        grid: &Grid<u8>,
+        colors: &mut Grid<usize>,
+        p: IVec2,
+        region_value: u8,
+        color: usize,
+        area: &mut usize,
+        perimeter: &mut usize,
+    ) {
+        if colors.get(p).copied().unwrap() == color {
+            return;
         }
-        res
-    };
-    const MINUSES: [usize; 256] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 4, 2, 0,
-        4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2,
-        0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 4, 4, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 0,
-        4, 2, 0, 0, 2, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 2, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 2,
-        4, 2, 0, 0, 4, 2, 4, 2, 0, 0, 2, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0,
-        0, 0, 2, 0, 0, 0, 2, 0, 4, 2, 0, 4, 2, 0, 4, 4,
-    ];
-    const PLUSES: [usize; 256] = [
-        4, 0, 0, 2, 0, 0, 2, 4, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 2, 0, 0, 0, 4, 2, 4, 0, 0, 0, 4, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 4, 4,
-        0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0,
-        4, 0, 0, 2, 0, 2, 0, 0, 2, 4, 0, 0, 2, 0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 2, 4, 0, 2, 4, 0, 2, 0, 0, 0, 2, 0, 0,
-        0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ];
+        *area += 1;
+        colors.set(p, color);
+        *perimeter = *perimeter + 4
+            - colors
+                .neighbours(p, DIRS)
+                .filter(|(_, v)| **v == color)
+                .count()
+                * 2;
 
-    *sides = *sides + PLUSES[neighbours] - MINUSES[neighbours];
-
-    for p in grid
-        .neighbours(p, DIRS)
-        .filter(|(_, v)| **v == region_value)
-        .map(|(p, _)| p)
-    {
-        calculate_area_and_sides(grid, colors, p, region_value, color, area, sides);
+        for p in grid
+            .neighbours(p, DIRS)
+            .filter(|(_, v)| **v == region_value)
+            .map(|(p, _)| p)
+        {
+            AreaAndPerimeter::visit(grid, colors, p, region_value, color, area, perimeter);
+        }
     }
 }
+
 const FULL_NEIGHBOURS: [IVec2; 8] = [
     IVec2::splat(-1),
     IVec2::NEG_Y,
@@ -98,52 +89,60 @@ const FULL_NEIGHBOURS: [IVec2; 8] = [
     IVec2::Y,
     IVec2::splat(1),
 ];
-fn calculate_area_and_perimeter(
-    grid: &Grid<u8>,
-    colors: &mut Grid<usize>,
-    p: IVec2,
-    region_value: u8,
-    color: usize,
-    area: &mut usize,
-    perimeter: &mut usize,
-) {
-    if colors.get(p).copied().unwrap() == color {
-        return;
-    }
-    *area += 1;
-    colors.set(p, color);
-    *perimeter = *perimeter + 4
-        - colors
-            .neighbours(p, DIRS)
-            .filter(|(_, v)| **v == color)
-            .count()
-            * 2;
 
-    for p in grid
-        .neighbours(p, DIRS)
-        .filter(|(_, v)| **v == region_value)
-        .map(|(p, _)| p)
-    {
-        calculate_area_and_perimeter(grid, colors, p, region_value, color, area, perimeter);
-    }
-}
-#[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> usize {
-    let grid = Grid::from_ascii_grid(file_content.trim());
-    let mut colors = grid.map(|_, _| 0);
-    let mut color = 0;
-    let mut total = 0;
-    for p in grid.coords() {
-        let value = grid.get(p).copied().unwrap();
-        if colors.get(p).copied().unwrap_or_default() == 0 {
-            color += 1;
-            let mut area = 0;
-            let mut sides = 0;
-            calculate_area_and_sides(&grid, &mut colors, p, value, color, &mut area, &mut sides);
-            total += area * sides;
+const MINUSES: [usize; 256] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 4, 2, 0, 4, 4,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 0, 0, 2, 2,
+    0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 4, 4, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 0, 4, 2, 0, 0, 2, 0, 0, 4,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 2, 2,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 2, 4, 2, 0, 0, 4, 2, 4, 2, 0, 0, 2, 0, 0, 4,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 4, 2, 0, 4, 2, 0, 4, 4,
+];
+const PLUSES: [usize; 256] = [
+    4, 0, 0, 2, 0, 0, 2, 4, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 2, 0, 0, 0, 4, 2, 4, 0, 0, 0, 4, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    2, 2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 4, 4, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 2, 4, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 4, 0, 0, 2, 0, 2, 0, 0, 2, 4, 0, 0,
+    2, 0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    4, 4, 0, 2, 4, 0, 2, 4, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+struct AreaAndSides;
+
+impl GroupVisitor for AreaAndSides {
+    fn visit(
+        grid: &Grid<u8>,
+        groups: &mut Grid<usize>,
+        p: IVec2,
+        region_value: u8,
+        group_id: usize,
+        area: &mut usize,
+        sides: &mut usize,
+    ) {
+        if groups.get(p).copied().unwrap() == group_id {
+            return;
+        }
+        *area += 1;
+        groups.set(p, group_id);
+
+        let neighbours_bitmask = FULL_NEIGHBOURS
+            .iter()
+            .map(|d| groups.get(p + *d).map_or(false, |v| *v == group_id))
+            .fold(0, |x, p| if p { (x << 1) | 1 } else { x << 1 });
+
+        *sides = *sides + PLUSES[neighbours_bitmask] - MINUSES[neighbours_bitmask];
+
+        for p in grid
+            .neighbours(p, DIRS)
+            .filter(|(_, v)| **v == region_value)
+            .map(|(p, _)| p)
+        {
+            AreaAndSides::visit(grid, groups, p, region_value, group_id, area, sides);
         }
     }
-    total
 }
 
 #[cfg(test)]
