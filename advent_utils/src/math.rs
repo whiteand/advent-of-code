@@ -189,12 +189,19 @@ impl std::ops::AddAssign for Rat {
     }
 }
 
-impl std::ops::MulAssign for Rat {
-    fn mul_assign(&mut self, rhs: Self) {
-        if self.bottom == 1 {
-            self.checked_set(self.top * rhs.top, rhs.bottom);
+macro_rules! happy_path_mul {
+    ($a:expr, $b:expr, $d:expr) => {
+        if $a.bottom == 1 {
+            $d.checked_set($a.top * $b.top, $b.bottom);
             return;
         }
+    };
+}
+impl std::ops::MulAssign for Rat {
+    fn mul_assign(&mut self, rhs: Self) {
+        happy_path_mul!(self, rhs, self);
+        happy_path_mul!(rhs, self, self);
+
         let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
         let right_g = get_gcd_i(self.bottom as i128, rhs.top);
         let top = self.top / left_g * (rhs.top / (right_g as i128));
