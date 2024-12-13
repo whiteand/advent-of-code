@@ -1,8 +1,11 @@
-use std::ops::{MulAssign, RangeInclusive};
+use std::{num::TryFromIntError, ops::RangeInclusive};
 
 use thiserror::Error;
 
 pub fn get_gcd(mut a: u128, mut b: u128) -> u128 {
+    if b == 1 {
+        return 1;
+    }
     while a > 0 && b > 0 {
         if a > b {
             a %= b;
@@ -41,6 +44,7 @@ pub struct Rat {
 }
 
 impl Rat {
+    #[inline(always)]
     fn checked_set(&mut self, top: i128, bottom: u128) {
         let gcd = get_gcd(top.unsigned_abs(), bottom);
         if gcd == 1 {
@@ -156,6 +160,9 @@ impl std::ops::Add for Rat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
+        if self.bottom == rhs.bottom {
+            return Self::new(self.top + rhs.top, self.bottom);
+        }
         let new_bottom = get_lcm(self.bottom, rhs.bottom);
         let top = self.top * ((new_bottom / self.bottom) as i128)
             + rhs.top * ((new_bottom / rhs.bottom) as i128);
@@ -166,29 +173,40 @@ impl std::ops::Add for Rat {
 impl std::ops::Mul for Rat {
     type Output = Self;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        let bottom = self.bottom * rhs.bottom;
-        let top = self.top * rhs.top;
-        Self::new(top, bottom)
+    fn mul(mut self, rhs: Self) -> Self::Output {
+        self *= rhs;
+        self
     }
 }
 
 impl std::ops::AddAssign for Rat {
     fn add_assign(&mut self, rhs: Self) {
-        let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        let top = self.top * ((new_bottom / self.bottom) as i128)
-            + rhs.top * ((new_bottom / rhs.bottom) as i128);
-        self.checked_set(top, new_bottom);
+        if self.bottom == rhs.bottom {
+            self.checked_set(self.top + rhs.top, self.bottom);
+            return;
+        }
+        let bottom = get_lcm(self.bottom, rhs.bottom);
+        let top =
+            self.top * ((bottom / self.bottom) as i128) + rhs.top * ((bottom / rhs.bottom) as i128);
+        self.checked_set(top, bottom);
     }
 }
 
 impl std::ops::MulAssign for Rat {
     fn mul_assign(&mut self, rhs: Self) {
+        if self.bottom == 1 {
+            self.checked_set(self.top * rhs.top, rhs.bottom);
+            return;
+        }
+        if self.top == 1 {
+            self.checked_set(self.top, rhs.bottom * self.bottom);
+            return;
+        }
         let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
         let right_g = get_gcd_i(self.bottom as i128, rhs.top);
         let top = self.top / left_g * (rhs.top / (right_g as i128));
-        let new_bottom = self.bottom / right_g * (rhs.bottom / left_g as u128);
-        self.checked_set(top, new_bottom)
+        let bottom = self.bottom / right_g * (rhs.bottom / left_g as u128);
+        self.checked_set(top, bottom);
     }
 }
 
@@ -214,10 +232,9 @@ impl std::ops::DivAssign for Rat {
             self.bottom = 1;
         } else {
             let new_sign = self.signum() * rhs.signum();
-
-            let top = self.top.abs() * (rhs.bottom as i128);
+            let top = self.top.abs() * (rhs.bottom as i128) * new_sign;
             let bottom = self.bottom * (rhs.top.unsigned_abs());
-            self.checked_set(top * new_sign, bottom);
+            self.checked_set(top, bottom);
         }
     }
 }
@@ -236,13 +253,13 @@ impl std::ops::Sub for Rat {
 impl std::ops::SubAssign for Rat {
     fn sub_assign(&mut self, rhs: Self) {
         if self.bottom == rhs.bottom {
-            self.top -= rhs.top;
+            self.checked_set(self.top - rhs.top, self.bottom);
             return;
         }
-        let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        let top = self.top * ((new_bottom / self.bottom) as i128)
-            - rhs.top * ((new_bottom / rhs.bottom) as i128);
-        self.checked_set(top, new_bottom);
+        let bottom = get_lcm(self.bottom, rhs.bottom);
+        let top =
+            self.top * ((bottom / self.bottom) as i128) - rhs.top * ((bottom / rhs.bottom) as i128);
+        self.checked_set(top, bottom);
     }
 }
 
@@ -267,14 +284,39 @@ macro_rules! impl_from_num {
     };
 }
 impl_from_num!(u64, i64, u32, i32, u16, i16, u8, i8, usize, isize);
+impl TryFrom<u128> for Rat {
+    type Error = TryFromIntError;
 
-impl TryFrom<Rat> for i64 {
+    fn try_from(value: u128) -> Result<Self, Self::Error> {
+        i128::try_from(value).map(|top| Rat { top, bottom: 1 })
+    }
+}
+
+macro_rules! try_from_rat_to_num {
+    ($($typ:ty),+) => {
+        $(
+            impl TryFrom<Rat> for $typ {
+                type Error = ();
+                fn try_from(r: Rat) -> Result<Self, Self::Error> {
+                    if r.bottom != 1 {
+                        return Err(());
+                    }
+                    r.top.try_into().map_err(|_| ())
+                }
+            }
+        )+
+    };
+}
+
+try_from_rat_to_num!(i64, i32, i16, i8, isize, u128, u64, u32, u16, u8, usize);
+
+impl TryFrom<Rat> for i128 {
     type Error = ();
     fn try_from(r: Rat) -> Result<Self, Self::Error> {
         if r.bottom != 1 {
             return Err(());
         }
-        r.top.try_into().map_err(|_| ())
+        Ok(r.top)
     }
 }
 
