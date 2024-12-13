@@ -1,4 +1,7 @@
-use std::{num::TryFromIntError, ops::RangeInclusive};
+use std::{
+    num::TryFromIntError,
+    ops::{AddAssign, DivAssign, RangeInclusive},
+};
 
 use thiserror::Error;
 
@@ -159,15 +162,9 @@ impl std::fmt::Debug for Rat {
 impl std::ops::Add for Rat {
     type Output = Self;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        if self.bottom == rhs.bottom {
-            return Self::new(self.top + rhs.top, self.bottom);
-        }
-        let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        let top = self.top * ((new_bottom / self.bottom) as i128)
-            + rhs.top * ((new_bottom / rhs.bottom) as i128);
-
-        Self::new(top, new_bottom)
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self.add_assign(rhs);
+        self
     }
 }
 impl std::ops::Mul for Rat {
@@ -198,10 +195,6 @@ impl std::ops::MulAssign for Rat {
             self.checked_set(self.top * rhs.top, rhs.bottom);
             return;
         }
-        if self.top == 1 {
-            self.checked_set(self.top, rhs.bottom * self.bottom);
-            return;
-        }
         let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
         let right_g = get_gcd_i(self.bottom as i128, rhs.top);
         let top = self.top / left_g * (rhs.top / (right_g as i128));
@@ -213,16 +206,9 @@ impl std::ops::MulAssign for Rat {
 impl std::ops::Div for Rat {
     type Output = Self;
 
-    fn div(self, rhs: Self) -> Self::Output {
-        if rhs.top == 0 && self.top == 0 {
-            return Self::ONE;
-        }
-        let new_sign = self.signum() * rhs.signum();
-
-        let top = self.top.abs() * (rhs.bottom as i128);
-        let bottom = self.bottom * (rhs.top.unsigned_abs());
-
-        Self::new(top * new_sign, bottom)
+    fn div(mut self, rhs: Self) -> Self::Output {
+        self.div_assign(rhs);
+        self
     }
 }
 impl std::ops::DivAssign for Rat {
