@@ -53,9 +53,11 @@ impl std::iter::Sum for Rat {
 impl std::ops::AddAssign for Rat {
     fn add_assign(&mut self, rhs: Self) {
         let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        self.top = self.top * ((new_bottom / self.bottom) as i128)
+        let top = self.top * ((new_bottom / self.bottom) as i128)
             + rhs.top * ((new_bottom / rhs.bottom) as i128);
-        self.bottom = new_bottom
+        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
+        self.top = top / (gcd as i128);
+        self.bottom = new_bottom / gcd;
     }
 }
 
@@ -210,9 +212,11 @@ impl std::ops::Sub for Rat {
 impl std::ops::SubAssign for Rat {
     fn sub_assign(&mut self, rhs: Self) {
         let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        self.top = self.top * ((new_bottom / self.bottom) as i128)
+        let top = self.top * ((new_bottom / self.bottom) as i128)
             - rhs.top * ((new_bottom / rhs.bottom) as i128);
-        self.bottom = new_bottom
+        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
+        self.top = top / (gcd as i128);
+        self.bottom = new_bottom / gcd;
     }
 }
 
@@ -357,7 +361,8 @@ impl<'t> Equations<'t> {
             let new_value = self.lefts[row_index][j] - self.lefts[other_row_index][j];
             self.lefts[row_index][j] = new_value;
         }
-        self.rights[row_index] = self.rights[row_index] - self.rights[other_row_index];
+
+        self.rights[row_index] -= self.rights[other_row_index];
     }
 
     pub fn solve(mut self) -> Result<(), SolveError> {
