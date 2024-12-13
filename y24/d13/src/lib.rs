@@ -21,12 +21,12 @@ pub fn solve_part_2(file_content: &str) -> usize {
 pub fn solve(file_content: &str, prize_offset: U64Vec2) -> usize {
     file_content
         .split("\n\n")
-        .flat_map(|line| parse_machine(line).ok().map(|x| x.1))
-        .map(|machine| Machine {
-            prize: machine.prize + prize_offset,
-            ..machine
+        .filter_map(|triple_of_lines| {
+            parse_machine(triple_of_lines)
+                .map(|x| x.1)
+                .ok()
+                .and_then(|mut machine| machine.move_prize(prize_offset).minimal_tokens_to_win())
         })
-        .map(|machine| machine.minimal_tokens_to_win().unwrap_or_default())
         .sum()
 }
 
@@ -71,6 +71,11 @@ impl Machine {
 
         (a.bottom == 1 && b.bottom == 1 && a.top >= 0 && b.top >= 0)
             .then(|| (a.top * 3 + b.top) as usize)
+    }
+
+    fn move_prize(&mut self, prize_offset: U64Vec2) -> &mut Self {
+        self.prize += prize_offset;
+        self
     }
 }
 

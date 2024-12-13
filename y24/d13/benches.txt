@@ -32,3 +32,20 @@ Found 6 outliers among 100 measurements (6.00%)
 y24d13: part 2          time:   [227.00 µs 227.15 µs 227.35 µs]
                         change: [-2.1017% -1.8633% -1.6343%] (p = 0.00 < 0.05)
                         Performance has improved.
+
+
+-- After Move Prize
+
+y24d13: part 1          time:   [229.65 µs 232.09 µs 236.22 µs]
+                        change: [-0.0548% +0.4332% +1.1979%] (p = 0.21 > 0.05)
+                        No change in performance detected.
+Found 8 outliers among 100 measurements (8.00%)
+  7 (7.00%) high mild
+  1 (1.00%) high severe
+
+y24d13: part 2          time:   [227.47 µs 227.92 µs 228.49 µs]
+                        change: [-2.4259% -1.7079% -1.1631%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 15 outliers among 100 measurements (15.00%)
+  7 (7.00%) high mild
+  8 (8.00%) high severe
