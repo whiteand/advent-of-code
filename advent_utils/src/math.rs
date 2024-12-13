@@ -56,8 +56,13 @@ impl std::ops::AddAssign for Rat {
         let top = self.top * ((new_bottom / self.bottom) as i128)
             + rhs.top * ((new_bottom / rhs.bottom) as i128);
         let gcd = get_gcd(top.unsigned_abs(), new_bottom);
-        self.top = top / (gcd as i128);
-        self.bottom = new_bottom / gcd;
+        if gcd != 1 {
+            self.top = top / (gcd as i128);
+            self.bottom = new_bottom / gcd;
+        } else {
+            self.top = top;
+            self.bottom = new_bottom;
+        }
     }
 }
 
@@ -175,10 +180,16 @@ impl std::ops::MulAssign for Rat {
     fn mul_assign(&mut self, rhs: Self) {
         let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
         let right_g = get_gcd_i(self.bottom as i128, rhs.top);
-        let new_top = self.top / left_g * (rhs.top / (right_g as i128));
+        let top = self.top / left_g * (rhs.top / (right_g as i128));
         let new_bottom = self.bottom / right_g * (rhs.bottom / left_g as u128);
-        self.top = new_top;
-        self.bottom = new_bottom;
+        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
+        if gcd != 1 {
+            self.top = top / (gcd as i128);
+            self.bottom = new_bottom / gcd;
+        } else {
+            self.top = top;
+            self.bottom = new_bottom;
+        }
     }
 }
 
@@ -215,8 +226,13 @@ impl std::ops::SubAssign for Rat {
         let top = self.top * ((new_bottom / self.bottom) as i128)
             - rhs.top * ((new_bottom / rhs.bottom) as i128);
         let gcd = get_gcd(top.unsigned_abs(), new_bottom);
-        self.top = top / (gcd as i128);
-        self.bottom = new_bottom / gcd;
+        if gcd != 1 {
+            self.top = top / (gcd as i128);
+            self.bottom = new_bottom / gcd;
+        } else {
+            self.top = top;
+            self.bottom = new_bottom;
+        }
     }
 }
 
