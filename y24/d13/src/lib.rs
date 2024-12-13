@@ -1,4 +1,8 @@
-use advent_utils::{glam::U64Vec2, math, parse::nums};
+use advent_utils::{
+    glam::U64Vec2,
+    math,
+    parse::{nums, ParseNumsIter},
+};
 use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
@@ -20,10 +24,18 @@ pub fn solve(file_content: &str, prize_offset: U64Vec2) -> usize {
         .sum()
 }
 
-fn parse_machine(triple_lines: &str) -> Result<Machine, String> {
-    let (ax, ay, bx, by, tx, ty) = nums::<u64>(triple_lines)
-        .collect_tuple()
-        .ok_or_else(|| format!("failed to parse input: {}", triple_lines))?;
+fn parse_machine(triple_lines: &str) -> Result<Machine, &str> {
+    let mut nums = nums::<u64>(triple_lines);
+    // Button A: X+21, Y+40
+    // Button B: X+56, Y+21
+    // Prize: X=15390, Y=2402
+    nums.skip_prefix("Button A: X+").map_err(|x| x.rest_str())?;
+    let (ax, ay) = nums.next_tuple().ok_or("failed")?;
+    nums.skip_prefix("\nButton B: X+")
+        .map_err(|x| x.rest_str())?;
+    let (bx, by) = nums.next_tuple().ok_or("failed")?;
+    nums.skip_prefix("\nPrize: X=").map_err(|x| x.rest_str())?;
+    let (tx, ty) = nums.next_tuple().ok_or("failed")?;
 
     Ok(Machine {
         button_a: U64Vec2::new(ax, ay),

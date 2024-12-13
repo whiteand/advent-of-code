@@ -2,7 +2,7 @@ use core::str;
 use std::marker::PhantomData;
 
 use itertools::Itertools;
-use nom::AsChar;
+use nom::{AsBytes, AsChar};
 
 use crate::grid::Grid;
 
@@ -27,11 +27,22 @@ pub struct ParseNumsIter<'t, T> {
 }
 
 impl<'t, T> ParseNumsIter<'t, T> {
-    pub fn into_rest_bytes(self) -> &'t [u8] {
+    pub fn rest_bytes(&self) -> &'t [u8] {
         self.bytes
     }
-    pub fn into_rest_str(self) -> &'t str {
-        str::from_utf8(self.into_rest_bytes()).unwrap()
+    pub fn skip_prefix(&mut self, prefix: impl AsBytes) -> Result<&mut Self, &mut Self> {
+        let bytes = prefix.as_bytes();
+        match self.bytes.strip_prefix(bytes) {
+            Some(rest) => {
+                self.bytes = rest;
+                Ok(self)
+            }
+            None => Err(self),
+        }
+    }
+
+    pub fn rest_str(&self) -> &'t str {
+        str::from_utf8(self.rest_bytes()).unwrap()
     }
     pub fn with_type<U>(self) -> ParseNumsIter<'t, U> {
         ParseNumsIter {
@@ -174,16 +185,16 @@ mod tests {
     fn test_rest_str() {
         let mut it = super::nums::<i16>("-129andrew");
         assert_eq!(it.next(), Some(-129));
-        assert_eq!(it.into_rest_str(), "andrew");
+        assert_eq!(it.rest_str(), "andrew");
 
         let mut it = super::nums::<i16>("-129andrew10bohdan");
         assert_eq!(it.next(), Some(-129));
         assert_eq!(it.next(), Some(10));
-        assert_eq!(it.into_rest_str(), "bohdan");
+        assert_eq!(it.rest_str(), "bohdan");
 
         let mut it = super::nums::<i16>("-129andrew10bohdan");
         assert_eq!(it.next(), Some(-129));
-        assert_eq!(it.into_rest_str(), "andrew10bohdan");
+        assert_eq!(it.rest_str(), "andrew10bohdan");
     }
     #[test]
     fn test_with_type() {
@@ -191,6 +202,6 @@ mod tests {
         assert_eq!(it.next(), Some(10u8));
         let mut it = it.with_type::<u32>();
         assert_eq!(it.next(), Some(1024u32));
-        assert_eq!(it.into_rest_str(), "rest");
+        assert_eq!(it.rest_str(), "rest");
     }
 }
