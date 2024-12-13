@@ -60,12 +60,13 @@ struct Machine {
 
 impl Machine {
     fn minimal_tokens_to_win(&self) -> Option<usize> {
+        let U64Vec2 { x: ax, y: ay } = self.button_a;
+        let U64Vec2 { x: bx, y: by } = self.button_b;
+        let U64Vec2 { x: tx, y: ty } = self.prize;
+
         let [a, b] = math::solve_system(
-            [
-                [self.button_a.x.into(), self.button_b.x.into()],
-                [self.button_a.y.into(), self.button_b.y.into()],
-            ],
-            [self.prize.x.into(), self.prize.y.into()],
+            [[ax.into(), bx.into()], [ay.into(), by.into()]],
+            [tx.into(), ty.into()],
         )?;
 
         (a.bottom == 1 && b.bottom == 1 && a.top >= 0 && b.top >= 0)
