@@ -40,6 +40,19 @@ pub struct Rat {
     pub bottom: u128,
 }
 
+impl Rat {
+    fn checked_set(&mut self, top: i128, bottom: u128) {
+        let gcd = get_gcd(top.unsigned_abs(), bottom);
+        if gcd == 1 {
+            self.top = top;
+            self.bottom = bottom;
+        } else {
+            self.top = top / (gcd as i128);
+            self.bottom = bottom / gcd;
+        }
+    }
+}
+
 impl std::iter::Sum for Rat {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         let mut initial = Self::ZERO;
@@ -47,22 +60,6 @@ impl std::iter::Sum for Rat {
             initial += x;
         }
         initial
-    }
-}
-
-impl std::ops::AddAssign for Rat {
-    fn add_assign(&mut self, rhs: Self) {
-        let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        let top = self.top * ((new_bottom / self.bottom) as i128)
-            + rhs.top * ((new_bottom / rhs.bottom) as i128);
-        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
-        if gcd != 1 {
-            self.top = top / (gcd as i128);
-            self.bottom = new_bottom / gcd;
-        } else {
-            self.top = top;
-            self.bottom = new_bottom;
-        }
     }
 }
 
@@ -176,20 +173,22 @@ impl std::ops::Mul for Rat {
     }
 }
 
+impl std::ops::AddAssign for Rat {
+    fn add_assign(&mut self, rhs: Self) {
+        let new_bottom = get_lcm(self.bottom, rhs.bottom);
+        let top = self.top * ((new_bottom / self.bottom) as i128)
+            + rhs.top * ((new_bottom / rhs.bottom) as i128);
+        self.checked_set(top, new_bottom);
+    }
+}
+
 impl std::ops::MulAssign for Rat {
     fn mul_assign(&mut self, rhs: Self) {
         let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
         let right_g = get_gcd_i(self.bottom as i128, rhs.top);
         let top = self.top / left_g * (rhs.top / (right_g as i128));
         let new_bottom = self.bottom / right_g * (rhs.bottom / left_g as u128);
-        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
-        if gcd != 1 {
-            self.top = top / (gcd as i128);
-            self.bottom = new_bottom / gcd;
-        } else {
-            self.top = top;
-            self.bottom = new_bottom;
-        }
+        self.checked_set(top, new_bottom)
     }
 }
 
@@ -222,17 +221,14 @@ impl std::ops::Sub for Rat {
 
 impl std::ops::SubAssign for Rat {
     fn sub_assign(&mut self, rhs: Self) {
+        if self.bottom == rhs.bottom {
+            self.top -= rhs.top;
+            return;
+        }
         let new_bottom = get_lcm(self.bottom, rhs.bottom);
         let top = self.top * ((new_bottom / self.bottom) as i128)
             - rhs.top * ((new_bottom / rhs.bottom) as i128);
-        let gcd = get_gcd(top.unsigned_abs(), new_bottom);
-        if gcd != 1 {
-            self.top = top / (gcd as i128);
-            self.bottom = new_bottom / gcd;
-        } else {
-            self.top = top;
-            self.bottom = new_bottom;
-        }
+        self.checked_set(top, new_bottom);
     }
 }
 
