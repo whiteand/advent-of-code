@@ -18,3 +18,17 @@ y24d13: part 1          time:   [231.15 µs 231.68 µs 232.33 µs]
 y24d13: part 2          time:   [229.69 µs 229.83 µs 230.02 µs]
                         change: [+0.5240% +0.7249% +0.9395%] (p = 0.00 < 0.05)
                         Change within noise threshold.
+
+
+- after macro
+
+y24d13: part 1          time:   [230.17 µs 230.74 µs 231.35 µs]
+                        change: [-3.4584% -2.4047% -1.7226%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 6 outliers among 100 measurements (6.00%)
+  5 (5.00%) high mild
+  1 (1.00%) high severe
+
+y24d13: part 2          time:   [227.00 µs 227.15 µs 227.35 µs]
+                        change: [-2.1017% -1.8633% -1.6343%] (p = 0.00 < 0.05)
+                        Performance has improved.

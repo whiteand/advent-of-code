@@ -5,7 +5,7 @@ use advent_utils::{
         self,
         bytes::complete::tag,
         character::complete::{self, line_ending},
-        sequence::{preceded, tuple},
+        sequence::{delimited, preceded, tuple},
         Parser,
     },
 };
@@ -30,31 +30,27 @@ pub fn solve(file_content: &str, prize_offset: U64Vec2) -> usize {
         .sum()
 }
 
+macro_rules! u64vec2 {
+    ($x_pref:expr, $y_pref:expr) => {
+        tuple((tag($x_pref), complete::u64, tag($y_pref), complete::u64))
+            .map(|(_, x, _, y)| U64Vec2::new(x, y))
+    };
+}
+
 fn parse_machine(input: &str) -> nom::IResult<&str, Machine> {
     tuple((
-        preceded(tag("Button A: "), parse_offset),
-        line_ending,
-        preceded(tag("Button B: "), parse_offset),
-        line_ending,
-        preceded(tag("Prize: "), parse_coord),
+        delimited(tag("Button A: "), u64vec2!("X+", ", Y+"), line_ending),
+        delimited(tag("Button B: "), u64vec2!("X+", ", Y+"), line_ending),
+        preceded(tag("Prize: "), u64vec2!("X=", ", Y=")),
     ))
-    .map(|(button_a, _, button_b, _, prize)| Machine {
+    .map(|(button_a, button_b, prize)| Machine {
         button_a,
         button_b,
         prize,
     })
     .parse(input)
 }
-fn parse_offset(input: &str) -> nom::IResult<&str, U64Vec2> {
-    tuple((tag("X+"), complete::u64, tag(", Y+"), complete::u64))
-        .map(|(_, x, _, y)| U64Vec2::new(x, y))
-        .parse(input)
-}
-fn parse_coord(input: &str) -> nom::IResult<&str, U64Vec2> {
-    tuple((tag("X="), complete::u64, tag(", Y="), complete::u64))
-        .map(|(_, x, _, y)| U64Vec2::new(x, y))
-        .parse(input)
-}
+
 #[derive(Debug)]
 struct Machine {
     button_a: U64Vec2,
