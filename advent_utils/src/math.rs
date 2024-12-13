@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::ops::{MulAssign, RangeInclusive};
 
 use thiserror::Error;
 
@@ -205,6 +205,20 @@ impl std::ops::Div for Rat {
         let bottom = self.bottom * (rhs.top.unsigned_abs());
 
         Self::new(top * new_sign, bottom)
+    }
+}
+impl std::ops::DivAssign for Rat {
+    fn div_assign(&mut self, rhs: Self) {
+        if rhs.top == 0 && self.top == 0 {
+            self.top = 1;
+            self.bottom = 1;
+        } else {
+            let new_sign = self.signum() * rhs.signum();
+
+            let top = self.top.abs() * (rhs.bottom as i128);
+            let bottom = self.bottom * (rhs.top.unsigned_abs());
+            self.checked_set(top * new_sign, bottom);
+        }
     }
 }
 
