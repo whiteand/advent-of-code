@@ -1,4 +1,4 @@
-use advent_utils::grid::Grid;
+use advent_utils::{grid::Grid, parse};
 use glam::IVec2;
 use itertools::Itertools;
 
@@ -17,7 +17,7 @@ fn get_dirs() -> [IVec2; 8] {
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    let grid = Grid::from_ascii_grid(file_content.trim());
+    let grid = parse::ascii_grid(file_content.trim());
 
     let mut total = 0;
     for pos in grid.coords() {
@@ -32,7 +32,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let grid = Grid::from_ascii_grid(file_content.trim());
+    let grid = parse::ascii_grid(file_content);
 
     let mut total = 0;
     for pos in grid.coords() {

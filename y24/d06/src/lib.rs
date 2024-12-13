@@ -1,7 +1,7 @@
-use advent_utils::{glam::IVec2, grid::Grid};
+use advent_utils::{glam::IVec2, grid::Grid, parse};
 
 pub fn solve_part_1(file_content: &str) -> usize {
-    let grid = Grid::from_ascii_grid(file_content);
+    let grid = parse::ascii_grid(file_content);
     let pos = grid
         .coords()
         .find(|x| grid.get(*x).copied().unwrap() == b'^')
@@ -12,7 +12,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
     positions.into_iter().filter(|x| *x).count()
 }
 pub fn solve_part_2(file_content: &str) -> usize {
-    let mut grid = Grid::from_ascii_grid(file_content);
+    let mut grid = parse::ascii_grid(file_content);
     let pos = grid
         .coords()
         .find(|x| grid.get(*x).copied().unwrap() == b'^')

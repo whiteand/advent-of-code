@@ -194,12 +194,6 @@ impl<T> IntoIterator for Grid<T> {
 }
 
 impl Grid<u8> {
-    pub fn from_ascii_grid(grid: &str) -> Self {
-        grid.lines()
-            .map(|line| line.as_bytes().iter().copied())
-            .collect()
-    }
-
     pub fn render_ascii(&self) -> String {
         let mut res = String::with_capacity(self.arr.len() + self.row_start_indexes.len() + 1);
         for row in self.rows() {
@@ -237,11 +231,9 @@ mod tests {
     use glam::IVec2;
     use itertools::Itertools;
 
-    use super::Grid;
-
     #[test]
     fn test_get() {
-        let grid = Grid::from_ascii_grid("123\n456\n789");
+        let grid = crate::parse::ascii_grid("123\n456\n789");
         assert_eq!(grid.get(IVec2::new(0, 0)).copied(), Some(b'1'));
         assert_eq!(grid.get(IVec2::new(1, 0)).copied(), Some(b'2'));
         assert_eq!(grid.get(IVec2::new(2, 0)).copied(), Some(b'3'));
@@ -277,7 +269,7 @@ mod tests {
         assert_eq!(grid.cols(2), 3);
         assert_eq!(grid.rows_len(), 3);
         assert_eq!(grid.rows_ranges().collect_vec(), vec![0..3, 3..6, 6..9]);
-        let grid = Grid::from_ascii_grid("123\n46\n789");
+        let grid = crate::parse::ascii_grid("123\n46\n789");
         assert_eq!(grid.cols(0), 3);
         assert_eq!(grid.cols(1), 2);
         assert_eq!(grid.cols(2), 3);

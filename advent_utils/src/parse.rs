@@ -4,6 +4,17 @@ use std::marker::PhantomData;
 use itertools::Itertools;
 use nom::AsChar;
 
+use crate::grid::Grid;
+
+/// Trims a string and returns a grid built over it.
+pub fn ascii_grid(file_content: &str) -> Grid<u8> {
+    file_content
+        .trim()
+        .lines()
+        .map(|line| line.as_bytes().iter().copied())
+        .collect()
+}
+
 pub fn nums<'t, T>(line: &'t str) -> ParseNumsIter<'t, T> {
     ParseNumsIter {
         bytes: line.as_bytes(),

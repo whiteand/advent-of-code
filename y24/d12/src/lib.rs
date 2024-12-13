@@ -1,4 +1,4 @@
-use advent_utils::{glam::IVec2, grid::Grid};
+use advent_utils::{glam::IVec2, grid::Grid, parse};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -12,7 +12,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve<V: GroupVisitor>(file_content: &str) -> usize {
-    let grid = Grid::from_ascii_grid(file_content.trim());
+    let grid = parse::ascii_grid(file_content);
     let mut groups = grid.map(|_, _| 0);
     let mut group_id = 0;
     let mut total = 0;
