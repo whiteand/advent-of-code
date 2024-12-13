@@ -1,14 +1,4 @@
-use advent_utils::{
-    glam::U64Vec2,
-    math,
-    nom::{
-        self,
-        bytes::complete::tag,
-        character::complete::{self, line_ending},
-        sequence::{delimited, preceded, tuple},
-        Parser,
-    },
-};
+use advent_utils::{glam::U64Vec2, math, parse::nums};
 use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
@@ -24,32 +14,22 @@ pub fn solve(file_content: &str, prize_offset: U64Vec2) -> usize {
         .split("\n\n")
         .filter_map(|triple_of_lines| {
             parse_machine(triple_of_lines)
-                .map(|x| x.1)
                 .ok()
                 .and_then(|mut machine| machine.move_prize(prize_offset).minimal_tokens_to_win())
         })
         .sum()
 }
 
-macro_rules! u64vec2 {
-    ($x_pref:expr, $y_pref:expr) => {
-        tuple((tag($x_pref), complete::u64, tag($y_pref), complete::u64))
-            .map(|(_, x, _, y)| U64Vec2::new(x, y))
-    };
-}
+fn parse_machine(triple_lines: &str) -> Result<Machine, String> {
+    let (ax, ay, bx, by, tx, ty) = nums::<u64>(triple_lines)
+        .collect_tuple()
+        .ok_or_else(|| format!("failed to parse input: {}", triple_lines))?;
 
-fn parse_machine(input: &str) -> nom::IResult<&str, Machine> {
-    tuple((
-        delimited(tag("Button A: "), u64vec2!("X+", ", Y+"), line_ending),
-        delimited(tag("Button B: "), u64vec2!("X+", ", Y+"), line_ending),
-        preceded(tag("Prize: "), u64vec2!("X=", ", Y=")),
-    ))
-    .map(|(button_a, button_b, prize)| Machine {
-        button_a,
-        button_b,
-        prize,
+    Ok(Machine {
+        button_a: U64Vec2::new(ax, ay),
+        button_b: U64Vec2::new(bx, by),
+        prize: U64Vec2::new(tx, ty),
     })
-    .parse(input)
 }
 
 #[derive(Debug)]

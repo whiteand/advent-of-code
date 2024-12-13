@@ -1,3 +1,4 @@
+use core::str;
 use std::marker::PhantomData;
 
 use itertools::Itertools;
@@ -12,6 +13,15 @@ pub fn nums<'t, T>(line: &'t str) -> ParseNumsIter<'t, T> {
 pub struct ParseNumsIter<'t, T> {
     bytes: &'t [u8],
     phantom: PhantomData<T>,
+}
+
+impl<'t, T> ParseNumsIter<'t, T> {
+    pub fn into_rest_bytes(self) -> &'t [u8] {
+        self.bytes
+    }
+    pub fn into_rest_str(self) -> &'t str {
+        str::from_utf8(self.into_rest_bytes()).unwrap()
+    }
 }
 
 impl<'t, T> ParseNumsIter<'t, T> {}
@@ -142,5 +152,20 @@ mod tests {
     #[should_panic(expected = "Failed to parse: -129 as i8")]
     fn test_fails_on_signed_underflow() {
         assert_eq!(super::nums::<i8>("-129").collect_vec(), vec![]);
+    }
+    #[test]
+    fn test_rest_str() {
+        let mut it = super::nums::<i16>("-129andrew");
+        assert_eq!(it.next(), Some(-129));
+        assert_eq!(it.into_rest_str(), "andrew");
+
+        let mut it = super::nums::<i16>("-129andrew10bohdan");
+        assert_eq!(it.next(), Some(-129));
+        assert_eq!(it.next(), Some(10));
+        assert_eq!(it.into_rest_str(), "bohdan");
+
+        let mut it = super::nums::<i16>("-129andrew10bohdan");
+        assert_eq!(it.next(), Some(-129));
+        assert_eq!(it.into_rest_str(), "andrew10bohdan");
     }
 }
