@@ -12,8 +12,11 @@ generate year day:
 clippy:
     cargo clippy --workspace --profile ci --locked --benches --tests --all-features --no-deps
 
-clear:
+clear: clear-trace
     rm -rf ./**/target
+
+clear-trace:
+   rm -rf ./trace-*.json
 
 solve year day:
     cat ./y{{year}}/d{{day}}/input.txt | cargo run --release --package y{{year}}d{{day}}

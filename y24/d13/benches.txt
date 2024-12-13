@@ -8,3 +8,13 @@ Found 8 outliers among 100 measurements (8.00%)
 y24d13: part 2          time:   [228.59 µs 228.76 µs 228.96 µs]
                         change: [-24.230% -24.062% -23.889%] (p = 0.00 < 0.05)
                         Performance has improved.
+
+-With delimited
+
+y24d13: part 1          time:   [231.15 µs 231.68 µs 232.33 µs]
+                        change: [+1.1085% +1.4301% +1.7727%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+
+y24d13: part 2          time:   [229.69 µs 229.83 µs 230.02 µs]
+                        change: [+0.5240% +0.7249% +0.9395%] (p = 0.00 < 0.05)
+                        Change within noise threshold.
