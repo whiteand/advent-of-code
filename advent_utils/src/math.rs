@@ -346,7 +346,7 @@ pub struct Equations<'t> {
     pub rights: &'t mut [Rat],
 }
 
-impl<'t> Equations<'t> {
+impl Equations<'_> {
     fn multiply_row(&mut self, row_index: usize, k: &Rat) {
         let vars = self.lefts[0].len();
         for j in 0..vars {
