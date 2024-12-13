@@ -9,6 +9,7 @@ use advent_utils::{
         Parser,
     },
 };
+use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -68,8 +69,12 @@ impl Machine {
             [[ax.into(), bx.into()], [ay.into(), by.into()]],
             [tx.into(), ty.into()],
         )
-        .filter(|[a, b]| (a.bottom == 1 && b.bottom == 1 && a.top >= 0 && b.top >= 0))
-        .map(|[a, b]| (a.top * 3 + b.top) as usize)
+        .and_then(|res| {
+            res.into_iter()
+                .filter_map(|x| usize::try_from(x).ok())
+                .collect_tuple()
+        })
+        .map(|(a, b)| a * 3 + b)
     }
 
     fn move_prize(&mut self, prize_offset: U64Vec2) -> &mut Self {
