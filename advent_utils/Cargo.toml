@@ -8,3 +8,5 @@ itertools = { workspace = true }
 tracing = { workspace = true }
 glam = { workspace = true }
 nom = { workspace = true }
+thiserror = "2.0.6"
+array-init = "2.1.0"

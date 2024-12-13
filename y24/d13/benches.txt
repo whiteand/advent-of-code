@@ -1,0 +1,10 @@
+y24d13: part 1          time:   [229.14 µs 229.34 µs 229.60 µs]
+                        change: [-23.875% -23.604% -23.334%] (p = 0.00 < 0.05)
+                        Performance has improved.
+Found 8 outliers among 100 measurements (8.00%)
+  4 (4.00%) high mild
+  4 (4.00%) high severe
+
+y24d13: part 2          time:   [228.59 µs 228.76 µs 228.96 µs]
+                        change: [-24.230% -24.062% -23.889%] (p = 0.00 < 0.05)
+                        Performance has improved.

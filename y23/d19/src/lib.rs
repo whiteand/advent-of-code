@@ -441,8 +441,8 @@ mod tests {
     #[case("a>9", "a<10")]
     #[case("s>9", "s<10")]
     fn test_negation(#[case] condition_str: &str, #[case] expected_condition_str: &str) {
-        let condition = parse_condition(&condition_str);
-        let expected_condition = parse_condition(&expected_condition_str);
+        let condition = parse_condition(condition_str);
+        let expected_condition = parse_condition(expected_condition_str);
 
         assert_eq!(condition.negation(), expected_condition);
     }

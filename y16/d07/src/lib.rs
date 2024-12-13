@@ -91,10 +91,8 @@ mod tests {
             if !super::supports_ssl(input) {
                 panic!("{input} supports ssl")
             }
-        } else {
-            if super::supports_ssl(input) {
-                panic!("{input} do not support ssl")
-            }
+        } else if super::supports_ssl(input) {
+            panic!("{input} do not support ssl")
         }
     }
 

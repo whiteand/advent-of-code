@@ -177,7 +177,7 @@ noop";
     fn test_part_1_actual() {
         let str = include_str!("../input.txt");
 
-        assert_eq!(format!("{}", solve_part_1(&str)), "14060");
+        assert_eq!(format!("{}", solve_part_1(str)), "14060");
     }
 
     #[test]

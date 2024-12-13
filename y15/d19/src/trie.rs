@@ -97,13 +97,13 @@ mod tests {
     #[test]
     fn test_trie() {
         let mut trie = Trie::new();
-        assert_eq!(trie.contains("a"), false);
-        assert_eq!(trie.contains("b"), false);
+        assert!(!trie.contains("a"));
+        assert!(!trie.contains("b"));
         trie.push("a");
-        assert_eq!(trie.contains("a"), true);
-        assert_eq!(trie.contains("b"), false);
+        assert!(trie.contains("a"));
+        assert!(!trie.contains("b"));
         trie.push("b");
-        assert_eq!(trie.contains("a"), true);
-        assert_eq!(trie.contains("b"), true);
+        assert!(trie.contains("a"));
+        assert!(trie.contains("b"));
     }
 }

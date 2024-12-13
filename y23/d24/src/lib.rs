@@ -1,4 +1,4 @@
-use advent_utils::math::{Equations, Rat, Vec2, Vec3};
+use advent_utils::math::{self, Rat, Vec2, Vec3};
 use itertools::Itertools;
 use std::ops::RangeInclusive;
 
@@ -166,9 +166,9 @@ pub fn solve_part_2(file_content: &str) -> i64 {
     let p2y = p2.y;
     let p2z = p2.z;
 
-    let mut equations = Equations {
-        lefts: vec![
-            vec![
+    let [a, b, c, ..] = math::solve_system(
+        [
+            [
                 v0y - v1y,
                 -v0x + v1x,
                 Rat::ZERO,
@@ -176,7 +176,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 p0x - p1x,
                 Rat::ZERO,
             ],
-            vec![
+            [
                 v0z - v1z,
                 Rat::ZERO,
                 -v0x + v1x,
@@ -184,7 +184,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 Rat::ZERO,
                 p0x - p1x,
             ],
-            vec![
+            [
                 Rat::ZERO,
                 v0z - v1z,
                 -v0y + v1y,
@@ -192,7 +192,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 -p0z + p1z,
                 p0y - p1y,
             ],
-            vec![
+            [
                 v0y - v2y,
                 -v0x + v2x,
                 Rat::ZERO,
@@ -200,7 +200,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 p0x - p2x,
                 Rat::ZERO,
             ],
-            vec![
+            [
                 v0z - v2z,
                 Rat::ZERO,
                 -v0x + v2x,
@@ -208,7 +208,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 Rat::ZERO,
                 p0x - p2x,
             ],
-            vec![
+            [
                 Rat::ZERO,
                 v0z - v2z,
                 -v0y + v2y,
@@ -217,7 +217,7 @@ pub fn solve_part_2(file_content: &str) -> i64 {
                 p0y - p2y,
             ],
         ],
-        rights: vec![
+        [
             p0x * v0y - p0y * v0x - p1x * v1y + p1y * v1x,
             p0x * v0z - p0z * v0x - p1x * v1z + p1z * v1x,
             p0y * v0z - p0z * v0y - p1y * v1z + p1z * v1y,
@@ -225,14 +225,10 @@ pub fn solve_part_2(file_content: &str) -> i64 {
             p0x * v0z - p0z * v0x - p2x * v2z + p2z * v2x,
             p0y * v0z - p0z * v0y - p2y * v2z + p2z * v2y,
         ],
-    };
+    )
+    .expect("expected to have a solution");
 
-    equations
-        .solve()
-        .expect("Expected to have a solution")
-        .into_iter()
-        .take(3)
-        .sum::<Rat>()
+    (a + b + c)
         .top
         .try_into()
         .expect("the result should be an integer with less than 64 bits")

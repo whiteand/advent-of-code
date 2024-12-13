@@ -52,13 +52,13 @@ R 2";
     #[test]
     fn test_y22_d9_p1_actual() {
         let str = include_str!("../input.txt");
-        let res = solve_part_1(&str);
+        let res = solve_part_1(str);
         assert_eq!(res, 6067);
     }
     #[test]
     fn test_y22_d9_p2_actual() {
         let str = include_str!("../input.txt");
-        let res = solve_part_2(&str);
+        let res = solve_part_2(str);
         assert_eq!(res, 2471);
     }
     #[test]

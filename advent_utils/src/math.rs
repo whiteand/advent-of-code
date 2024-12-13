@@ -1,5 +1,7 @@
 use std::ops::RangeInclusive;
 
+use thiserror::Error;
+
 pub fn get_gcd(mut a: u128, mut b: u128) -> u128 {
     while a > 0 && b > 0 {
         if a > b {
@@ -220,6 +222,22 @@ impl From<i128> for Rat {
     }
 }
 
+macro_rules! impl_from_num {
+    ($($typ:ty),+) => {
+        $(
+            impl From<$typ> for Rat {
+                fn from(i: $typ) -> Self {
+                    Self {
+                        top: i as i128,
+                        bottom: 1,
+                    }
+                }
+            }
+        )+
+    };
+}
+impl_from_num!(u64, i64, u32, i32, u16, i16, u8, i8, usize, isize);
+
 impl TryFrom<Rat> for i64 {
     type Error = ();
     fn try_from(r: Rat) -> Result<Self, Self::Error> {
@@ -311,12 +329,20 @@ impl std::fmt::Debug for Vec3 {
     }
 }
 
-pub struct Equations {
-    pub lefts: Vec<Vec<Rat>>,
-    pub rights: Vec<Rat>,
+#[derive(Debug, Error)]
+pub enum SolveError {
+    #[error("lefts should have the same len as rights")]
+    IncompatibleLeftAndRight,
+    #[error("failed to determine the variable at index {0}")]
+    CannotSolveFor(usize),
 }
 
-impl Equations {
+pub struct Equations<'t> {
+    pub lefts: &'t mut [&'t mut [Rat]],
+    pub rights: &'t mut [Rat],
+}
+
+impl<'t> Equations<'t> {
     fn multiply_row(&mut self, row_index: usize, k: &Rat) {
         let vars = self.lefts[0].len();
         for j in 0..vars {
@@ -334,22 +360,24 @@ impl Equations {
         self.rights[row_index] = self.rights[row_index] - self.rights[other_row_index];
     }
 
-    pub fn solve(&mut self) -> Option<Vec<Rat>> {
+    pub fn solve(mut self) -> Result<(), SolveError> {
         let vars = self.lefts[0].len();
         let eqs = self.rights.len();
 
         if vars > eqs {
-            return None;
+            return Err(SolveError::IncompatibleLeftAndRight);
         }
-
         for var_index in 0..vars {
-            let non_zero_row = self
+            let Some(non_zero_row) = self
                 .lefts
                 .iter()
                 .enumerate()
                 .skip(var_index)
                 .find(|(_, row)| !row[var_index].is_zero())
-                .map(|(i, _)| i)?;
+                .map(|(i, _)| i)
+            else {
+                return Err(SolveError::CannotSolveFor(var_index));
+            };
             self.multiply_row(non_zero_row, &self.lefts[non_zero_row][var_index].reverse());
             self.swap_rows(var_index, non_zero_row);
             for eq_index in (var_index + 1)..eqs {
@@ -376,7 +404,7 @@ impl Equations {
                 self.multiply_row(var_index, &k);
             }
         }
-        Some(self.rights.clone())
+        Ok(())
     }
 
     fn swap_rows(&mut self, var_index: usize, non_zero_row: usize) {
@@ -391,4 +419,21 @@ impl Equations {
         }
         self.rights.swap(var_index, non_zero_row);
     }
+}
+
+pub fn solve_system<const VARS: usize, const EQS: usize>(
+    mut lefts: [[Rat; VARS]; EQS],
+    mut rights: [Rat; EQS],
+) -> Option<[Rat; EQS]> {
+    let mut lefts: [&mut [Rat]; EQS] =
+        array_init::from_iter(lefts.iter_mut().map(|x| x.as_mut())).unwrap();
+    let rights_mut = rights.as_mut();
+    Equations {
+        lefts: &mut lefts,
+        rights: rights_mut,
+    }
+    .solve()
+    .ok()?;
+
+    Some(rights)
 }

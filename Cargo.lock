@@ -6,9 +6,11 @@ version = 4
 name = "advent_utils"
 version = "0.1.0"
 dependencies = [
+ "array-init",
  "glam",
  "itertools 0.13.0",
  "nom",
+ "thiserror 2.0.6",
  "tracing",
 ]
 
@@ -41,6 +43,12 @@ checksum = "3f2a05fd1bd10b2527e20a2cd32d8873d115b8b39fe219ee25f42a8aca6ba278"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "array-init"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d62b7694a562cdf5a74227903507c56ab2cc8bdd1f781ed5cb4cf9c9f810bfc"
 
 [[package]]
 name = "autocfg"
@@ -647,7 +655,7 @@ dependencies = [
  "integer-sqrt",
  "num-traits",
  "rustc-hash",
- "thiserror",
+ "thiserror 1.0.51",
 ]
 
 [[package]]
@@ -1021,7 +1029,16 @@ version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f11c217e1416d6f036b870f14e0413d480dbf28edbee1f877abaf0206af43bb7"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.51",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fec2a1820ebd077e2b90c4df007bebf344cd394098a13c563957d0afc83ea47"
+dependencies = [
+ "thiserror-impl 2.0.6",
 ]
 
 [[package]]
@@ -1029,6 +1046,17 @@ name = "thiserror-impl"
 version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01742297787513b79cf8e29d1056ede1313e2420b7b3b15d0a768b4921f549df"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.87",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d65750cab40f4ff1929fb1ba509e9914eb756131cef4210da8d5d700d26f6312"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2301,6 +2329,18 @@ dependencies = [
 
 [[package]]
 name = "y24d12"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "criterion",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y24d13"
 version = "0.1.0"
 dependencies = [
  "advent_utils",

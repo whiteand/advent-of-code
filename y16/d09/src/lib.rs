@@ -1,6 +1,6 @@
 use advent_utils::nom::{
     self,
-    bytes::complete::{tag, take_until},
+    bytes::complete::tag,
     character::complete,
     sequence::{delimited, separated_pair},
     Parser,

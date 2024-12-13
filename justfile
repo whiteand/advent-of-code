@@ -10,7 +10,7 @@ generate year day:
     /usr/local/bin/code ./y{{year}}/d{{day}}/src/lib.rs
 
 clippy:
-    cargo watch -x clippy
+    cargo clippy --workspace --profile ci --locked --benches --tests --all-features --no-deps
 
 clear:
     rm -rf ./**/target

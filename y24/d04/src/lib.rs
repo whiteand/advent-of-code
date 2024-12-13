@@ -67,8 +67,6 @@ impl GridExt for Grid<u8> {
 #[cfg(test)]
 mod tests {
     use super::{solve_part_1, solve_part_2};
-    use tracing;
-    use tracing_subscriber;
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
 

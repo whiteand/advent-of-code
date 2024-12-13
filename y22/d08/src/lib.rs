@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn test_actual() {
         let str = include_str!("../input.txt");
-        let res = solve_part_1(&str);
+        let res = solve_part_1(str);
         assert_eq!(res, 1705);
     }
 
