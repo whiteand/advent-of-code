@@ -30,7 +30,7 @@ impl<'t, T> ParseNumsIter<'t, T> {
     pub fn rest_bytes(&self) -> &'t [u8] {
         self.bytes
     }
-    pub fn skip_prefix(&mut self, prefix: impl AsBytes) -> Result<&mut Self, &mut Self> {
+    pub fn strip_prefix(&mut self, prefix: impl AsBytes) -> Result<&mut Self, &mut Self> {
         let bytes = prefix.as_bytes();
         match self.bytes.strip_prefix(bytes) {
             Some(rest) => {

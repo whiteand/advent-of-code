@@ -29,12 +29,13 @@ fn parse_machine(triple_lines: &str) -> Result<Machine, &str> {
     // Button A: X+21, Y+40
     // Button B: X+56, Y+21
     // Prize: X=15390, Y=2402
-    nums.skip_prefix("Button A: X+").map_err(|x| x.rest_str())?;
+    nums.strip_prefix("Button A: X+")
+        .map_err(|x| x.rest_str())?;
     let (ax, ay) = nums.next_tuple().ok_or("failed")?;
-    nums.skip_prefix("\nButton B: X+")
+    nums.strip_prefix("\nButton B: X+")
         .map_err(|x| x.rest_str())?;
     let (bx, by) = nums.next_tuple().ok_or("failed")?;
-    nums.skip_prefix("\nPrize: X=").map_err(|x| x.rest_str())?;
+    nums.strip_prefix("\nPrize: X=").map_err(|x| x.rest_str())?;
     let (tx, ty) = nums.next_tuple().ok_or("failed")?;
 
     Ok(Machine {
