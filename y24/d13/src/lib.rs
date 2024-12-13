@@ -64,13 +64,12 @@ impl Machine {
         let U64Vec2 { x: bx, y: by } = self.button_b;
         let U64Vec2 { x: tx, y: ty } = self.prize;
 
-        let [a, b] = math::solve_system(
+        math::solve_system(
             [[ax.into(), bx.into()], [ay.into(), by.into()]],
             [tx.into(), ty.into()],
-        )?;
-
-        (a.bottom == 1 && b.bottom == 1 && a.top >= 0 && b.top >= 0)
-            .then(|| (a.top * 3 + b.top) as usize)
+        )
+        .filter(|[a, b]| (a.bottom == 1 && b.bottom == 1 && a.top >= 0 && b.top >= 0))
+        .map(|[a, b]| (a.top * 3 + b.top) as usize)
     }
 
     fn move_prize(&mut self, prize_offset: U64Vec2) -> &mut Self {
