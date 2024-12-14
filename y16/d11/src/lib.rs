@@ -6,46 +6,101 @@ where
     State<N>: std::fmt::Display,
 {
     const TARGET_LEVEL: usize = 3;
-    let (states, cost) = pathfinding::prelude::dijkstra(
+    let (_, cost) = pathfinding::prelude::dijkstra(
         &input,
         |x| {
             let generators = x.current_generators().collect_vec();
             let chips = x.current_microchips().collect_vec();
-            let mut levels = vec![];
-            if x.elevator < TARGET_LEVEL {
-                levels.push(x.elevator + 1);
-            }
-            if x.elevator > 0 {
-                levels.push(x.elevator - 1);
-            }
             let mut res = Vec::new();
-            for level in levels {
-                for (cn, gn) in (0..=chips.len()).cartesian_product(0..=generators.len()) {
-                    if cn == 0 && gn == 0 {
-                        continue;
+            for level in 0..=TARGET_LEVEL {
+                if level.abs_diff(x.elevator) != 1 {
+                    continue;
+                }
+                // taking 2 chips
+                for i in 0..N {
+                    if i >= chips.len() {
+                        break;
                     }
-                    if cn + gn > 2 {
-                        continue;
-                    }
-                    for cs in chips.iter().copied().combinations(cn) {
-                        for gs in generators.iter().copied().combinations(gn) {
-                            let Ok(next_state) = x.goto(level, &gs, &cs) else {
-                                continue;
-                            };
-                            res.push((next_state, 1));
+                    for j in (i + 1)..N {
+                        if j >= chips.len() {
+                            break;
                         }
+                        let c1 = chips[i];
+                        let c2 = chips[j];
+                        let Ok(next_state) = x.goto(level, &[], &[c1, c2]) else {
+                            continue;
+                        };
+                        res.push((next_state, 1));
                     }
                 }
+                // taking 2 generators
+                for i in 0..N {
+                    if i >= generators.len() {
+                        break;
+                    }
+                    for j in (i + 1)..N {
+                        if j >= generators.len() {
+                            break;
+                        }
+                        let g1 = generators[i];
+                        let g2 = generators[j];
+                        let Ok(next_state) = x.goto(level, &[g1, g2], &[]) else {
+                            continue;
+                        };
+                        res.push((next_state, 1));
+                    }
+                }
+                // taking 1 chip + 1 generator
+                for i in 0..N {
+                    if i >= chips.len() {
+                        break;
+                    }
+                    for j in 0..N {
+                        if j >= generators.len() {
+                            break;
+                        }
+                        let c1 = chips[i];
+                        let g1 = generators[j];
+                        let Ok(next_state) = x.goto(level, &[g1], &[c1]) else {
+                            continue;
+                        };
+                        res.push((next_state, 1));
+                    }
+                }
+                // taking 1 generator
+                for i in 0..N {
+                    if i >= generators.len() {
+                        break;
+                    }
+                    let g1 = generators[i];
+                    let Ok(next_state) = x.goto(level, &[g1], &[]) else {
+                        continue;
+                    };
+                    res.push((next_state, 1));
+                }
+
+                // taking 1 chip
+                for i in 0..N {
+                    if i >= chips.len() {
+                        break;
+                    }
+                    let c1 = chips[i];
+                    let Ok(next_state) = x.goto(level, &[], &[c1]) else {
+                        continue;
+                    };
+                    res.push((next_state, 1));
+                }
             }
+
             res
         },
         |s| s.all_on_level(TARGET_LEVEL),
     )
     .unwrap();
 
-    for s in states {
-        println!("{s}\n")
-    }
+    // for s in states {
+    //     println!("{s}\n")
+    // }
 
     cost
 }
@@ -86,14 +141,15 @@ impl<const N: usize> State<N> {
                 return Err(());
             }
         }
-
         let mut new_generators = self.generators;
-        for g in generators {
-            new_generators[*g] = level;
-        }
         let mut new_microchips = self.microchips;
-        for m in microchips {
-            new_microchips[*m] = level;
+        for i in 0..N {
+            if generators.contains(&i) {
+                new_generators[i] = level;
+            }
+            if microchips.contains(&i) {
+                new_microchips[i] = level;
+            }
         }
 
         let res = Self {
