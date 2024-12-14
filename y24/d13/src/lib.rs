@@ -1,8 +1,4 @@
-use advent_utils::{
-    glam::U64Vec2,
-    math,
-    parse::{nums, ParseNumsIter},
-};
+use advent_utils::{glam::U64Vec2, math, parse::nums};
 use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]

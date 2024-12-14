@@ -77,7 +77,7 @@ fn print_robots<'t>(robots: impl Iterator<Item = &'t Robot>, from: IVec2, to: IV
     let map = robots.into_group_map_by(|x| x.p);
     for i in from.y..to.y {
         for j in from.x..to.x {
-            let c = map.get(&IVec2::new(j, i)).is_some();
+            let c = map.contains_key(&IVec2::new(j, i));
             if c {
                 print!("#");
             } else {

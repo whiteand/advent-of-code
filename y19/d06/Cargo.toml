@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 advent_utils.workspace = true
-criterion.workspace = true
+criterion = "0.5.1"
 itertools.workspace = true
 petgraph = "0.6.5"
 nom.workspace = true

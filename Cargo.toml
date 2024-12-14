@@ -95,7 +95,7 @@ members = [
 
 [workspace.dependencies]
 advent_utils = { path = "./advent_utils" }
-criterion = "0.5.1"
+divan = "0.1.17"
 glam = "0.25.0"
 itertools = "0.13.0"
 nom = "7.1.3"

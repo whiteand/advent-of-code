@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 itertools.workspace = true
-criterion.workspace = true
+criterion = "0.5.1"
 rstest = "0.18.2"
 
 

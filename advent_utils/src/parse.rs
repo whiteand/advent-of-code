@@ -15,7 +15,7 @@ pub fn ascii_grid(file_content: &str) -> Grid<u8> {
         .collect()
 }
 
-pub fn nums<'t, T>(line: &'t str) -> ParseNumsIter<'t, T> {
+pub fn nums<T>(line: &str) -> ParseNumsIter<'_, T> {
     ParseNumsIter {
         bytes: line.as_bytes(),
         phantom: PhantomData,
@@ -51,8 +51,6 @@ impl<'t, T> ParseNumsIter<'t, T> {
         }
     }
 }
-
-impl<'t, T> ParseNumsIter<'t, T> {}
 
 macro_rules! uint_nums {
     ($($typ:ty),+) => {
