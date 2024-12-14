@@ -9,6 +9,9 @@ generate year day:
     /usr/local/bin/code ./y{{year}}/d{{day}}/example.txt
     /usr/local/bin/code ./y{{year}}/d{{day}}/src/lib.rs
 
+amend:
+    git add .; git commit --amend --no-edit; git push -f
+
 clippy:
     cargo clippy --workspace --profile ci --locked --benches --tests --all-features --no-deps
 

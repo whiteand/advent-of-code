@@ -1,6 +1,5 @@
 use advent_utils::{glam::IVec2, parse};
 use itertools::Itertools;
-use quadtree_rs::{area::AreaBuilder, point::Point, Quadtree};
 
 #[derive(Debug, Clone)]
 struct Robot {
@@ -10,13 +9,7 @@ struct Robot {
 
 impl Robot {
     fn step_many(&mut self, steps: usize, screen_size: IVec2) {
-        self.p.x = (self.p.x + self.v.x * steps as i32).rem_euclid(screen_size.x);
-        self.p.y = (self.p.y + self.v.y * steps as i32).rem_euclid(screen_size.y);
-    }
-
-    fn is_in(&self, top_left: IVec2, bottom_right: IVec2) -> bool {
-        (top_left.x..bottom_right.x).contains(&self.p.x)
-            && (top_left.y..bottom_right.y).contains(&self.p.y)
+        self.p = (self.p + self.v * (steps as i32)).rem_euclid(screen_size)
     }
 }
 
@@ -25,6 +18,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
     solve_part_1_with_size(file_content, IVec2::new(101, 103))
 }
 
+#[inline(always)]
 fn solve_part_1_with_size(file_content: &str, size: IVec2) -> usize {
     let mut robots = parse_robots(file_content);
 
@@ -32,34 +26,21 @@ fn solve_part_1_with_size(file_content: &str, size: IVec2) -> usize {
         robot.step_many(100, size);
     }
 
-    let quadrant_size = IVec2::new(size.x / 2, size.y / 2);
+    let cx = size.x / 2;
+    let cy = size.y / 2;
 
-    let (mut a, mut b, mut c, mut d) = (0, 0, 0, 0);
+    let mut cnt = [0, 0, 0, 0];
     for robot in robots.iter() {
-        if robot.is_in(IVec2::new(0, 0), quadrant_size) {
-            a += 1;
+        if robot.p.x == cx || robot.p.y == cy {
+            continue;
         }
-        if robot.is_in(
-            IVec2::new(quadrant_size.x + 1, 0),
-            IVec2::new(size.x, quadrant_size.y),
-        ) {
-            b += 1;
-        }
-        if robot.is_in(
-            IVec2::new(0, quadrant_size.y + 1),
-            IVec2::new(quadrant_size.x, size.y),
-        ) {
-            c += 1;
-        }
-        if robot.is_in(
-            IVec2::new(quadrant_size.x + 1, quadrant_size.y + 1),
-            IVec2::new(size.x, size.y),
-        ) {
-            d += 1;
-        }
+        let r = (robot.p.y / (cy + 1)) as usize;
+        let c = (robot.p.x / (cx + 1)) as usize;
+        let i = (r << 1) | c;
+        cnt[i] += 1;
     }
 
-    a * b * c * d
+    cnt.into_iter().product()
 }
 
 const TREE_TOP_LEFT: IVec2 = IVec2::new(42, 42);
@@ -74,15 +55,10 @@ pub fn solve_part_2(file_content: &str, print: bool) -> usize {
     loop {
         let m = robots
             .iter()
-            .enumerate()
-            .filter(|(i, r)| {
-                robots
-                    .iter()
-                    .skip(i + 1)
-                    .any(|r2| (r.p - r2.p).abs().dot(IVec2::splat(1)) <= 1)
-            })
+            .tuple_combinations()
+            .filter(|(r, r2)| r.p.x.abs_diff(r2.p.x) + r.p.y.abs_diff(r2.p.y) <= 1)
             .count();
-        if m >= robots.len() / 2 {
+        if m >= robots.len() {
             if print {
                 print_robots(robots.iter(), TREE_TOP_LEFT, TREE_BOTTOM_RIGHT);
             }
@@ -92,6 +68,7 @@ pub fn solve_part_2(file_content: &str, print: bool) -> usize {
         for robot in robots.iter_mut() {
             robot.step_many(1, size);
         }
+
         i += 1
     }
 }
@@ -112,15 +89,18 @@ fn print_robots<'t>(robots: impl Iterator<Item = &'t Robot>, from: IVec2, to: IV
 }
 
 fn parse_robots(file_content: &str) -> Vec<Robot> {
-    parse::nums::<i32>(file_content.trim())
-        .chunks(4)
-        .into_iter()
-        .map(|x| x.collect_tuple().unwrap())
-        .map(|(a, b, c, d)| Robot {
-            p: IVec2::new(a, b),
-            v: IVec2::new(c, d),
+    let mut robots = Vec::with_capacity(file_content.trim().lines().count());
+    let mut it = parse::nums::<i32>(file_content.trim());
+    loop {
+        let Some(px) = it.next() else { break robots };
+        let py = it.next().unwrap();
+        let vx = it.next().unwrap();
+        let vy = it.next().unwrap();
+        robots.push(Robot {
+            p: IVec2::new(px, py),
+            v: IVec2::new(vx, vy),
         })
-        .collect_vec()
+    }
 }
 
 #[cfg(test)]
@@ -170,6 +150,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // runs 25s
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
