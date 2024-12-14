@@ -1,45 +1,56 @@
+use itertools::Itertools;
+
 #[tracing::instrument(skip(input))]
-pub fn solve_part_1<const N: usize>(mut input: State<N>) -> usize
+pub fn solve<const N: usize>(input: State<N>) -> usize
 where
     State<N>: std::fmt::Display,
 {
-    println!("{input}");
-    input = input.goto(1, &[], &[0]).unwrap();
-    println!("{input}");
-    input = input.goto(2, &[0], &[0]).unwrap();
-    println!("{input}");
-    input = input.goto(1, &[], &[0]).unwrap();
-    println!("{input}");
-    input = input.goto(0, &[], &[0]).unwrap();
-    println!("{input}");
-    input = input.goto(1, &[], &[0, 1]).unwrap();
-    println!("{input}");
-    input = input.goto(2, &[], &[0, 1]).unwrap();
-    println!("{input}");
-    input = input.goto(3, &[], &[0, 1]).unwrap();
-    println!("{input}");
-    println!("{input}");
-    input = input.goto(2, &[], &[0]).unwrap();
-    println!("{input}");
-    input = input.goto(3, &[0, 1], &[]).unwrap();
-    println!("{input}");
-    input = input.goto(2, &[], &[1]).unwrap();
-    println!("{input}");
-    input = input.goto(3, &[], &[0, 1]).unwrap();
-    println!("{input}");
-    assert!(input.all_on_level(3));
-    todo!("part 1 is not implemented yet")
-}
-#[tracing::instrument(skip(input))]
-pub fn solve_part_2<const N: usize>(input: State<N>) -> usize
-where
-    State<N>: std::fmt::Display,
-{
-    println!("{input}");
-    todo!("part 2 is not implemented yet")
+    const TARGET_LEVEL: usize = 3;
+    let (states, cost) = pathfinding::prelude::dijkstra(
+        &input,
+        |x| {
+            let generators = x.current_generators().collect_vec();
+            let chips = x.current_microchips().collect_vec();
+            let mut levels = vec![];
+            if x.elevator < TARGET_LEVEL {
+                levels.push(x.elevator + 1);
+            }
+            if x.elevator > 0 {
+                levels.push(x.elevator - 1);
+            }
+            let mut res = Vec::new();
+            for level in levels {
+                for (cn, gn) in (0..=chips.len()).cartesian_product(0..=generators.len()) {
+                    if cn == 0 && gn == 0 {
+                        continue;
+                    }
+                    if cn + gn > 2 {
+                        continue;
+                    }
+                    for cs in chips.iter().copied().combinations(cn) {
+                        for gs in generators.iter().copied().combinations(gn) {
+                            let Ok(next_state) = x.goto(level, &gs, &cs) else {
+                                continue;
+                            };
+                            res.push((next_state, 1));
+                        }
+                    }
+                }
+            }
+            res
+        },
+        |s| s.all_on_level(TARGET_LEVEL),
+    )
+    .unwrap();
+
+    for s in states {
+        println!("{s}\n")
+    }
+
+    cost
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct State<const N: usize> {
     generators: [usize; N],
     microchips: [usize; N],
@@ -53,6 +64,12 @@ impl<const N: usize> State<N> {
             .iter()
             .chain(self.microchips.iter())
             .all(|x| *x == level);
+    }
+    fn current_generators(&self) -> impl Iterator<Item = usize> + '_ {
+        (0..N).filter(|i| self.generators[*i] == self.elevator)
+    }
+    fn current_microchips(&self) -> impl Iterator<Item = usize> + '_ {
+        (0..N).filter(|i| self.microchips[*i] == self.elevator)
     }
     fn goto(self, level: usize, generators: &[usize], microchips: &[usize]) -> Result<Self, ()> {
         if cfg!(debug_assertions) {
@@ -116,6 +133,18 @@ impl<const N: usize> State<N> {
 pub const ACTUAL: State<5> = State {
     generators: [0, 0, 0, 2, 2],
     microchips: [0, 1, 1, 2, 2],
+    elevator: 0,
+};
+
+/// ```ignore
+/// F4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
+/// F3 .  .  .  .  .  .  .  DG DM EG EM .  .  .  .
+/// F2 .  .  .  .  BM .  CM .  .  .  .  .  .  .  .  
+/// F1 E  AG AM BG .  CG .  .  .  .  .  FG FM GG GM  
+/// ```
+pub const ACTUAL2: State<7> = State {
+    generators: [0, 0, 0, 2, 2, 0, 0],
+    microchips: [0, 1, 1, 2, 2, 0, 0],
     elevator: 0,
 };
 
@@ -226,10 +255,68 @@ impl std::fmt::Display for State<5> {
         Ok(())
     }
 }
+impl std::fmt::Display for State<7> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        wr!(
+            f,
+            F4,
+            3,
+            E at self.elevator,
+            AG at self.generators[0], AM at self.microchips[0],
+            BG at self.generators[1], BM at self.microchips[1],
+            CG at self.generators[2], CM at self.microchips[2],
+            DG at self.generators[3], DM at self.microchips[3],
+            EG at self.generators[4], EM at self.microchips[4],
+            FG at self.generators[5], FM at self.microchips[5],
+            GG at self.generators[6], GM at self.microchips[6],
+        );
+        wr!(
+            f,
+            F3,
+            2,
+            E at self.elevator,
+            AG at self.generators[0], AM at self.microchips[0],
+            BG at self.generators[1], BM at self.microchips[1],
+            CG at self.generators[2], CM at self.microchips[2],
+            DG at self.generators[3], DM at self.microchips[3],
+            EG at self.generators[4], EM at self.microchips[4],
+            FG at self.generators[5], FM at self.microchips[5],
+            GG at self.generators[6], GM at self.microchips[6],
+        );
+        wr!(
+            f,
+            F2,
+            1,
+            E at self.elevator,
+            AG at self.generators[0], AM at self.microchips[0],
+            BG at self.generators[1], BM at self.microchips[1],
+            CG at self.generators[2], CM at self.microchips[2],
+            DG at self.generators[3], DM at self.microchips[3],
+            EG at self.generators[4], EM at self.microchips[4],
+            FG at self.generators[5], FM at self.microchips[5],
+            GG at self.generators[6], GM at self.microchips[6],
+        );
+        wr!(
+            f,
+            F1,
+            0,
+            E at self.elevator,
+            AG at self.generators[0], AM at self.microchips[0],
+            BG at self.generators[1], BM at self.microchips[1],
+            CG at self.generators[2], CM at self.microchips[2],
+            DG at self.generators[3], DM at self.microchips[3],
+            EG at self.generators[4], EM at self.microchips[4],
+            FG at self.generators[5], FM at self.microchips[5],
+            GG at self.generators[6], GM at self.microchips[6],
+        );
+
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use super::{solve_part_1, solve_part_2, State};
+    use super::{solve, State};
 
     const EXAMPLE: State<2> = State {
         generators: [1, 2],
@@ -244,39 +331,27 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "0");
+        assert_eq!(format!("{}", solve(EXAMPLE)), "11");
     }
 
-    #[test]
-    #[ignore]
+    #[test] // runs 1.79s
     fn test_part1_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(super::ACTUAL)), "0");
+        assert_eq!(format!("{}", solve(super::ACTUAL)), "31");
     }
 
     #[test]
-    #[ignore]
-    fn test_part2() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
-    }
-
-    #[test]
-    #[ignore]
+    #[ignore] // runs 17s in release
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_2(super::ACTUAL)), "0");
+        assert_eq!(format!("{}", solve(super::ACTUAL2)), "0");
     }
 }
