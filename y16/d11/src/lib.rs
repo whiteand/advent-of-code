@@ -1,5 +1,95 @@
 use itertools::Itertools;
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct State<const N: usize>(usize);
+
+impl<const N: usize> State<N> {
+    fn done(&self) -> bool {
+        let mask = usize::MAX >> (size_of::<usize>() * 8 - N * 2 * 2);
+        self.0 & mask == mask
+    }
+    fn elevator(&self) -> usize {
+        (self.0 >> (N * 2 * 2)) & 0b11
+    }
+    fn set_elevator(&self, value: usize) -> Self {
+        Self((!(0b11 << (N * 2 * 2)) & self.0) | (value << (N * 2 * 2)))
+    }
+    #[inline(always)]
+    fn microchip(&self, i: usize) -> usize {
+        (self.0 >> (i * 2)) & 0b11
+    }
+    #[inline(always)]
+    fn set_microchip(&self, i: usize, value: usize) -> Self {
+        Self((!(0b11 << (i * 2)) & self.0) | (value << (i * 2)))
+    }
+    #[inline(always)]
+    fn generator(&self, i: usize) -> usize {
+        (self.0 >> ((i * 2) + N * 2)) & 0b11
+    }
+    #[inline(always)]
+    fn set_generator(&self, i: usize, value: usize) -> Self {
+        Self((!(0b11 << ((i * 2) + N * 2)) & self.0) | (value << ((i * 2) + N * 2)))
+    }
+    fn current_generators(&self) -> impl Iterator<Item = usize> {
+        let elevator = self.elevator();
+        let b = self.0;
+        (0..N).filter(move |i| ((b >> (i * 2 + N * 2)) & 0b11) == elevator)
+    }
+    fn current_microchips(&self) -> impl Iterator<Item = usize> + '_ {
+        let elevator = self.elevator();
+        let b = self.0;
+        (0..N).filter(move |i| ((b >> (i * 2)) & 0b11) == elevator)
+    }
+
+    fn validate(self) -> Result<Self, ()> {
+        for ty in 0..N {
+            let level = self.microchip(ty);
+            if self.generator(ty) == level {
+                continue;
+            }
+            for ty2 in 0..N {
+                if ty2 == ty {
+                    continue;
+                }
+                if self.generator(ty2) == level {
+                    return Err(());
+                }
+            }
+        }
+
+        Ok(self)
+    }
+
+    fn goto(self, level: usize, generators: &[usize], microchips: &[usize]) -> Result<Self, ()>
+    where
+        Self: std::fmt::Display,
+    {
+        if cfg!(debug_assertions) {
+            let elevator = self.elevator();
+            if !generators.iter().all(|i| self.generator(*i) == elevator) {
+                return Err(());
+            }
+            if !microchips.iter().all(|i| self.microchip(*i) == elevator) {
+                return Err(());
+            }
+        }
+        let mut new_state = self;
+
+        for i in 0..N {
+            if generators.contains(&i) {
+                new_state = new_state.set_generator(i, level);
+            }
+            if microchips.contains(&i) {
+                new_state = new_state.set_microchip(i, level);
+            }
+        }
+
+        new_state = new_state.set_elevator(level);
+
+        new_state.validate()
+    }
+}
+
 #[tracing::instrument(skip(input))]
 pub fn solve<const N: usize>(input: State<N>) -> usize
 where
@@ -9,11 +99,12 @@ where
     let (_, cost) = pathfinding::prelude::dijkstra(
         &input,
         |x| {
+            tracing::info!("new state:\n{x}");
             let generators = x.current_generators().collect_vec();
             let chips = x.current_microchips().collect_vec();
             let mut res = Vec::new();
             for level in 0..=TARGET_LEVEL {
-                if level.abs_diff(x.elevator) != 1 {
+                if level.abs_diff(x.elevator()) != 1 {
                     continue;
                 }
                 // taking 2 chips
@@ -94,7 +185,7 @@ where
 
             res
         },
-        |s| s.all_on_level(TARGET_LEVEL),
+        |s| s.done(),
     )
     .unwrap();
 
@@ -105,92 +196,13 @@ where
     cost
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
-pub struct State<const N: usize> {
-    generators: [usize; N],
-    microchips: [usize; N],
-    elevator: usize,
-}
-
-impl<const N: usize> State<N> {
-    fn all_on_level(&self, level: usize) -> bool {
-        return self
-            .generators
-            .iter()
-            .chain(self.microchips.iter())
-            .all(|x| *x == level);
-    }
-    fn current_generators(&self) -> impl Iterator<Item = usize> + '_ {
-        (0..N).filter(|i| self.generators[*i] == self.elevator)
-    }
-    fn current_microchips(&self) -> impl Iterator<Item = usize> + '_ {
-        (0..N).filter(|i| self.microchips[*i] == self.elevator)
-    }
-    fn goto(self, level: usize, generators: &[usize], microchips: &[usize]) -> Result<Self, ()> {
-        if cfg!(debug_assertions) {
-            if !generators
-                .iter()
-                .all(|i| self.generators[*i] == self.elevator)
-            {
-                return Err(());
-            }
-            if !microchips
-                .iter()
-                .all(|i| self.microchips[*i] == self.elevator)
-            {
-                return Err(());
-            }
-        }
-        let mut new_generators = self.generators;
-        let mut new_microchips = self.microchips;
-        for i in 0..N {
-            if generators.contains(&i) {
-                new_generators[i] = level;
-            }
-            if microchips.contains(&i) {
-                new_microchips[i] = level;
-            }
-        }
-
-        let res = Self {
-            elevator: level,
-            microchips: new_microchips,
-            generators: new_generators,
-        };
-
-        res.validate()
-    }
-    fn validate(self) -> Result<Self, ()> {
-        for ty in 0..N {
-            let level = self.microchips[ty];
-            if self.generators[ty] == level {
-                continue;
-            }
-            for ty2 in 0..N {
-                if ty2 == ty {
-                    continue;
-                }
-                if self.generators[ty2] == level {
-                    return Err(());
-                }
-            }
-        }
-
-        Ok(self)
-    }
-}
-
 /// ```ignore
 /// F4 .  .  .  .  .  .  .  .  .  .  .
 /// F3 .  .  .  .  .  .  .  DG DM EG EM
 /// F2 .  .  .  .  BM .  CM .  .  .  .
 /// F1 E  AG AM BG .  CG .  .  .  .  .
 /// ```
-pub const ACTUAL: State<5> = State {
-    generators: [0, 0, 0, 2, 2],
-    microchips: [0, 1, 1, 2, 2],
-    elevator: 0,
-};
+pub const ACTUAL: State<5> = State(0b0010100000001010010100);
 
 /// ```ignore
 /// F4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
@@ -198,11 +210,7 @@ pub const ACTUAL: State<5> = State {
 /// F2 .  .  .  .  BM .  CM .  .  .  .  .  .  .  .  
 /// F1 E  AG AM BG .  CG .  .  .  .  .  FG FM GG GM  
 /// ```
-pub const ACTUAL2: State<7> = State {
-    generators: [0, 0, 0, 2, 2, 0, 0],
-    microchips: [0, 1, 1, 2, 2, 0, 0],
-    elevator: 0,
-};
+pub const ACTUAL2: State<7> = State(0b000000101000000000001010010100);
 
 macro_rules! wr {
     ($f:ident, $label:ident, $cur:expr, $($id:ident at $actual:expr$(,)?)+) => {{
@@ -229,33 +237,33 @@ impl std::fmt::Display for State<2> {
             f,
             F4,
             3,
-            E at self.elevator,
-            HG at self.generators[0], HM at self.microchips[0],
-            LG at self.generators[1], LM at self.microchips[1],
+            E at self.elevator(),
+            HG at self.generator(0), HM at self.microchip(0),
+            LG at self.generator(1), LM at self.microchip(1),
         );
         wr!(
             f,
             F3,
             2,
-            E at self.elevator,
-            HG at self.generators[0], HM at self.microchips[0],
-            LG at self.generators[1], LM at self.microchips[1],
+            E at self.elevator(),
+          HG at self.generator(0), HM at self.microchip(0),
+            LG at self.generator(1), LM at self.microchip(1),
         );
         wr!(
             f,
             F2,
             1,
-            E at self.elevator,
-            HG at self.generators[0], HM at self.microchips[0],
-            LG at self.generators[1], LM at self.microchips[1],
+            E at self.elevator(),
+          HG at self.generator(0), HM at self.microchip(0),
+            LG at self.generator(1), LM at self.microchip(1),
         );
         wr!(
             f,
             F1,
             0,
-            E at self.elevator,
-            HG at self.generators[0], HM at self.microchips[0],
-            LG at self.generators[1], LM at self.microchips[1],
+            E at self.elevator(),
+          HG at self.generator(0), HM at self.microchip(0),
+            LG at self.generator(1), LM at self.microchip(1),
         );
 
         Ok(())
@@ -267,45 +275,45 @@ impl std::fmt::Display for State<5> {
             f,
             F4,
             3,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
         );
         wr!(
             f,
             F3,
             2,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
         );
         wr!(
             f,
             F2,
             1,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
+         E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
         );
         wr!(
             f,
             F1,
             0,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
+         E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
         );
 
         Ok(())
@@ -317,53 +325,53 @@ impl std::fmt::Display for State<7> {
             f,
             F4,
             3,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
-            FG at self.generators[5], FM at self.microchips[5],
-            GG at self.generators[6], GM at self.microchips[6],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
+            FG at self.generator(5), FM at self.microchip(5),
+            GG at self.generator(6), GM at self.microchip(6),
         );
         wr!(
             f,
             F3,
             2,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
-            FG at self.generators[5], FM at self.microchips[5],
-            GG at self.generators[6], GM at self.microchips[6],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
+            FG at self.generator(5), FM at self.microchip(5),
+            GG at self.generator(6), GM at self.microchip(6),
         );
         wr!(
             f,
             F2,
             1,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
-            FG at self.generators[5], FM at self.microchips[5],
-            GG at self.generators[6], GM at self.microchips[6],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
+            FG at self.generator(5), FM at self.microchip(5),
+            GG at self.generator(6), GM at self.microchip(6),
         );
         wr!(
             f,
             F1,
             0,
-            E at self.elevator,
-            AG at self.generators[0], AM at self.microchips[0],
-            BG at self.generators[1], BM at self.microchips[1],
-            CG at self.generators[2], CM at self.microchips[2],
-            DG at self.generators[3], DM at self.microchips[3],
-            EG at self.generators[4], EM at self.microchips[4],
-            FG at self.generators[5], FM at self.microchips[5],
-            GG at self.generators[6], GM at self.microchips[6],
+            E at self.elevator(),
+            AG at self.generator(0), AM at self.microchip(0),
+            BG at self.generator(1), BM at self.microchip(1),
+            CG at self.generator(2), CM at self.microchip(2),
+            DG at self.generator(3), DM at self.microchip(3),
+            EG at self.generator(4), EM at self.microchip(4),
+            FG at self.generator(5), FM at self.microchip(5),
+            GG at self.generator(6), GM at self.microchip(6),
         );
 
         Ok(())
@@ -374,11 +382,7 @@ impl std::fmt::Display for State<7> {
 mod tests {
     use super::{solve, State};
 
-    const EXAMPLE: State<2> = State {
-        generators: [1, 2],
-        microchips: [0, 0],
-        elevator: 0,
-    };
+    const EXAMPLE: State<2> = State(0b0010010000);
 
     #[test]
     fn test_part1() {
