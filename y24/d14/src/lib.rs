@@ -70,62 +70,29 @@ pub fn solve_part_2(file_content: &str, print: bool) -> usize {
     let mut robots = parse_robots(file_content);
     let size = IVec2::new(101, 103);
 
-    let mut qt = Quadtree::<i32, usize>::new((size.max_element().ilog2() + 1) as usize);
-
-    let mut handles = robots
-        .iter()
-        .enumerate()
-        .map(|(i, r)| {
-            qt.insert_pt(Point { x: r.p.x, y: r.p.y }, i)
-                .expect("should be valid")
-        })
-        .collect_vec();
-
-    let area = AreaBuilder::default()
-        .anchor(Point {
-            x: TREE_TOP_LEFT.x,
-            y: TREE_TOP_LEFT.y,
-        })
-        .dimensions((
-            TREE_BOTTOM_RIGHT.x - TREE_TOP_LEFT.x,
-            TREE_BOTTOM_RIGHT.y - TREE_TOP_LEFT.y,
-        ))
-        .build()
-        .expect("should be valid");
-
-    for i in 0.. {
-        let m = qt.query(area).count();
-        if m >= 353 {
+    let mut i = 0;
+    loop {
+        let m = robots
+            .iter()
+            .enumerate()
+            .filter(|(i, r)| {
+                robots
+                    .iter()
+                    .skip(i + 1)
+                    .any(|r2| (r.p - r2.p).abs().dot(IVec2::splat(1)) <= 1)
+            })
+            .count();
+        if m >= robots.len() / 2 {
             if print {
-                print_robots(robots.iter(), IVec2::new(42, 42), IVec2::new(73, 75));
+                print_robots(robots.iter(), TREE_TOP_LEFT, TREE_BOTTOM_RIGHT);
             }
-            return i;
+            break i;
         }
 
-        step_robots(size, &mut robots, &mut qt, &mut handles);
-    }
-    0
-}
-
-#[tracing::instrument(skip(size, robots, qt, handles))]
-fn step_robots(
-    size: IVec2,
-    robots: &mut [Robot],
-    qt: &mut Quadtree<i32, usize>,
-    handles: &mut [u64],
-) {
-    for (i, robot) in robots.iter_mut().enumerate() {
-        qt.delete_by_handle(handles[i]);
-        robot.step_many(1, size);
-        handles[i] = qt
-            .insert_pt(
-                Point {
-                    x: robot.p.x,
-                    y: robot.p.y,
-                },
-                i,
-            )
-            .expect("valid");
+        for robot in robots.iter_mut() {
+            robot.step_many(1, size);
+        }
+        i += 1
     }
 }
 
