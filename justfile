@@ -9,6 +9,10 @@ generate year day:
     /usr/local/bin/code ./y{{year}}/d{{day}}/example.txt
     /usr/local/bin/code ./y{{year}}/d{{day}}/src/lib.rs
 
+regenerate year day:
+    rm -rf ./y{{year}}/d{{day}}
+    just generate {{year}} {{day}}
+
 amend:
     git add .; git commit --amend --no-edit; git push -f
 
