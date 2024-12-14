@@ -1,0 +1,22 @@
+Timer precision: 41 ns
+y16d10    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  33.95 µs      │ 88.24 µs      │ 36.1 µs       │ 38.17 µs      │ 100     │ 100
+╰─ part2  37.66 µs      │ 53.99 µs      │ 39.87 µs      │ 40.69 µs      │ 100     │ 100
+
+
+Timer precision: 41 ns
+y16d10    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  24.45 µs      │ 44.99 µs      │ 25.18 µs      │ 25.52 µs      │ 100     │ 100
+╰─ part2  27.66 µs      │ 43.66 µs      │ 28.66 µs      │ 29.14 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y16d10    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  26.87 µs      │ 73.49 µs      │ 28.2 µs       │ 29.73 µs      │ 100     │ 100
+╰─ part2  32.62 µs      │ 48.7 µs       │ 33.74 µs      │ 34.17 µs      │ 100     │ 100
+
+
+After replacing hash set with arrays:
+
+y16d10    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  18.7 µs       │ 60.45 µs      │ 19.45 µs      │ 20.83 µs      │ 100     │ 100
+╰─ part2  18.83 µs      │ 31.91 µs      │ 18.95 µs      │ 19.62 µs      │ 100     │ 100
