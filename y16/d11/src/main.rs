@@ -1,5 +1,3 @@
-use std::io::Read;
-
 use y16d11::solve;
 
 fn main() {
