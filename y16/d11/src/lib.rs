@@ -1,41 +1,14 @@
+use advent_utils::{declare_array, declare_field};
 use itertools::Itertools;
 use std::collections::VecDeque;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct State<const N: usize>(usize);
 
-macro_rules! declare_field {
-    ( $f:ident,$set_f:ident, $offset:expr, $mask:expr) => {
-        #[inline(always)]
-        fn $f(&self) -> usize {
-            (self.0 >> $offset) & $mask
-        }
-        #[inline(always)]
-        fn $set_f(&self, value: usize) -> Self {
-            Self((!($mask << $offset) & self.0) | (value << $offset))
-        }
-    };
-}
-macro_rules! declare_array {
-    ($f:ident, $set_f:ident, $offset:expr, $elem_bits:expr, $elem_mask:expr) => {
-        #[inline(always)]
-        fn $f(&self, i: usize) -> usize {
-            (self.0 >> ((i * $elem_bits) + $offset)) & $elem_mask
-        }
-        #[inline(always)]
-        fn $set_f(&self, i: usize, value: usize) -> Self {
-            Self(
-                (!($elem_mask << ((i * $elem_bits) + $offset)) & self.0)
-                    | (value << ((i * $elem_bits) + $offset)),
-            )
-        }
-    };
-}
-
 impl<const N: usize> State<N> {
-    declare_field!(elevator, set_elevator, (N * 2 * 2), 0b11);
-    declare_array!(microchip, set_microchip, 0, 2, 0b11);
-    declare_array!(generator, set_generator, (N * 2), 2, 0b11);
+    declare_field!(usize, elevator, set_elevator, (N * 2 * 2), 0b11);
+    declare_array!(usize, microchip, set_microchip, 0, 2, 0b11);
+    declare_array!(usize, generator, set_generator, (N * 2), 2, 0b11);
 
     fn done(&self) -> bool {
         let mask = usize::MAX >> (size_of::<usize>() * 8 - N * 2 * 2);

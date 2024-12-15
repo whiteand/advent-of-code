@@ -83,38 +83,6 @@ impl Entity {
     }
 }
 impl LargeGrid {
-    fn render(&self) -> String {
-        let mut output = String::new();
-        let size = self.size;
-
-        for y in 0..size.y {
-            for x in 0..size.x {
-                let p = IVec2::new(x, y);
-                if self.player == p {
-                    output.push('@');
-                    continue;
-                }
-                match &self.entities.get(&p) {
-                    None => {
-                        output.push('.');
-                    }
-                    Some(Entity::Wall) => {
-                        output.push('#');
-                    }
-                    Some(Entity::Box(idx)) => {
-                        let box_left = self.boxes[*idx];
-                        if box_left == p {
-                            output.push('[');
-                        } else {
-                            output.push(']')
-                        }
-                    }
-                }
-            }
-            output.push('\n');
-        }
-        output
-    }
     fn get(&self, p: IVec2) -> Option<Entity> {
         self.entities.get(&p).cloned()
     }
