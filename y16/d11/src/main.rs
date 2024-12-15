@@ -11,6 +11,7 @@ fn main() {
 
     let mut instant = std::time::Instant::now();
 
+    println!("{}", y16d11::ACTUAL);
     let result = solve(y16d11::ACTUAL);
     println!("Part 1: {}", result);
     println!("Time: {:?}", instant.elapsed());
@@ -18,6 +19,7 @@ fn main() {
     println!();
 
     instant = std::time::Instant::now();
+    println!("{}", y16d11::ACTUAL2);
     let result = solve(y16d11::ACTUAL2);
     println!("Part 2: {}", result);
     println!("Time: {:?}", instant.elapsed());

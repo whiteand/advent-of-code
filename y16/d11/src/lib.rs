@@ -255,152 +255,93 @@ macro_rules! wr {
         writeln!($f)?;
     }}
 }
-impl std::fmt::Display for State<2> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        wr!(
-            f,
-            F4,
-            3,
-            E at self.elevator(),
-            HG at self.generator(0), HM at self.microchip(0),
-            LG at self.generator(1), LM at self.microchip(1),
-        );
-        wr!(
-            f,
-            F3,
-            2,
-            E at self.elevator(),
-          HG at self.generator(0), HM at self.microchip(0),
-            LG at self.generator(1), LM at self.microchip(1),
-        );
-        wr!(
-            f,
-            F2,
-            1,
-            E at self.elevator(),
-          HG at self.generator(0), HM at self.microchip(0),
-            LG at self.generator(1), LM at self.microchip(1),
-        );
-        wr!(
-            f,
-            F1,
-            0,
-            E at self.elevator(),
-          HG at self.generator(0), HM at self.microchip(0),
-            LG at self.generator(1), LM at self.microchip(1),
-        );
 
-        Ok(())
+macro_rules! impl_display {
+    ($n:expr,$self:ident, $($id:ident => $expr:expr),+) => {
+        impl std::fmt::Display for State<$n> {
+            fn fmt(&$self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                wr!(
+                    f,
+                    F4,
+                    3,
+                    $(
+                        $id at $expr
+                    ),+
+                );
+                wr!(
+                    f,
+                    F3,
+                    2,
+                    $(
+                        $id at $expr
+                    ),+
+                );
+                wr!(
+                    f,
+                    F2,
+                    1,
+                    $(
+                        $id at $expr
+                    ),+
+                );
+                wr!(
+                    f,
+                    F1,
+                    0,
+                    $(
+                        $id at $expr
+                    ),+
+                );
+
+                Ok(())
+            }
+        }
     }
 }
-impl std::fmt::Display for State<5> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        wr!(
-            f,
-            F4,
-            3,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-        );
-        wr!(
-            f,
-            F3,
-            2,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-        );
-        wr!(
-            f,
-            F2,
-            1,
-         E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-        );
-        wr!(
-            f,
-            F1,
-            0,
-         E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-        );
 
-        Ok(())
-    }
-}
-impl std::fmt::Display for State<7> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        wr!(
-            f,
-            F4,
-            3,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-            FG at self.generator(5), FM at self.microchip(5),
-            GG at self.generator(6), GM at self.microchip(6),
-        );
-        wr!(
-            f,
-            F3,
-            2,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-            FG at self.generator(5), FM at self.microchip(5),
-            GG at self.generator(6), GM at self.microchip(6),
-        );
-        wr!(
-            f,
-            F2,
-            1,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-            FG at self.generator(5), FM at self.microchip(5),
-            GG at self.generator(6), GM at self.microchip(6),
-        );
-        wr!(
-            f,
-            F1,
-            0,
-            E at self.elevator(),
-            AG at self.generator(0), AM at self.microchip(0),
-            BG at self.generator(1), BM at self.microchip(1),
-            CG at self.generator(2), CM at self.microchip(2),
-            DG at self.generator(3), DM at self.microchip(3),
-            EG at self.generator(4), EM at self.microchip(4),
-            FG at self.generator(5), FM at self.microchip(5),
-            GG at self.generator(6), GM at self.microchip(6),
-        );
-
-        Ok(())
-    }
-}
+impl_display!(
+    2,
+    self,
+    E => self.elevator(),
+    AG => self.generator(0),
+    AM => self.microchip(0),
+    BG => self.generator(1),
+    BM => self.microchip(1)
+);
+impl_display!(
+    5,
+    self,
+    E => self.elevator(),
+    AG => self.generator(0),
+    AM => self.microchip(0),
+    BG => self.generator(1),
+    BM => self.microchip(1),
+    CG => self.generator(2),
+    CM => self.microchip(2),
+    DG => self.generator(3),
+    DM => self.microchip(3),
+    EG => self.generator(4),
+    EM => self.microchip(4)
+);
+impl_display!(
+    7,
+    self,
+    E => self.elevator(),
+    AG => self.generator(0),
+    AM => self.microchip(0),
+    BG => self.generator(1),
+    BM => self.microchip(1),
+    CG => self.generator(2),
+    CM => self.microchip(2),
+    DG => self.generator(3),
+    DM => self.microchip(3),
+    EG => self.generator(4),
+    EM => self.microchip(4),
+    FG => self.generator(5),
+    FM => self.microchip(5),
+    GG => self.generator(6),
+    GM => self.microchip(6)
+);
 
 #[cfg(test)]
 mod tests {
