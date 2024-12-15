@@ -16,12 +16,12 @@ fn main() {
 
     let result = solve_part_1(&input);
     println!("Part 1: {}", result);
-    println!("Time: {:?}ms", instant.elapsed());
+    println!("Time: {:?}", instant.elapsed());
 
     println!();
 
     instant = std::time::Instant::now();
     let result = solve_part_2(&input);
     println!("Part 2: {}", result);
-    println!("Time: {:?}ms", instant.elapsed());
+    println!("Time: {:?}", instant.elapsed());
 }

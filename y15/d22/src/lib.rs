@@ -1,5 +1,7 @@
 use std::collections::{BinaryHeap, HashSet};
 
+use advent_utils::declare_field;
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 struct Player {
     hp: usize,
@@ -70,142 +72,137 @@ fn parse_boss(input: &str) -> Boss {
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 struct BitState(u64);
 
-macro_rules! bit_field {
-    ($get:ident, $set:ident, $dec:ident,$inc:ident, $offset:expr, $mask:expr, $typ:ty) => {
-        impl BitState {
-            #[allow(dead_code)]
-            #[inline(always)]
-            pub fn $get(&self) -> $typ {
-                ((self.0 >> $offset) & $mask) as $typ
-            }
-            #[allow(dead_code)]
-            #[inline(always)]
-            pub fn $set(&self, new_value: $typ) -> Self {
-                assert!(new_value as u64 <= $mask);
-                Self(((new_value as u64) << $offset) | (self.0 & !($mask << $offset)))
-            }
-            #[allow(dead_code)]
-            #[inline(always)]
-            pub fn $dec(&self, amount: $typ) -> Self {
-                assert!(amount as u64 <= $mask);
-                let value = self.$get();
-                if value <= amount {
-                    return self.$set(0);
-                } else {
-                    return self.$set(unsafe { value.unchecked_sub(amount) });
-                }
-            }
-            #[allow(dead_code)]
-            #[inline(always)]
-            pub fn $inc(&self, amount: $typ) -> Self {
-                let value = self.$get();
-                let new_value = value + amount;
-                debug_assert!(new_value <= $mask);
-                self.$set(value + amount)
-            }
+impl BitState {
+    declare_field!(u64, u8, get_player_hp, set_player_hp, 0, 0b0111_1111);
+    declare_field!(
+        u64,
+        u16,
+        get_player_mana,
+        set_player_mana,
+        7,
+        0b1111_1111_1111
+    );
+    declare_field!(
+        u64,
+        u8,
+        get_shield_effect_counter,
+        set_shield_effect_counter,
+        19,
+        0b111
+    );
+    declare_field!(
+        u64,
+        u8,
+        get_recharge_effect_counter,
+        set_recharge_effect_counter,
+        22,
+        0b111
+    );
+    declare_field!(
+        u64,
+        u8,
+        get_poison_effect_counter,
+        set_poison_effect_counter,
+        25,
+        0b111
+    );
+    declare_field!(
+        u64,
+        u16,
+        get_spent_mana,
+        set_spent_mana,
+        28,
+        0b0001_1111_1111_1111
+    );
+    declare_field!(u64, u8, get_boss_hp, set_boss_hp, 41, 0b0111_1111);
+    declare_field!(u64, u8, get_boss_damage, set_boss_damage, 48, 0b1111);
+
+    #[inline(always)]
+    pub fn dec_player_hp(&self, amount: u8) -> Self {
+        assert!(amount as u64 <= 0b0111_1111);
+        let value = self.get_player_hp();
+        if value <= amount {
+            return self.set_player_hp(0);
+        } else {
+            return self.set_player_hp(unsafe { value.unchecked_sub(amount) });
         }
-    };
+    }
+    #[inline(always)]
+    pub fn inc_player_hp(&self, amount: u8) -> Self {
+        let value = self.get_player_hp();
+        let new_value = value + amount;
+        debug_assert!(new_value <= 0b0111_1111);
+        self.set_player_hp(value + amount)
+    }
+    #[inline(always)]
+    pub fn dec_player_mana(&self, amount: u16) -> Self {
+        assert!(amount as u64 <= 0b1111_1111_1111);
+        let value = self.get_player_mana();
+        if value <= amount {
+            return self.set_player_mana(0);
+        } else {
+            return self.set_player_mana(unsafe { value.unchecked_sub(amount) });
+        }
+    }
+    #[inline(always)]
+    pub fn inc_player_mana(&self, amount: u16) -> Self {
+        let value = self.get_player_mana();
+        let new_value = value + amount;
+        debug_assert!(new_value <= 0b1111_1111_1111);
+        self.set_player_mana(value + amount)
+    }
+
+    #[inline(always)]
+    pub fn dec_shield_effect_counter(&self, amount: u8) -> Self {
+        assert!(amount as u64 <= 0b0111);
+        let value = self.get_shield_effect_counter();
+        if value <= amount {
+            return self.set_shield_effect_counter(0);
+        } else {
+            return self.set_shield_effect_counter(unsafe { value.unchecked_sub(amount) });
+        }
+    }
+    #[inline(always)]
+    pub fn dec_recharge_effect_counter(&self, amount: u8) -> Self {
+        assert!(amount as u64 <= 0b111);
+        let value = self.get_recharge_effect_counter();
+        if value <= amount {
+            return self.set_recharge_effect_counter(0);
+        } else {
+            return self.set_recharge_effect_counter(unsafe { value.unchecked_sub(amount) });
+        }
+    }
+
+    #[inline(always)]
+    pub fn dec_poison_effect_counter(&self, amount: u8) -> Self {
+        assert!(amount as u64 <= 0b111);
+        let value = self.get_poison_effect_counter();
+        if value <= amount {
+            return self.set_poison_effect_counter(0);
+        } else {
+            return self.set_poison_effect_counter(unsafe { value.unchecked_sub(amount) });
+        }
+    }
+
+    #[inline(always)]
+    pub fn inc_spent_mana(&self, amount: u16) -> Self {
+        let value = self.get_spent_mana();
+        let new_value = value + amount;
+        debug_assert!(new_value <= 0b0001_1111_1111_1111);
+        self.set_spent_mana(value + amount)
+    }
+
+    #[inline(always)]
+    pub fn dec_boss_hp(&self, amount: u8) -> Self {
+        assert!(amount as u64 <= 0b1111111);
+        let value = self.get_boss_hp();
+        if value <= amount {
+            return self.set_boss_hp(0);
+        } else {
+            return self.set_boss_hp(unsafe { value.unchecked_sub(amount) });
+        }
+    }
 }
-
-const PLAYER_HP_BIT_SIZE: usize = 7;
-const PLAYER_MANA_BIT_SIZE: usize = 12;
-const PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE: usize = 3;
-const PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE: usize = 3;
-const PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE: usize = 3;
-const PLAYER_SPENT_MANA_BIT_SIZE: usize = 13;
-const BOSS_HP_BIT_SIZE: usize = 7;
-const _BOSS_DAMAGE_BIT_SIZE: usize = 4;
-
-bit_field!(
-    get_player_hp,
-    set_player_hp,
-    dec_player_hp,
-    inc_player_hp,
-    0,
-    0b0111_1111,
-    u8
-);
-bit_field!(
-    get_player_mana,
-    set_player_mana,
-    dec_player_mana,
-    inc_player_mana,
-    PLAYER_HP_BIT_SIZE,
-    0b1111_1111_1111,
-    u16
-);
-bit_field!(
-    get_shield_effect_counter,
-    set_shield_effect_counter,
-    dec_shield_effect_counter,
-    inc_shield_effect_counter,
-    (PLAYER_HP_BIT_SIZE + PLAYER_MANA_BIT_SIZE),
-    0b0111,
-    u8
-);
-bit_field!(
-    get_recharge_effect_counter,
-    set_recharge_effect_counter,
-    dec_recharge_effect_counter,
-    inc_recharge_effect_counter,
-    (PLAYER_HP_BIT_SIZE + PLAYER_MANA_BIT_SIZE + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE),
-    0b111,
-    u8
-);
-bit_field!(
-    get_poison_effect_counter,
-    set_poison_effect_counter,
-    dec_poison_effect_counter,
-    inc_poison_effect_counter,
-    (PLAYER_HP_BIT_SIZE
-        + PLAYER_MANA_BIT_SIZE
-        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE),
-    0b111,
-    u8
-);
-bit_field!(
-    get_spent_mana,
-    set_spent_mana,
-    dec_spent_mana,
-    inc_spent_mana,
-    (PLAYER_HP_BIT_SIZE
-        + PLAYER_MANA_BIT_SIZE
-        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE),
-    0b0001_1111_1111_1111,
-    u16
-);
-bit_field!(
-    get_boss_hp,
-    set_boss_hp,
-    dec_boss_hp,
-    inc_boss_hp,
-    (PLAYER_HP_BIT_SIZE
-        + PLAYER_MANA_BIT_SIZE
-        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_SPENT_MANA_BIT_SIZE),
-    0b1111111,
-    u8
-);
-bit_field!(
-    get_boss_damage,
-    set_boss_damage,
-    dec_boss_damage,
-    inc_boss_damage,
-    (PLAYER_HP_BIT_SIZE
-        + PLAYER_MANA_BIT_SIZE
-        + PLAYER_SHIELD_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_RECHARGE_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_POISON_EFFECT_COUNTER_BIT_SIZE
-        + PLAYER_SPENT_MANA_BIT_SIZE
-        + BOSS_HP_BIT_SIZE),
-    0b1111,
-    u8
-);
 
 impl std::fmt::Debug for BitState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
