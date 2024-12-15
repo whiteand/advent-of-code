@@ -2468,6 +2468,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.13.0",
+ "rstest 0.23.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",

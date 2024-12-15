@@ -15,6 +15,9 @@ impl<T> Grid<T> {
             (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(r as i32, c as i32))
         })
     }
+    pub fn elements_len(&self) -> usize {
+        self.arr.len()
+    }
     pub fn map<U>(&self, f: impl Fn(&T, IVec2) -> U) -> Grid<U> {
         let f = &f;
         self.rows()
@@ -180,6 +183,10 @@ impl<T> Grid<T> {
                     .unwrap_or(arr.len());
                 (start..end).map(move |ind| (i, ind - start, &arr[ind]))
             })
+    }
+
+    pub fn size(&self) -> IVec2 {
+        IVec2::new(self.rows_len() as i32, self.cols(0) as i32)
     }
 }
 

@@ -90,110 +90,105 @@ impl<const N: usize> State<N> {
     }
 }
 
+const TARGET_LEVEL: usize = 3;
 #[tracing::instrument(skip(input))]
 pub fn solve<const N: usize>(input: State<N>) -> usize
 where
     State<N>: std::fmt::Display,
 {
-    const TARGET_LEVEL: usize = 3;
-    let (_, cost) = pathfinding::prelude::dijkstra(
-        &input,
-        |x| {
-            tracing::info!("new state:\n{x}");
-            let generators = x.current_generators().collect_vec();
-            let chips = x.current_microchips().collect_vec();
-            let mut res = Vec::new();
-            for level in 0..=TARGET_LEVEL {
-                if level.abs_diff(x.elevator()) != 1 {
-                    continue;
-                }
-                // taking 2 chips
-                for i in 0..N {
-                    if i >= chips.len() {
-                        break;
-                    }
-                    for j in (i + 1)..N {
-                        if j >= chips.len() {
-                            break;
-                        }
-                        let c1 = chips[i];
-                        let c2 = chips[j];
-                        let Ok(next_state) = x.goto(level, &[], &[c1, c2]) else {
-                            continue;
-                        };
-                        res.push((next_state, 1));
-                    }
-                }
-                // taking 2 generators
-                for i in 0..N {
-                    if i >= generators.len() {
-                        break;
-                    }
-                    for j in (i + 1)..N {
-                        if j >= generators.len() {
-                            break;
-                        }
-                        let g1 = generators[i];
-                        let g2 = generators[j];
-                        let Ok(next_state) = x.goto(level, &[g1, g2], &[]) else {
-                            continue;
-                        };
-                        res.push((next_state, 1));
-                    }
-                }
-                // taking 1 chip + 1 generator
-                for i in 0..N {
-                    if i >= chips.len() {
-                        break;
-                    }
-                    for j in 0..N {
-                        if j >= generators.len() {
-                            break;
-                        }
-                        let c1 = chips[i];
-                        let g1 = generators[j];
-                        let Ok(next_state) = x.goto(level, &[g1], &[c1]) else {
-                            continue;
-                        };
-                        res.push((next_state, 1));
-                    }
-                }
-                // taking 1 generator
-                for i in 0..N {
-                    if i >= generators.len() {
-                        break;
-                    }
-                    let g1 = generators[i];
-                    let Ok(next_state) = x.goto(level, &[g1], &[]) else {
-                        continue;
-                    };
-                    res.push((next_state, 1));
-                }
+    pathfinding::prelude::dijkstra(&input, |x| next_states(x).map(|x| (x, 1)), |s| s.done())
+        .map(|(_, cost)| cost)
+        .unwrap()
+}
 
-                // taking 1 chip
-                for i in 0..N {
-                    if i >= chips.len() {
-                        break;
-                    }
-                    let c1 = chips[i];
-                    let Ok(next_state) = x.goto(level, &[], &[c1]) else {
-                        continue;
-                    };
-                    res.push((next_state, 1));
-                }
+fn next_states<const N: usize>(state: &State<N>) -> impl Iterator<Item = State<N>>
+where
+    State<N>: std::fmt::Display,
+{
+    let generators = state.current_generators().collect_vec();
+    let chips = state.current_microchips().collect_vec();
+    let mut res = Vec::new();
+    for level in 0..=TARGET_LEVEL {
+        if level.abs_diff(state.elevator()) != 1 {
+            continue;
+        }
+        // taking 2 chips
+        for i in 0..N {
+            if i >= chips.len() {
+                break;
             }
+            for j in (i + 1)..N {
+                if j >= chips.len() {
+                    break;
+                }
+                let c1 = chips[i];
+                let c2 = chips[j];
+                let Ok(next_state) = state.goto(level, &[], &[c1, c2]) else {
+                    continue;
+                };
+                res.push(next_state);
+            }
+        }
+        // taking 2 generators
+        for i in 0..N {
+            if i >= generators.len() {
+                break;
+            }
+            for j in (i + 1)..N {
+                if j >= generators.len() {
+                    break;
+                }
+                let g1 = generators[i];
+                let g2 = generators[j];
+                let Ok(next_state) = state.goto(level, &[g1, g2], &[]) else {
+                    continue;
+                };
+                res.push(next_state);
+            }
+        }
+        // taking 1 chip + 1 generator
+        for i in 0..N {
+            if i >= chips.len() {
+                break;
+            }
+            for j in 0..N {
+                if j >= generators.len() {
+                    break;
+                }
+                let c1 = chips[i];
+                let g1 = generators[j];
+                let Ok(next_state) = state.goto(level, &[g1], &[c1]) else {
+                    continue;
+                };
+                res.push(next_state);
+            }
+        }
+        // taking 1 generator
+        for i in 0..N {
+            if i >= generators.len() {
+                break;
+            }
+            let g1 = generators[i];
+            let Ok(next_state) = state.goto(level, &[g1], &[]) else {
+                continue;
+            };
+            res.push(next_state);
+        }
 
-            res
-        },
-        |s| s.done(),
-    )
-    .unwrap();
+        // taking 1 chip
+        for i in 0..N {
+            if i >= chips.len() {
+                break;
+            }
+            let c1 = chips[i];
+            let Ok(next_state) = state.goto(level, &[], &[c1]) else {
+                continue;
+            };
+            res.push(next_state);
+        }
+    }
 
-    // for s in states {
-    //     println!("{s}\n")
-    // }
-
-    cost
+    res.into_iter()
 }
 
 /// ```ignore
