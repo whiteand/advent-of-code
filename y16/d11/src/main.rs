@@ -11,10 +11,6 @@ fn main() {
         ),
     );
 
-    // read stdin into a string
-    let mut input = String::new();
-    std::io::stdin().read_to_string(&mut input).unwrap();
-
     let mut instant = std::time::Instant::now();
 
     let result = solve(y16d11::ACTUAL);

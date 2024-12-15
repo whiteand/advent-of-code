@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use itertools::Itertools;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -96,9 +98,26 @@ pub fn solve<const N: usize>(input: State<N>) -> usize
 where
     State<N>: std::fmt::Display,
 {
-    pathfinding::prelude::dijkstra(&input, |x| next_states(x).map(|x| (x, 1)), |s| s.done())
-        .map(|(_, cost)| cost)
-        .unwrap()
+    let max_state = usize::MAX >> (size_of::<usize>() * 8 - N * 2 * 2 - 2);
+    let mut min_steps_to = vec![usize::MAX; max_state + 1];
+    let mut to_visit = VecDeque::new();
+    to_visit.push_back(input);
+    min_steps_to[input.0] = 0;
+    while let Some(state) = to_visit.pop_front() {
+        if state.done() {
+            return min_steps_to[state.0];
+        }
+        let prev = min_steps_to[state.0];
+        for s in next_states(&state) {
+            let steps = prev.saturating_add(1);
+            if min_steps_to[s.0] <= steps {
+                continue;
+            }
+            min_steps_to[s.0] = steps;
+            to_visit.push_back(s);
+        }
+    }
+    min_steps_to[max_state]
 }
 
 fn next_states<const N: usize>(state: &State<N>) -> impl Iterator<Item = State<N>>
@@ -400,13 +419,13 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // runs 17s in release
+    #[ignore]
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve(super::ACTUAL2)), "0");
+        assert_eq!(format!("{}", solve(super::ACTUAL2)), "55");
     }
 }
