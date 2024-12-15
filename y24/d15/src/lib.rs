@@ -65,7 +65,6 @@ fn gps_total(it: impl Iterator<Item = IVec2>) -> usize {
 struct LargeGrid {
     boxes: Vec<IVec2>,
     entities: HashMap<IVec2, Entity>,
-    size: IVec2,
     player: IVec2,
 }
 
@@ -201,7 +200,6 @@ impl From<Grid<u8>> for LargeGrid {
         Self {
             boxes,
             entities,
-            size: grid.size() * IVec2::new(2, 1),
             player,
         }
     }
@@ -242,45 +240,11 @@ fn parse_large_grid(file_content: &str) -> (LargeGrid, Vec<IVec2>) {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse_large_grid;
-
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
-    const EXAMPLE2: &str = r#"
-#######
-#..[].#
-#...O@#
-#O.OO.#
-#...#.#
-#...[]#
-#######
 
-v<>^<^<v<v"#;
     const ACTUAL: &str = include_str!("../input.txt");
 
-    #[test]
-    fn test_part2_2() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        let (mut grid, moves) = parse_large_grid(ACTUAL);
-        for m in moves {
-            let c = match (m.x, m.y) {
-                (0, 1) => 'v',
-                (0, -1) => '^',
-                (1, 0) => '>',
-                (-1, 0) => '<',
-                _ => '?',
-            };
-            tracing::info!("\n{}\nm={c}", grid.render());
-            grid.move_player(m);
-        }
-        tracing::info!("\n{}", grid.render());
-        // let res = gps_total(grid.boxes.iter().copied());
-        // assert_eq!(res, 9021);
-    }
     #[test]
     fn test_part1() {
         let _guard = tracing::subscriber::set_default(
@@ -319,8 +283,6 @@ v<>^<^<v<v"#;
                 .finish(),
         );
         let res = solve_part_2(ACTUAL);
-        assert!(res < 1459031);
-        assert!(res > 724639);
-        assert_eq!(res, 0);
+        assert_eq!(res, 1458740);
     }
 }

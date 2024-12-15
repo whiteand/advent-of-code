@@ -6,12 +6,13 @@ use std::collections::VecDeque;
 pub struct State<const N: usize>(usize);
 
 impl<const N: usize> State<N> {
+    const MAX_STATE: Self = Self(usize::MAX >> ((usize::BITS as usize) - N * 2 * 2 - 2));
     declare_field!(usize, elevator, set_elevator, (N * 2 * 2), 0b11);
     declare_array!(usize, microchip, set_microchip, 0, 2, 0b11);
     declare_array!(usize, generator, set_generator, (N * 2), 2, 0b11);
 
     fn done(&self) -> bool {
-        let mask = usize::MAX >> (size_of::<usize>() * 8 - N * 2 * 2);
+        let mask = usize::MAX >> ((usize::BITS as usize) - N * 2 * 2);
         self.0 & mask == mask
     }
 
@@ -76,13 +77,14 @@ impl<const N: usize> State<N> {
 }
 
 const TARGET_LEVEL: usize = 3;
+
 #[tracing::instrument(skip(input))]
 pub fn solve<const N: usize>(input: State<N>) -> usize
 where
     State<N>: std::fmt::Display,
 {
-    let max_state = usize::MAX >> (size_of::<usize>() * 8 - N * 2 * 2 - 2);
-    let mut min_steps_to = vec![usize::MAX; max_state + 1];
+    let max_state = State::<N>::MAX_STATE;
+    let mut min_steps_to = vec![usize::MAX; max_state.0 + 1];
     let mut to_visit = VecDeque::new();
     to_visit.push_back(input);
     min_steps_to[input.0] = 0;
@@ -100,7 +102,7 @@ where
             to_visit.push_back(s);
         }
     }
-    min_steps_to[max_state]
+    min_steps_to[max_state.0]
 }
 
 fn next_states<const N: usize>(state: &State<N>) -> impl Iterator<Item = State<N>>

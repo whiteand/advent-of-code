@@ -1,6 +1,4 @@
 use std::io::Read;
-use tracing_chrome::ChromeLayerBuilder;
-use tracing_subscriber::prelude::*;
 
 use y24d15::{solve_part_1, solve_part_2};
 

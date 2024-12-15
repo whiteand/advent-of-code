@@ -1,5 +1,4 @@
 use divan::black_box;
-use std::fs;
 use y16d10::{solve_part_1, solve_part_2};
 
 fn main() {

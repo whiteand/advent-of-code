@@ -16,7 +16,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
     executor
         .find_map(|x| match x {
             Either::Left(bot_state) if bot_state.contains(61) && bot_state.contains(17) => {
-                return Some(bot_state.id)
+                Some(bot_state.id)
             }
             _ => None,
         })
@@ -240,7 +240,7 @@ fn parse_bot(input: &str) -> nom::IResult<&str, Bot> {
 fn parse_entity(input: &str) -> nom::IResult<&str, Entity> {
     alt((
         parse_bot.map(Entity::from),
-        preceded(tag("output "), complete::u64.map(|x| x as usize)).map(|id| Entity::Output(id)),
+        preceded(tag("output "), parse_usize.map(Entity::Output)),
     ))(input)
 }
 fn parse_bot_instruction(input: &str) -> nom::IResult<&str, Instruction> {
@@ -313,7 +313,7 @@ mod tests {
         let x = executor
             .find_map(|x| match x {
                 Either::Left(bot_state) if bot_state.contains(2) && bot_state.contains(5) => {
-                    return Some(bot_state.id)
+                    Some(bot_state.id)
                 }
                 _ => None,
             })

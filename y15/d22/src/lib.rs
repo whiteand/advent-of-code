@@ -122,9 +122,9 @@ impl BitState {
         assert!(amount as u64 <= 0b0111_1111);
         let value = self.get_player_hp();
         if value <= amount {
-            return self.set_player_hp(0);
+            self.set_player_hp(0)
         } else {
-            return self.set_player_hp(unsafe { value.unchecked_sub(amount) });
+            self.set_player_hp(unsafe { value.unchecked_sub(amount) })
         }
     }
     #[inline(always)]
@@ -139,9 +139,9 @@ impl BitState {
         assert!(amount as u64 <= 0b1111_1111_1111);
         let value = self.get_player_mana();
         if value <= amount {
-            return self.set_player_mana(0);
+            self.set_player_mana(0)
         } else {
-            return self.set_player_mana(unsafe { value.unchecked_sub(amount) });
+            self.set_player_mana(unsafe { value.unchecked_sub(amount) })
         }
     }
     #[inline(always)]
@@ -157,9 +157,9 @@ impl BitState {
         assert!(amount as u64 <= 0b0111);
         let value = self.get_shield_effect_counter();
         if value <= amount {
-            return self.set_shield_effect_counter(0);
+            self.set_shield_effect_counter(0)
         } else {
-            return self.set_shield_effect_counter(unsafe { value.unchecked_sub(amount) });
+            self.set_shield_effect_counter(unsafe { value.unchecked_sub(amount) })
         }
     }
     #[inline(always)]
@@ -167,9 +167,9 @@ impl BitState {
         assert!(amount as u64 <= 0b111);
         let value = self.get_recharge_effect_counter();
         if value <= amount {
-            return self.set_recharge_effect_counter(0);
+            self.set_recharge_effect_counter(0)
         } else {
-            return self.set_recharge_effect_counter(unsafe { value.unchecked_sub(amount) });
+            self.set_recharge_effect_counter(unsafe { value.unchecked_sub(amount) })
         }
     }
 
@@ -178,9 +178,9 @@ impl BitState {
         assert!(amount as u64 <= 0b111);
         let value = self.get_poison_effect_counter();
         if value <= amount {
-            return self.set_poison_effect_counter(0);
+            self.set_poison_effect_counter(0)
         } else {
-            return self.set_poison_effect_counter(unsafe { value.unchecked_sub(amount) });
+            self.set_poison_effect_counter(unsafe { value.unchecked_sub(amount) })
         }
     }
 
@@ -197,9 +197,9 @@ impl BitState {
         assert!(amount as u64 <= 0b1111111);
         let value = self.get_boss_hp();
         if value <= amount {
-            return self.set_boss_hp(0);
+            self.set_boss_hp(0)
         } else {
-            return self.set_boss_hp(unsafe { value.unchecked_sub(amount) });
+            self.set_boss_hp(unsafe { value.unchecked_sub(amount) })
         }
     }
 }
