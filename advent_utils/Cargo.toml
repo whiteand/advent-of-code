@@ -9,4 +9,5 @@ tracing = { workspace = true }
 glam = { workspace = true }
 nom = { workspace = true }
 thiserror = "2.0.6"
+fixed-slice-vec = "0.10.0"
 array-init = "2.1.0"

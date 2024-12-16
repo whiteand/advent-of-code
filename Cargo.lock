@@ -7,6 +7,7 @@ name = "advent_utils"
 version = "0.1.0"
 dependencies = [
  "array-init",
+ "fixed-slice-vec",
  "glam",
  "itertools 0.13.0",
  "nom",
@@ -301,6 +302,12 @@ dependencies = [
  "libc",
  "windows-sys 0.59.0",
 ]
+
+[[package]]
+name = "fixed-slice-vec"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bb23c599a9ff5b981529099902fe5de8d55ecc8c1f451542da17b8d2d65326e"
 
 [[package]]
 name = "fixedbitset"
@@ -1622,6 +1629,7 @@ dependencies = [
 name = "y15d19"
 version = "0.1.0"
 dependencies = [
+ "advent_utils",
  "criterion",
  "edit-distance",
  "itertools 0.13.0",

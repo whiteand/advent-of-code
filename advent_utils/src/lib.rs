@@ -1,5 +1,6 @@
 pub mod bitfield;
 pub mod doubly_linked_list;
+pub mod fixed_slice_vec;
 pub mod grid;
 pub mod math;
 pub mod parse;
