@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use y{{year}}d{{day}}::{solve_part_1, solve_part_2};
+use y24d16::{solve_part_1, solve_part_2};
 
 fn main() {
     let (chrome_layer, _guard) = tracing_chrome::ChromeLayerBuilder::new().build();
