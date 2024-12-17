@@ -1,12 +1,14 @@
 pub mod bitfield;
 pub mod doubly_linked_list;
 pub mod fixed_slice_vec;
+pub mod genetic;
 pub mod grid;
 pub mod math;
 pub mod parse;
 pub mod reduces;
 
 pub use glam;
+pub use rand;
 pub mod nom {
     pub use nom::*;
     pub fn parse_usize(input: &str) -> nom::IResult<&str, usize> {

@@ -3,6 +3,6 @@ test.txt
 .DS_Store
 benches/**/y*d*.txt
 work.nu
-y*/d*/input.txt
+y*/d*/input*.txt
 cron.sh
 trace-*.json
