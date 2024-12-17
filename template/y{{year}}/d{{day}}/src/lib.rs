@@ -1,10 +1,10 @@
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    todo!("part 1 is not implemented yet: {file_content}")
+    file_content.len()
 }
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    todo!("part 2 is not implemented yet: {file_content}")
+    file_content.len()
 }
 
 #[cfg(test)]
