@@ -14,12 +14,12 @@ impl<T> Grid<T> {
     where
         T: Copy,
     {
-        let mut res = Self {
-            arr: Vec::with_capacity(size.x as usize * size.y as usize),
-            row_start_indexes: Vec::with_capacity(size.y as usize),
-        };
-        res.resize(size, value);
-        res
+        let rows = size.y as usize;
+        let cols = size.x as usize;
+        Self {
+            arr: vec![value; rows * cols],
+            row_start_indexes: (0..rows).map(|i| i * cols).collect_vec(),
+        }
     }
 
     pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
@@ -437,13 +437,19 @@ mod alloc_tests {
     #[global_allocator]
     static ALLOCATOR: Mockalloc<System> = Mockalloc(System);
 
-    #[test]
-    fn test_new() {
+    #[rstest]
+    #[case(IVec2::new(3, 3), 2)]
+    #[case(IVec2::new(128, 128), 2)]
+    fn test_new(#[case] size: IVec2, #[case] allocs: u64) {
         let alloc_info = mockalloc::record_allocs(|| {
-            // Some code which uses the allocator
-            let _grid = Grid::new(IVec2::new(3, 3), b'a');
+            Grid::new(size, b'0');
         });
-        assert_eq!(alloc_info.num_allocs(), 2);
+        assert!(
+            alloc_info.num_allocs() == allocs,
+            "We expected at most {} allocations, but got {}",
+            allocs,
+            alloc_info.num_allocs(),
+        );
     }
 
     #[rstest]
