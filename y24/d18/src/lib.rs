@@ -6,7 +6,7 @@ use itertools::Itertools;
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1<const F: usize>(file_content: &str) -> usize {
     let (ptrs, target) = parse_pointers(file_content);
-    let mut corruptions = build_grid(target);
+    let mut corruptions = Grid::new(target + IVec2::splat(1), false);
     for x in ptrs.into_iter().take(F) {
         corruptions.set(x, true);
     }
@@ -16,7 +16,7 @@ pub fn solve_part_1<const F: usize>(file_content: &str) -> usize {
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> String {
     let (ptrs, target) = parse_pointers(file_content);
-    let mut corruptions = build_grid(target);
+    let mut corruptions = Grid::new(target + IVec2::splat(1), false);
     let mut prev_number = 0;
     let res = binary_search(1, ptrs.len(), |mid| {
         if mid > prev_number {
@@ -71,11 +71,6 @@ fn parse_pointers(file_content: &str) -> (Vec<IVec2>, IVec2) {
     }
 
     (positions, target)
-}
-
-fn build_grid(target: IVec2) -> Grid<bool> {
-    let corruptions = Grid::from_iter((0..=target.y).map(|_| (0..=target.x).map(|_| false)));
-    corruptions
 }
 
 #[cfg(test)]
