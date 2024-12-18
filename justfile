@@ -59,3 +59,9 @@ test-p2 year day:
     cargo test --package y{{year}}d{{day}} --lib -- tests::test_part2_actual --exact --show-output
 test-p2-watch year day:
     cargo watch test --package y{{year}}d{{day}} --lib -- tests::test_part2_actual --exact --show-output
+
+fuzz *PARAMS:
+    cargo +nightly fuzz {{PARAMS}}
+
+fuzz-10s TARGET:
+    just fuzz run {{TARGET}} -- -max_total_time=10

@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "fuzz",
     "advent_utils",
     "y15/d01",
     "y15/d02",

@@ -1,0 +1,21 @@
+[package]
+name = "advent_utils-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.advent_utils]
+path = "../advent_utils"
+
+[[bin]]
+name = "parse_ascii"
+path = "fuzz_targets/parse_ascii.rs"
+test = false
+doc = false
+bench = false
