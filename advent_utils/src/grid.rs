@@ -188,6 +188,48 @@ impl<T> Grid<T> {
     pub fn size(&self) -> IVec2 {
         IVec2::new(self.rows_len() as i32, self.cols(0) as i32)
     }
+
+    pub fn resize(&mut self, new_size: IVec2, _value: T)
+    where
+        T: Copy,
+    {
+        let new_cols = new_size.x as usize;
+        let new_rows = new_size.y as usize;
+        let old_rows = self.rows_len();
+
+        if new_rows <= old_rows {
+            if new_rows != old_rows {
+                self.arr.truncate(self.row_start_indexes[new_rows]);
+                self.row_start_indexes.truncate(new_rows);
+            }
+            let mut dst = 0;
+            for i in 0..self.rows_len() {
+                let start = self.row_start_indexes[i];
+                let end = self
+                    .row_start_indexes
+                    .get(i + 1)
+                    .copied()
+                    .unwrap_or_else(|| self.arr.len());
+
+                let old_cols = end - start;
+                if new_cols == old_cols && dst == start {
+                    dst += old_cols;
+                    continue;
+                }
+                if new_cols <= old_cols {
+                    let new_end = start + new_cols;
+                    self.arr.copy_within(start..new_end, dst);
+                    self.row_start_indexes[i] = dst;
+                    dst += new_end - start;
+                } else {
+                    panic!("Cannot increase x coordinate")
+                }
+            }
+            self.arr.truncate(dst);
+            return;
+        }
+        panic!("cannot do it at the moment: {new_size}")
+    }
 }
 
 impl<T> IntoIterator for Grid<T> {
@@ -291,5 +333,25 @@ mod tests {
         assert_eq!(grid.get(IVec2::new(1, 2)).copied(), Some(b'8'));
         assert_eq!(grid.get(IVec2::new(2, 2)).copied(), Some(b'9'));
         assert_eq!(grid.rows_ranges().collect_vec(), vec![0..3, 3..5, 5..8]);
+    }
+    #[test]
+    fn test_resize() {
+        const GRID_STR: &str = "123\n456\n789";
+        let mut grid = crate::parse::ascii_grid(GRID_STR);
+        assert_eq!(grid.render_ascii(), "123\n456\n789\n");
+        grid.resize(IVec2::new(3, 2), b'0');
+        assert_eq!(grid.render_ascii(), "123\n456\n");
+
+        let mut grid = crate::parse::ascii_grid(GRID_STR);
+        grid.resize(IVec2::new(2, 3), b'0');
+        assert_eq!(grid.render_ascii(), "12\n45\n78\n");
+
+        let mut grid = crate::parse::ascii_grid(GRID_STR);
+        grid.resize(IVec2::new(2, 2), b'0');
+        assert_eq!(grid.render_ascii(), "12\n45\n");
+
+        let mut grid = crate::parse::ascii_grid("123\n456a\n789");
+        grid.resize(IVec2::new(3, 3), b'0');
+        assert_eq!(grid.render_ascii(), "123\n456\n789\n");
     }
 }

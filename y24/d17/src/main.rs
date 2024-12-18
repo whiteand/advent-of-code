@@ -1,11 +1,5 @@
 use std::io::Read;
 
-use advent_utils::rand::{
-    self,
-    rngs::{SmallRng, ThreadRng},
-    Rng,
-};
-use itertools::Itertools;
 use y24d17::{solve_part_1, solve_part_2, solve_part_2_genetic};
 
 fn main() {
