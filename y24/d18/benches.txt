@@ -1,0 +1,35 @@
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  435.3 µs      │ 628.9 µs      │ 455.2 µs      │ 462.7 µs      │ 100     │ 100
+╰─ part2  1.239 ms      │ 1.504 ms      │ 1.292 ms      │ 1.303 ms      │ 100     │ 100
+
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  436.7 µs      │ 603.7 µs      │ 459.8 µs      │ 469.1 µs      │ 100     │ 100
+╰─ part2  1.245 ms      │ 1.512 ms      │ 1.287 ms      │ 1.301 ms      │ 100     │ 100
+
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  439.7 µs      │ 602.8 µs      │ 461.6 µs      │ 466.7 µs      │ 100     │ 100
+╰─ part2  1.228 ms      │ 1.477 ms      │ 1.282 ms      │ 1.288 ms      │ 100     │ 100
+
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  438.8 µs      │ 592.7 µs      │ 465.5 µs      │ 468.3 µs      │ 100     │ 100
+╰─ part2  892.7 µs      │ 1.179 ms      │ 925.3 µs      │ 936.3 µs      │ 100     │ 100
+
+
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  475.2 µs      │ 680.3 µs      │ 500.2 µs      │ 507.1 µs      │ 100     │ 100
+╰─ part2  386.3 µs      │ 563.2 µs      │ 406.6 µs      │ 412.7 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  308.4 µs      │ 463.7 µs      │ 322 µs        │ 328.4 µs      │ 100     │ 100
+╰─ part2  388.4 µs      │ 605.3 µs      │ 401.2 µs      │ 412.8 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  306.5 µs      │ 428 µs        │ 314.6 µs      │ 320.5 µs      │ 100     │ 100
+╰─ part2  382.5 µs      │ 637.2 µs      │ 396.7 µs      │ 412.1 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y24d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  311.1 µs      │ 431.8 µs      │ 321.6 µs      │ 330.7 µs      │ 100     │ 100
+╰─ part2  383.4 µs      │ 558.4 µs      │ 403 µs        │ 414.9 µs      │ 100     │ 100
