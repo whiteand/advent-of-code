@@ -11,8 +11,10 @@ dependencies = [
  "fixed-slice-vec",
  "glam",
  "itertools 0.13.0",
+ "mockalloc",
  "nom",
  "rand",
+ "rstest 0.23.0",
  "thiserror",
  "tracing",
 ]
@@ -625,6 +627,26 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
+name = "mockalloc"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6c93486116b2ab028d2a2c5f5ff42020407d1c7048b77ca0b196a511a12a94"
+dependencies = [
+ "mockalloc-macros",
+]
+
+[[package]]
+name = "mockalloc-macros"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23565dcdaedab64115f722c31d84e5bdb7125724097dcafce160a64806d6fb65"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.105",
+]
 
 [[package]]
 name = "nalgebra"

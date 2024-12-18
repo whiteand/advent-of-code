@@ -13,3 +13,8 @@ fixed-slice-vec = "0.10.0"
 array-init = "2.1.0"
 derive_more = { version = "1.0.0", features = ["from"] }
 rand = { version = "0.8.5", features = ["small_rng"] }
+rstest.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true
+mockalloc = "0.1.2"

@@ -10,6 +10,18 @@ pub struct Grid<T> {
 }
 
 impl<T> Grid<T> {
+    pub fn new(size: IVec2, value: T) -> Self
+    where
+        T: Copy,
+    {
+        let mut res = Self {
+            arr: Vec::with_capacity(size.x as usize * size.y as usize),
+            row_start_indexes: Vec::with_capacity(size.y as usize),
+        };
+        res.resize(size, value);
+        res
+    }
+
     pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
         (0..self.rows_len()).flat_map(|r| {
             (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(r as i32, c as i32))
@@ -189,7 +201,7 @@ impl<T> Grid<T> {
         IVec2::new(self.rows_len() as i32, self.cols(0) as i32)
     }
 
-    pub fn resize(&mut self, new_size: IVec2, _value: T)
+    pub fn resize(&mut self, new_size: IVec2, value: T)
     where
         T: Copy,
     {
@@ -197,38 +209,60 @@ impl<T> Grid<T> {
         let new_rows = new_size.y as usize;
         let old_rows = self.rows_len();
 
-        if new_rows <= old_rows {
-            if new_rows != old_rows {
-                self.arr.truncate(self.row_start_indexes[new_rows]);
-                self.row_start_indexes.truncate(new_rows);
-            }
-            let mut dst = 0;
-            for i in 0..self.rows_len() {
-                let start = self.row_start_indexes[i];
-                let end = self
-                    .row_start_indexes
-                    .get(i + 1)
-                    .copied()
-                    .unwrap_or_else(|| self.arr.len());
+        let additional_space = self
+            .rows()
+            .map(|x| new_cols.saturating_sub(x.len()))
+            .sum::<usize>()
+            + (new_rows.saturating_sub(old_rows) * new_cols);
 
-                let old_cols = end - start;
-                if new_cols == old_cols && dst == start {
-                    dst += old_cols;
-                    continue;
-                }
-                if new_cols <= old_cols {
-                    let new_end = start + new_cols;
-                    self.arr.copy_within(start..new_end, dst);
-                    self.row_start_indexes[i] = dst;
-                    dst += new_end - start;
-                } else {
-                    panic!("Cannot increase x coordinate")
-                }
+        if additional_space > 0 {
+            let prev_n = self.arr.len();
+            self.arr.resize(prev_n + additional_space, value);
+            self.arr.copy_within(0..prev_n, additional_space);
+            for x in self.row_start_indexes.iter_mut() {
+                *x += additional_space;
             }
-            self.arr.truncate(dst);
-            return;
         }
-        panic!("cannot do it at the moment: {new_size}")
+
+        let mut dst = 0;
+        for i in (0..self.rows_len()).take(new_rows) {
+            let start = self.row_start_indexes[i];
+            let end = self
+                .row_start_indexes
+                .get(i + 1)
+                .copied()
+                .unwrap_or_else(|| self.arr.len());
+
+            let old_cols = end - start;
+            if new_cols == old_cols && dst == start {
+                dst += old_cols;
+                continue;
+            }
+            self.row_start_indexes[i] = dst;
+            if new_cols <= old_cols {
+                let new_end = start + new_cols;
+                self.arr.copy_within(start..new_end, dst);
+                dst += new_end - start;
+            } else {
+                // new_cols > old_cols
+                self.arr.copy_within(start..end, dst);
+                dst += end - start;
+                self.arr[dst..(dst + new_cols - old_cols)].fill(value);
+                dst += new_cols - old_cols;
+            }
+        }
+        self.row_start_indexes
+            .reserve(new_rows.saturating_sub(old_rows));
+        for _ in old_rows..new_rows {
+            self.row_start_indexes.push(dst);
+            self.arr[dst..(dst + new_cols)].fill(value);
+            dst += new_cols;
+        }
+        if new_rows < old_rows {
+            self.row_start_indexes.truncate(new_rows);
+        }
+
+        self.arr.truncate(dst);
     }
 }
 
@@ -335,6 +369,11 @@ mod tests {
         assert_eq!(grid.rows_ranges().collect_vec(), vec![0..3, 3..5, 5..8]);
     }
     #[test]
+    fn test_new() {
+        let grid = super::Grid::new(IVec2::new(3, 3), b'a');
+        assert_eq!(grid.render_ascii(), "aaa\naaa\naaa\n");
+    }
+    #[test]
     fn test_resize() {
         const GRID_STR: &str = "123\n456\n789";
         let mut grid = crate::parse::ascii_grid(GRID_STR);
@@ -353,5 +392,78 @@ mod tests {
         let mut grid = crate::parse::ascii_grid("123\n456a\n789");
         grid.resize(IVec2::new(3, 3), b'0');
         assert_eq!(grid.render_ascii(), "123\n456\n789\n");
+
+        let mut grid = crate::parse::ascii_grid("123\n45\n789");
+        grid.resize(IVec2::new(3, 3), b'0');
+        assert_eq!(grid.render_ascii(), "123\n450\n789\n");
+
+        let mut grid = crate::parse::ascii_grid("123\n456\n789");
+        grid.resize(IVec2::new(3, 4), b'0');
+        assert_eq!(grid.render_ascii(), "123\n456\n789\n000\n");
+
+        let mut grid = crate::parse::ascii_grid("123\n456\n789");
+        grid.resize(IVec2::new(4, 3), b'0');
+        assert_eq!(grid.render_ascii(), "1230\n4560\n7890\n");
+
+        let mut grid = crate::parse::ascii_grid("123\n4\n789");
+        grid.resize(IVec2::new(4, 3), b'0');
+        assert_eq!(grid.render_ascii(), "1230\n4000\n7890\n");
+
+        let mut grid = crate::parse::ascii_grid("123456\n4\n789");
+        grid.resize(IVec2::new(4, 3), b'0');
+        assert_eq!(grid.render_ascii(), "1234\n4000\n7890\n");
+
+        let mut grid = crate::parse::ascii_grid("123456\n4\n789");
+        grid.resize(IVec2::new(0, 0), b'0');
+        assert_eq!(grid.render_ascii(), "");
+        grid.resize(IVec2::new(3, 3), b'a');
+        assert_eq!(grid.render_ascii(), "aaa\naaa\naaa\n");
+
+        let mut grid = crate::parse::ascii_grid("123456\n4\n789");
+        grid.resize(IVec2::new(1, 1), b'0');
+        assert_eq!(grid.render_ascii(), "1\n");
+    }
+}
+
+#[cfg(test)]
+mod alloc_tests {
+    use glam::IVec2;
+    use mockalloc::Mockalloc;
+    use rstest::rstest;
+    use std::alloc::System;
+
+    use super::Grid;
+
+    #[global_allocator]
+    static ALLOCATOR: Mockalloc<System> = Mockalloc(System);
+
+    #[test]
+    fn test_new() {
+        let alloc_info = mockalloc::record_allocs(|| {
+            // Some code which uses the allocator
+            let _grid = Grid::new(IVec2::new(3, 3), b'a');
+        });
+        assert_eq!(alloc_info.num_allocs(), 2);
+    }
+
+    #[rstest]
+    #[case(crate::parse::ascii_grid("123\n456\n789"), IVec2::new(3, 2), 0)]
+    #[case(crate::parse::ascii_grid("123\n456\n789"), IVec2::new(2, 3), 0)]
+    #[case(crate::parse::ascii_grid("123\n456a\n789"), IVec2::new(3, 3), 0)]
+    #[case(crate::parse::ascii_grid("123\n45\n789"), IVec2::new(3, 3), 1)]
+    #[case(crate::parse::ascii_grid("123\n456\n789"), IVec2::new(3, 4), 2)]
+    #[case(crate::parse::ascii_grid("123\n456\n789"), IVec2::new(4, 3), 1)]
+    #[case(crate::parse::ascii_grid("1234\n45\n789"), IVec2::new(3, 3), 0)]
+    #[case(crate::parse::ascii_grid("1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890"), IVec2::new(20, 20), 2)]
+    fn test_resize(#[case] mut grid: Grid<u8>, #[case] new_size: IVec2, #[case] allocs: u64) {
+        let alloc_info = mockalloc::record_allocs(|| {
+            grid.resize(new_size, b'0');
+        });
+        assert!(
+            alloc_info.num_allocs() <= allocs,
+            "We expected at most {} allocations, but got {}",
+            allocs,
+            alloc_info.num_allocs(),
+        );
     }
 }
