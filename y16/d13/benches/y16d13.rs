@@ -1,5 +1,5 @@
 use divan::black_box;
-use y24d16::{solve_part_1, solve_part_2};
+use y16d13::{solve_part_1, solve_part_2};
 
 fn main() {
     divan::main();
