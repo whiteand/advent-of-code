@@ -1,8 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-    "fuzz",
     "advent_utils",
+    "fuzz",
     "y15/d01",
     "y15/d02",
     "y15/d03",
@@ -98,6 +98,7 @@ members = [
     "y24/d16",
     "y24/d17",
     "y24/d18",
+    "y24/d19",
 ]
 
 [workspace.dependencies]
