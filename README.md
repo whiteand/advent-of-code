@@ -1,3 +1,8 @@
+# Additional dependencies
+
+- cargo-fuzz
+- bacon
+
 # To start a new day you need to generate a template
 
 ```sh

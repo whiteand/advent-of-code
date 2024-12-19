@@ -231,7 +231,7 @@ impl<T> Grid<T> {
                 .row_start_indexes
                 .get(i + 1)
                 .copied()
-                .unwrap_or_else(|| self.arr.len());
+                .unwrap_or(self.arr.len());
 
             let old_cols = end - start;
             if new_cols == old_cols && dst == start {

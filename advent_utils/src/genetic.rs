@@ -89,7 +89,7 @@ where
             generation: 0,
             mutation_rate_bps: 200.into(),
             preserve_best_bps: 5000.into(),
-            best_gene: best_gene,
+            best_gene,
             children: 2,
             get_error,
             sex,
