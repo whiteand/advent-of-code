@@ -10,16 +10,16 @@ fn solve(discs: &[Disc]) -> usize {
     let mut positions = discs.iter().map(|x| x.positions()).collect_vec();
     let mut current_pos = positions
         .iter_mut()
-        .map(|x| x.next().unwrap())
+        .map(|x| x.nth(1).unwrap())
         .collect_vec();
     for t in 0.. {
         if current_pos
             .iter()
             .copied()
             .enumerate()
-            .all(|(i, p)| p == (discs[i].positions * 2 - i) % discs[i].positions)
+            .all(|(i, p)| (p + i) % discs[i].positions == 0)
         {
-            return t - 1;
+            return t;
         }
         for (dst, src) in current_pos.iter_mut().zip(positions.iter_mut()) {
             *dst = src.next().unwrap();
