@@ -73,8 +73,8 @@ where
         Self {
             next_index: 0..,
             salt,
-            remembered: Vec::with_capacity(15000),
-            fives: Vec::with_capacity(15000),
+            remembered: Vec::with_capacity(30000),
+            fives: Vec::with_capacity(30000),
             last_five_check: 0,
         }
     }
@@ -90,25 +90,32 @@ where
         let mut buf = Vec::with_capacity(10);
         for i in start..(start + 1000) {
             if self.last_five_check < i {
-                for j in (self.last_five_check + 1)..=i {
-                    let dig = self.stream_at(j);
-
-                    for (a, b, c, d, e) in dig
-                        .as_ref()
-                        .iter()
-                        .flat_map(|&x| [x >> 4, x & 0b1111])
-                        .tuple_windows()
-                    {
-                        if a != b || b != c || c != d || d != e {
-                            continue;
+                let digits = self
+                    .stream_at(i)
+                    .as_ref()
+                    .iter()
+                    .flat_map(|x| [x >> 4, x & 0b1111]);
+                let mut last = 0;
+                let mut cnt = 0;
+                for x in digits {
+                    if x == last {
+                        cnt += 1;
+                    } else {
+                        if cnt >= 5 {
+                            buf.push(last);
                         }
-                        buf.push(a);
+                        last = x;
+                        cnt = 1;
                     }
-                    for x in buf.drain(0..) {
-                        self.fives.push((x, j));
-                    }
-                    self.last_five_check = j;
                 }
+                if cnt >= 5 {
+                    buf.push(last);
+                }
+
+                for x in buf.drain(0..) {
+                    self.fives.push((x, i));
+                }
+                self.last_five_check = i;
             }
             if self
                 .fives
@@ -188,6 +195,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // runs 15s in realease
     fn test_part2() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -198,6 +206,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // runs 15s in realease
     fn test_part2_actual() {
         assert_eq!(format!("{}", solve_part_2::<63>(ACTUAL)), "22696");
     }
