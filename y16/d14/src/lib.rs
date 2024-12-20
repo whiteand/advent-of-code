@@ -2,11 +2,15 @@ use itertools::Itertools;
 use std::fmt::Write;
 use std::io::Write as IOWrite;
 use std::ops::{Deref, RangeFrom};
-use tracing::info;
 
 #[tracing::instrument]
 pub fn solve_part_1<const I: usize>(salt: &str) -> usize {
-    Keys::<Part1HashAlgo>::new(salt.trim()).nth(I).unwrap()
+    solve::<I, Part1HashAlgo>(salt)
+}
+
+#[tracing::instrument(skip(salt))]
+pub fn solve_part_2<const I: usize>(salt: &str) -> usize {
+    solve::<I, Part2HashAlgo>(salt)
 }
 
 trait HashAlgo {
@@ -19,6 +23,8 @@ struct Keys<'t, H: HashAlgo> {
     next_index: RangeFrom<usize>,
     salt: &'t str,
     remembered: Vec<H::Out>,
+    fives: Vec<(u8, usize)>,
+    last_five_check: usize,
 }
 
 struct Part1HashAlgo;
@@ -48,15 +54,14 @@ impl HashAlgo for Part2HashAlgo {
 
         for _ in 0..2015 {
             let mut ctx = md5::Context::new();
-            ctx.write(buf.as_bytes());
+            let _ = ctx.write(buf.as_bytes()).unwrap();
             let dig = ctx.compute();
             buf.clear();
-            write!(buf, "{:x}", dig);
+            write!(buf, "{:x}", dig).unwrap();
         }
         let mut ctx = md5::Context::new();
-        ctx.write(buf.as_bytes());
-        let dig = ctx.compute();
-        dig
+        let _ = ctx.write(buf.as_bytes()).unwrap();
+        ctx.compute()
     }
 }
 
@@ -69,20 +74,57 @@ where
             next_index: 0..,
             salt,
             remembered: Vec::with_capacity(15000),
+            fives: Vec::with_capacity(15000),
+            last_five_check: 0,
         }
     }
     fn stream_at(&mut self, ind: usize) -> &H::Out {
         for i in (self.remembered.len())..=ind {
             let digest = H::digest(self.salt, i);
 
-            info!(?ind, hex = hex::encode(digest.deref()));
             self.remembered.push(digest);
         }
         self.remembered.get(ind).unwrap()
     }
+    fn has_five_of(&mut self, value: u8, start: usize) -> bool {
+        let mut buf = Vec::with_capacity(10);
+        for i in start..(start + 1000) {
+            if self.last_five_check < i {
+                for j in (self.last_five_check + 1)..=i {
+                    let dig = self.stream_at(j);
+
+                    for (a, b, c, d, e) in dig
+                        .as_ref()
+                        .iter()
+                        .flat_map(|&x| [x >> 4, x & 0b1111])
+                        .tuple_windows()
+                    {
+                        if a != b || b != c || c != d || d != e {
+                            continue;
+                        }
+                        buf.push(a);
+                    }
+                    for x in buf.drain(0..) {
+                        self.fives.push((x, j));
+                    }
+                    self.last_five_check = j;
+                }
+            }
+            if self
+                .fives
+                .iter()
+                .rev()
+                .take_while(|(_, j)| *j >= i)
+                .any(|(x, _)| *x == value)
+            {
+                return true;
+            }
+        }
+        false
+    }
 }
 
-impl<'t, H: HashAlgo> Iterator for Keys<'t, H>
+impl<H: HashAlgo> Iterator for Keys<'_, H>
 where
     H::Out: core::ops::Deref<Target = [u8; 16]>,
 {
@@ -103,25 +145,20 @@ where
                 continue;
             };
 
-            for j in (i + 1)..(i + 1001) {
-                let dig = self.stream_at(j);
-                if dig
-                    .as_ref()
-                    .iter()
-                    .flat_map(|&x| [x >> 4, x & 0b1111])
-                    .tuple_windows()
-                    .any(|(a, b, c, d, e)| (tripple == a && a == b && b == c && c == d && d == e))
-                {
-                    return Some(i);
-                }
+            if self.has_five_of(tripple, i + 1) {
+                return Some(i);
             }
         }
     }
 }
 
 #[tracing::instrument(skip(salt))]
-pub fn solve_part_2<const I: usize>(salt: &str) -> usize {
-    Keys::<Part2HashAlgo>::new(salt.trim()).nth(I).unwrap()
+pub fn solve<const I: usize, H>(salt: &str) -> usize
+where
+    H: HashAlgo,
+    H::Out: Deref<Target = [u8; 16]>,
+{
+    Keys::<H>::new(salt.trim()).nth(I).unwrap()
 }
 
 #[cfg(test)]
@@ -161,13 +198,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_part2_actual() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_2::<63>(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2::<63>(ACTUAL)), "22696");
     }
 }
