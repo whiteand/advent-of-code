@@ -181,7 +181,7 @@ impl<T> Grid<T> {
     }
 
     #[inline(always)]
-    pub fn entries(&self) -> impl Iterator<Item = (usize, usize, &T)> + '_ {
+    pub fn entries(&self) -> impl Iterator<Item = (IVec2, &T)> + '_ {
         let arr = &self.arr;
         self.row_start_indexes
             .iter()
@@ -193,7 +193,7 @@ impl<T> Grid<T> {
                     .get(i + 1)
                     .copied()
                     .unwrap_or(arr.len());
-                (start..end).map(move |ind| (i, ind - start, &arr[ind]))
+                (start..end).map(move |ind| (IVec2::new((ind - start) as i32, i as i32), &arr[ind]))
             })
     }
 

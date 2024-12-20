@@ -6,8 +6,8 @@ generate year day:
     /Users/whiteand/.cargo/bin/cargo generate --init --path ./template -d year={{year}} -d day={{day}} --name y{{year}}d{{day}}
     /opt/homebrew/bin/nu fetch.nu 20{{year}} {{day}};
     /opt/homebrew/bin/deno --allow-read --allow-write ./scripts/add-member.ts {{year}} {{day}};
-    /usr/local/bin/code ./y{{year}}/d{{day}}/example.txt
     /usr/local/bin/code ./y{{year}}/d{{day}}/src/lib.rs
+    /usr/local/bin/code ./y{{year}}/d{{day}}/example.txt
 
 regenerate year day:
     rm -rf ./y{{year}}/d{{day}}
@@ -40,8 +40,8 @@ test-watch year day:
 bench year day:
     cargo bench --package y{{year}}d{{day}}
 
-bacon year day:
-    bacon -- -p y{{year}}d{{day}}
+bacon year day *PARAMS:
+    bacon {{PARAMS}} -- -p y{{year}}d{{day}}
 
 
 t year day test:
@@ -62,3 +62,7 @@ fuzz *PARAMS:
 
 fuzz-10s TARGET:
     just fuzz run {{TARGET}} -- -max_total_time=10
+
+edit:
+    code ./justfile
+
