@@ -1,4 +1,8 @@
-use advent_utils::{glam::IVec2, grid::Grid, parse};
+use advent_utils::{
+    glam::IVec2,
+    grid::{Grid, NonDiagonal},
+    parse,
+};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -36,7 +40,7 @@ pub fn solve<V: GroupVisitor>(file_content: &str) -> usize {
                 V::visit(&groups, p, group_id, &mut res2);
 
                 for p in grid
-                    .neighbours(p, DIRS)
+                    .neighbours(p, NonDiagonal)
                     .filter(|(_, v)| **v == value)
                     .map(|(p, _)| p)
                 {
@@ -54,15 +58,13 @@ trait GroupVisitor {
     fn visit(colors: &Grid<usize>, p: IVec2, color: usize, res2: &mut usize);
 }
 
-const DIRS: [IVec2; 4] = [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X];
-
 struct Perimeter;
 
 impl GroupVisitor for Perimeter {
     fn visit(colors: &Grid<usize>, p: IVec2, color: usize, perimeter: &mut usize) {
         *perimeter = *perimeter + 4
             - colors
-                .neighbours(p, DIRS)
+                .neighbours(p, NonDiagonal)
                 .filter(|(_, v)| **v == color)
                 .count()
                 * 2;

@@ -1,4 +1,8 @@
-use advent_utils::{glam::IVec2, grid::Grid, parse};
+use advent_utils::{
+    glam::IVec2,
+    grid::{Grid, NonDiagonal},
+    parse,
+};
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
@@ -24,7 +28,7 @@ fn load_finish_positions(grid: &Grid<u8>, pos: IVec2, visited: &mut Grid<bool>) 
         return;
     }
     for (p, _) in grid
-        .neighbours(pos, [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X])
+        .neighbours(pos, NonDiagonal)
         .filter(|(_, v)| **v == value + 1)
     {
         load_finish_positions(grid, p, visited);
@@ -48,7 +52,7 @@ fn get_rating(grid: &Grid<u8>, pos: IVec2, dp: &mut Grid<Option<usize>>) -> usiz
     };
 
     let res = grid
-        .neighbours(pos, [IVec2::NEG_Y, IVec2::Y, IVec2::X, IVec2::NEG_X])
+        .neighbours(pos, NonDiagonal)
         .filter(|(_, v)| **v == value + 1)
         .map(|(p, v)| {
             if *v == b'9' {

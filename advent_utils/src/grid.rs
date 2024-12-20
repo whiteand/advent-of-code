@@ -9,6 +9,19 @@ pub struct Grid<T> {
     row_start_indexes: Vec<usize>,
 }
 
+/// Represents neighbours from top, right,bottom and left.
+pub struct NonDiagonal;
+
+impl IntoIterator for NonDiagonal {
+    type Item = IVec2;
+
+    type IntoIter = std::array::IntoIter<IVec2, 4>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X].into_iter()
+    }
+}
+
 impl<T> Grid<T> {
     pub fn new(size: IVec2, value: T) -> Self
     where
@@ -97,6 +110,7 @@ impl<T> Grid<T> {
             .map(move |d| d + pos)
             .filter_map(|p| self.get(p).map(|x| (p, x)))
     }
+
     #[inline(always)]
     pub fn rows_mut(&mut self) -> impl Iterator<Item = &mut [T]> + '_ {
         let mut row_lengths = self

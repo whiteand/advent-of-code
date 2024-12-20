@@ -1,3 +1,21 @@
 y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  84.95 ms      │ 91.83 ms      │ 86.79 ms      │ 86.92 ms      │ 100     │ 100
 ╰─ part2  93.43 ms      │ 98.65 ms      │ 93.61 ms      │ 94.18 ms      │ 100     │ 100
+
+y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  85.48 ms      │ 89.22 ms      │ 85.85 ms      │ 86.54 ms      │ 100     │ 100
+╰─ part2  92.91 ms      │ 129.8 ms      │ 94.2 ms       │ 95.07 ms      │ 100     │ 100
+
+y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  84.96 ms      │ 122.8 ms      │ 85.17 ms      │ 86.31 ms      │ 100     │ 100
+╰─ part2  92.38 ms      │ 125.6 ms      │ 93.21 ms      │ 94.06 ms      │ 100     │ 100
+
+y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  84.96 ms      │ 88.51 ms      │ 85.08 ms      │ 85.77 ms      │ 100     │ 100
+╰─ part2  92.39 ms      │ 96.71 ms      │ 92.54 ms      │ 93.26 ms      │ 100     │ 100
+
+Tuple Combinations:
+
+y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  55.68 ms      │ 59.38 ms      │ 55.97 ms      │ 56.58 ms      │ 100     │ 100
+╰─ part2  57.47 ms      │ 59.92 ms      │ 57.62 ms      │ 58.12 ms      │ 100     │ 100
