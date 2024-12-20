@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use y24d20::{solve_part_1, solve_part_2};
+use y24d20::solve;
 
 fn main() {
     // let (chrome_layer, _guard) = tracing_chrome::ChromeLayerBuilder::new().build();
@@ -22,14 +22,14 @@ fn main() {
 
     let mut instant = std::time::Instant::now();
 
-    let result = solve_part_1::<100>(&input);
+    let result = solve::<100, 2>(&input);
     println!("Part 1: {}", result);
     println!("Time: {:?}", instant.elapsed());
 
     println!();
 
     instant = std::time::Instant::now();
-    let result = solve_part_2(&input);
+    let result = solve::<100, 20>(&input);
     println!("Part 2: {}", result);
     println!("Time: {:?}", instant.elapsed());
 }

@@ -1,0 +1,3 @@
+y24d20    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  84.95 ms      │ 91.83 ms      │ 86.79 ms      │ 86.92 ms      │ 100     │ 100
+╰─ part2  93.43 ms      │ 98.65 ms      │ 93.61 ms      │ 94.18 ms      │ 100     │ 100
