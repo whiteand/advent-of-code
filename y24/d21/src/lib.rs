@@ -1,15 +1,91 @@
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use advent_utils::glam::IVec2;
-use itertools::Itertools;
 use tracing::info;
+
+// actions: &[KeypadAction],
+// positions: [IVec2; ROBOTS],
+// robot_index: usize,
+
+#[derive(Clone)]
+struct CachePerRobot<const ROBOTS: usize> {
+    cache_per_positions:
+        HashMap<[IVec2; ROBOTS], Vec<(Vec<KeypadAction>, (usize, [IVec2; ROBOTS]))>>,
+}
+
+struct PerformActionsCache<const ROBOTS: usize> {
+    cache_per_robot: Vec<CachePerRobot<ROBOTS>>,
+}
+
+impl<const ROBOTS: usize> PerformActionsCache<ROBOTS> {
+    fn new() -> Self {
+        Self {
+            cache_per_robot: vec![
+                CachePerRobot {
+                    cache_per_positions: HashMap::new(),
+                };
+                ROBOTS
+            ],
+        }
+    }
+    fn append(
+        &mut self,
+        robot_index: usize,
+        actions: &[KeypadAction],
+        positions: [IVec2; ROBOTS],
+        result: (usize, [IVec2; ROBOTS]),
+    ) {
+        self.cache_per_robot[robot_index]
+            .cache_per_positions
+            .entry(positions)
+            .or_default()
+            .push((actions.to_vec(), result));
+    }
+
+    fn get(
+        &mut self,
+        robot_index: usize,
+        actions: &[KeypadAction],
+        positions: [IVec2; ROBOTS],
+    ) -> Option<(usize, [IVec2; ROBOTS])> {
+        self.cache_per_robot[robot_index]
+            .cache_per_positions
+            .get(&positions)
+            .and_then(|x| {
+                x.iter()
+                    .rev()
+                    .find_map(|(acts, result)| (acts == actions).then_some(*result))
+            })
+    }
+}
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    file_content.lines().map(|line| complexity_of(line)).sum()
+    let mut cache = PerformActionsCache::<3>::new();
+    file_content
+        .lines()
+        .map(|line| {
+            let num_part = advent_utils::parse::nums::<usize>(line).next().unwrap();
+
+            min_steps_to_enter_code::<3>(line, &mut cache) * num_part
+        })
+        .sum()
+}
+#[tracing::instrument(skip(file_content))]
+pub fn solve_part_2(file_content: &str) -> usize {
+    const ROBOTS: usize = 11;
+    let mut cache = PerformActionsCache::<ROBOTS>::new();
+    file_content
+        .lines()
+        .map(|line| {
+            let num_part = advent_utils::parse::nums::<usize>(line).next().unwrap();
+
+            min_steps_to_enter_code::<ROBOTS>(line, &mut cache) * num_part
+        })
+        .sum()
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum KeypadAction {
     Press,
     Move(DirectionButton),
@@ -30,7 +106,7 @@ impl KeypadAction {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum DirectionButton {
     Up,
     A,
@@ -69,124 +145,168 @@ impl std::fmt::Display for DirectionButton {
     }
 }
 
-#[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> usize {
-    file_content.len()
+#[derive(Debug, Copy, Clone)]
+struct CodeTask<'t, const ROBOTS: usize> {
+    code: &'t [u8],
+    positions: [IVec2; ROBOTS],
 }
 
-#[derive(Debug)]
-struct State {
-    target: IVec2,
-    parents: Vec<IVec2>,
-    parents_planned: Vec<Vec<KeypadAction>>,
-    keypad_planned_actions: Vec<KeypadAction>,
+fn min_steps_to_enter_code<const ROBOTS: usize>(
+    code: &str,
+    cache: &mut PerformActionsCache<ROBOTS>,
+) -> usize {
+    let mut positions = [get_directional_keypad_position(DirectionButton::A); ROBOTS];
+    positions[0] = get_position(b'A');
+
+    min_steps_to_solve_code_task(
+        CodeTask {
+            code: code.as_bytes(),
+            positions,
+        },
+        cache,
+    )
 }
 
-impl State {
-    fn enter_code(&mut self, code: &str) {
-        for target_code in code.as_bytes() {
-            self.plan_entering_code_button(*target_code)
+fn min_steps_to_solve_code_task<'t, const ROBOTS: usize>(
+    code_task: CodeTask<'t, ROBOTS>,
+    cache: &mut PerformActionsCache<ROBOTS>,
+) -> usize {
+    let Some((&first, rest)) = code_task.code.split_first() else {
+        return 0;
+    };
+    let next_a = get_position(first);
+    let mut paths = actions_to_move(code_task.positions[0], next_a, get_value);
+    for p in paths.iter_mut() {
+        p.push(KeypadAction::Press);
+    }
+    assert!(!paths.is_empty());
+    let mut min_steps = usize::MAX;
+    for path in paths {
+        info!(?next_a, f = ?(first as char), ?rest, ?path);
+        let (steps, mut new_positions) = perform_actions(&path, code_task.positions, 0, cache);
+        if steps >= min_steps {
+            continue;
         }
+        new_positions[0] = next_a;
 
-        macro_rules! plan_parent {
-            ($child_plan:expr, $parent_ind:expr) => {{
-                let child_actions = std::mem::take(&mut $child_plan);
-                for child_action in child_actions.iter().copied() {
-                    self.plan_parent_to_control_action(child_action, $parent_ind);
-                }
-                let _ = std::mem::replace(&mut $child_plan, child_actions);
-            }};
+        let rest_steps = min_steps_to_solve_code_task(
+            CodeTask {
+                code: rest,
+                positions: new_positions,
+            },
+            cache,
+        );
+        let total_steps = steps + rest_steps;
+        if min_steps > total_steps {
+            min_steps = total_steps;
         }
-
-        plan_parent!(self.keypad_planned_actions, 0);
-        plan_parent!(self.parents_planned[0], 1);
-
-        // self.print()
     }
-
-    // fn print(&self) {
-    //     let target_plan = self.keypad_planned_actions.iter().join("");
-    //     let parent_plan = self.parents_planned[0].iter().join("");
-    //     let parent2_plan = self.parents_planned[1].iter().join("");
-    //     let my_plan = self.parents_planned[2].iter().join("");
-    //     info!(?target_plan, ?parent_plan, ?parent2_plan, ?my_plan)
-    // }
-
-    fn plan_parent_to_control_action(&mut self, action: KeypadAction, parent_ind: usize) {
-        let next_button = match action {
-            KeypadAction::Press => DirectionButton::A,
-            KeypadAction::Move(dir) => dir,
-        };
-        let next_target = get_directional_keypad_position(next_button);
-        actions_to_move(
-            self.parents[parent_ind],
-            next_target,
-            &mut self.parents_planned[parent_ind],
-            get_directional_keypad_value,
-        );
-        self.parents[parent_ind] = next_target;
-        self.parents_planned[parent_ind].push(KeypadAction::Press);
-    }
-    fn plan_entering_code_button(&mut self, target_code: u8) {
-        let next_target = get_position(target_code);
-        actions_to_move(
-            self.target,
-            next_target,
-            &mut self.keypad_planned_actions,
-            get_value,
-        );
-        self.keypad_planned_actions.push(KeypadAction::Press);
-        self.target = next_target;
-    }
+    min_steps
 }
 
-#[tracing::instrument(ret)]
-fn complexity_of(code: &str) -> usize {
-    let mut state = State {
-        target: get_position(b'A'),
-        parents: vec![
-            get_directional_keypad_position(DirectionButton::A),
-            get_directional_keypad_position(DirectionButton::A),
-        ],
-        parents_planned: vec![Vec::with_capacity(54), Vec::with_capacity(324)],
-        keypad_planned_actions: Vec::with_capacity(9),
+fn perform_actions<const ROBOTS: usize>(
+    actions: &[KeypadAction],
+    positions: [IVec2; ROBOTS],
+    robot_index: usize,
+    cache: &mut PerformActionsCache<ROBOTS>,
+) -> (usize, [IVec2; ROBOTS]) {
+    let Some((action, rest_actions)) = actions.split_first() else {
+        return (0, positions);
     };
 
-    state.enter_code(code);
+    if robot_index == positions.len() - 1 {
+        let mut new_positions = positions;
+        for action in actions {
+            if let KeypadAction::Move(d) = action {
+                new_positions[robot_index] += d.to_vec();
+            }
+        }
+        return (actions.len(), new_positions);
+    }
 
-    let me_actions_len = state.parents_planned.last().unwrap().len();
-    let num_part = advent_utils::parse::nums::<usize>(code).next().unwrap();
+    if let Some(result) = cache.get(robot_index, actions, positions) {
+        return result;
+    }
 
-    num_part * me_actions_len
+    let parent = robot_index + 1;
+    let parent_pos = positions[parent];
+    let next_parent_value = match action {
+        KeypadAction::Press => DirectionButton::A,
+        KeypadAction::Move(direction_button) => *direction_button,
+    };
+    let next_parent_pos = get_directional_keypad_position(next_parent_value);
+    let mut parent_actions_to_pos =
+        actions_to_move(parent_pos, next_parent_pos, get_directional_keypad_value);
+
+    for x in &mut parent_actions_to_pos {
+        x.push(KeypadAction::Press);
+    }
+
+    let mut min_steps = usize::MAX;
+    let mut min_new_positions = positions;
+
+    for actions in parent_actions_to_pos {
+        let (steps, mut new_positions) = perform_actions(&actions, positions, parent, cache);
+        if steps > min_steps {
+            continue;
+        }
+        new_positions[parent] = next_parent_pos;
+        let (rest_steps, new_positions2) =
+            perform_actions(rest_actions, new_positions, robot_index, cache);
+        let total_steps = steps + rest_steps;
+
+        if min_steps > total_steps {
+            min_steps = total_steps;
+            min_new_positions = new_positions2
+        }
+    }
+
+    cache.append(
+        robot_index,
+        actions,
+        positions,
+        (min_steps, min_new_positions),
+    );
+
+    (min_steps, min_new_positions)
 }
 
 // transitions current position to the target_position
+#[tracing::instrument(skip(get_v), ret)]
 fn actions_to_move<X>(
     current: IVec2,
     target_p: IVec2,
-    path: &mut Vec<KeypadAction>,
     get_v: impl Fn(IVec2) -> Option<X>,
-) {
+) -> Vec<Vec<KeypadAction>> {
     if current == target_p {
-        return;
+        return vec![vec![]];
     }
     let angle1 = IVec2::new(target_p.x, current.y);
     let angle2 = IVec2::new(current.x, target_p.y);
-    let angle = match get_v(angle1) {
-        Some(_) => angle1,
-        None => angle2,
-    };
-    let first_dir = (angle - current).signum();
-    let second_dir = (target_p - angle).signum();
-    let first_steps = (angle - current).abs().dot(IVec2::splat(1)) as usize;
-    let second_steps = (target_p - angle).abs().dot(IVec2::splat(1)) as usize;
+    let mut angles = Vec::with_capacity(2);
+    if get_v(angle1).is_some() {
+        angles.push(angle1);
+    }
+    if get_v(angle2).is_some() {
+        angles.push(angle2);
+    }
+    let mut res = Vec::with_capacity(angles.len());
+    for angle in angles {
+        let mut path = vec![];
+        let first_dir = (angle - current).signum();
+        let second_dir = (target_p - angle).signum();
+        let first_steps = (angle - current).abs().dot(IVec2::splat(1)) as usize;
+        let second_steps = (target_p - angle).abs().dot(IVec2::splat(1)) as usize;
 
-    if let Some(c) = dir_to_command(first_dir) {
-        path.extend(std::iter::repeat_n(KeypadAction::Move(c), first_steps));
+        if let Some(c) = dir_to_command(first_dir) {
+            path.extend(std::iter::repeat_n(KeypadAction::Move(c), first_steps));
+        }
+        if let Some(c) = dir_to_command(second_dir) {
+            path.extend(std::iter::repeat_n(KeypadAction::Move(c), second_steps));
+        }
+        res.push(path)
     }
-    if let Some(c) = dir_to_command(second_dir) {
-        path.extend(std::iter::repeat_n(KeypadAction::Move(c), second_steps));
-    }
+    res
 }
 
 fn dir_to_command(dir: IVec2) -> Option<DirectionButton> {
@@ -228,7 +348,7 @@ fn get_value(pos: IVec2) -> Option<u8> {
     if pos == IVec2::new(1, 3) {
         return Some(b'0');
     }
-    if pos == IVec2::new(1, 3) {
+    if pos == IVec2::new(2, 3) {
         return Some(b'A');
     }
     if pos == IVec2::new(0, 2) {
@@ -249,13 +369,13 @@ fn get_value(pos: IVec2) -> Option<u8> {
     if pos == IVec2::new(2, 1) {
         return Some(b'6');
     }
-    if pos == IVec2::new(0, 1) {
+    if pos == IVec2::new(0, 0) {
         return Some(b'7');
     }
-    if pos == IVec2::new(1, 1) {
+    if pos == IVec2::new(1, 0) {
         return Some(b'8');
     }
-    if pos == IVec2::new(2, 1) {
+    if pos == IVec2::new(2, 0) {
         return Some(b'9');
     }
     None
@@ -290,55 +410,19 @@ fn get_directional_keypad_value(pos: IVec2) -> Option<DirectionButton> {
 
 #[cfg(test)]
 mod tests {
-    use crate::complexity_of;
 
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
-    use rstest::rstest;
 
-    #[rstest]
-    #[case("029A", 68 * 29)]
-    #[case("980A", 60 * 980)]
-    #[case(
-        "179A", 68 * 179
-    )]
-    #[case(
-        "456A", 64 * 456
-    )]
-    #[case(
-        "379A", 64 * 379
-    )]
-    fn test_complexity(#[case] target_code: &str, #[case] expected_result: usize) {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(complexity_of(target_code), expected_result);
+    #[test]
+    fn test_part1_example() {
+        assert_eq!(solve_part_1(EXAMPLE), 126384);
     }
-
     #[test]
     fn test_part1_actual() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(solve_part_1(EXAMPLE), 126384);
-        assert!(solve_part_1(ACTUAL) > 175970);
-        assert_eq!(solve_part_1(ACTUAL), 0);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_part2() {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", solve_part_2(EXAMPLE)), "0");
+        let actual = solve_part_1(ACTUAL);
+        assert_eq!(actual, 176650);
     }
 
     #[test]

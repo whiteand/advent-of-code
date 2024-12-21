@@ -10,11 +10,11 @@ fn main() {
     //         chrome_layer,
     //     ),
     // );
-    let _guard = tracing::subscriber::set_default(
-        tracing_subscriber::FmtSubscriber::builder()
-            .without_time()
-            .finish(),
-    );
+    // let _guard = tracing::subscriber::set_default(
+    //     tracing_subscriber::FmtSubscriber::builder()
+    //         .without_time()
+    //         .finish(),
+    // );
 
     // read stdin into a string
     let mut input = String::new();
