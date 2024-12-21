@@ -4,10 +4,21 @@ use advent_utils::glam::IVec2;
 use itertools::Itertools;
 use tracing::info;
 
+#[tracing::instrument(skip(file_content))]
+pub fn solve_part_1(file_content: &str) -> usize {
+    file_content.lines().map(|line| complexity_of(line)).sum()
+}
+
 #[derive(Debug, Copy, Clone)]
 enum KeypadAction {
     Press,
     Move(DirectionButton),
+}
+
+impl std::fmt::Display for KeypadAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char(self.to_u8() as char)
+    }
 }
 
 impl KeypadAction {
@@ -59,81 +70,102 @@ impl std::fmt::Display for DirectionButton {
 }
 
 #[tracing::instrument(skip(file_content))]
-pub fn solve_part_1(file_content: &str) -> String {
-    get_directions_for(file_content.trim())
-}
-#[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
     file_content.len()
 }
 
+#[derive(Debug)]
 struct State {
     target: IVec2,
-    parent: IVec2,
-    parent2: IVec2,
+    parents: Vec<IVec2>,
+    parents_planned: Vec<Vec<KeypadAction>>,
     keypad_planned_actions: Vec<KeypadAction>,
-    parent_planned_actions: Vec<KeypadAction>,
-    parent2_planned_actions: Vec<KeypadAction>,
-    my_actions: Vec<KeypadAction>,
 }
 
 impl State {
     fn enter_code(&mut self, code: &str) {
         for target_code in code.as_bytes() {
-            self.keypad_planned_actions.clear();
-            let next_target = get_position(*target_code);
-            actions_to_move(
-                self.target,
-                next_target,
-                &mut self.keypad_planned_actions,
-                get_value,
-            );
-            self.keypad_planned_actions.push(KeypadAction::Press);
-            let mut keypad_planned_actions = std::mem::take(&mut self.keypad_planned_actions);
-
-            for action in keypad_planned_actions.drain(..) {
-                self.execute_keypad_action(action);
-            }
-            std::mem::replace(&mut self.keypad_planned_actions, keypad_planned_actions);
+            self.plan_entering_code_button(*target_code)
         }
+
+        macro_rules! plan_parent {
+            ($child_plan:expr, $parent_ind:expr) => {{
+                let child_actions = std::mem::take(&mut $child_plan);
+                for child_action in child_actions.iter().copied() {
+                    self.plan_parent_to_control_action(child_action, $parent_ind);
+                }
+                let _ = std::mem::replace(&mut $child_plan, child_actions);
+            }};
+        }
+
+        plan_parent!(self.keypad_planned_actions, 0);
+        plan_parent!(self.parents_planned[0], 1);
+
+        // self.print()
     }
 
-    fn execute_keypad_action(&mut self, action: KeypadAction) {
-        match action {
-            KeypadAction::Press => self.my_actions.push(KeypadAction::Press),
-            KeypadAction::Move(direction_button) => {
-                let dir = direction_button.to_vec();
-                self.target += dir;
-                self.my_actions.push(KeypadAction::Move(direction_button));
-            }
-        }
-        info!(?action);
+    // fn print(&self) {
+    //     let target_plan = self.keypad_planned_actions.iter().join("");
+    //     let parent_plan = self.parents_planned[0].iter().join("");
+    //     let parent2_plan = self.parents_planned[1].iter().join("");
+    //     let my_plan = self.parents_planned[2].iter().join("");
+    //     info!(?target_plan, ?parent_plan, ?parent2_plan, ?my_plan)
+    // }
+
+    fn plan_parent_to_control_action(&mut self, action: KeypadAction, parent_ind: usize) {
+        let next_button = match action {
+            KeypadAction::Press => DirectionButton::A,
+            KeypadAction::Move(dir) => dir,
+        };
+        let next_target = get_directional_keypad_position(next_button);
+        actions_to_move(
+            self.parents[parent_ind],
+            next_target,
+            &mut self.parents_planned[parent_ind],
+            get_directional_keypad_value,
+        );
+        self.parents[parent_ind] = next_target;
+        self.parents_planned[parent_ind].push(KeypadAction::Press);
+    }
+    fn plan_entering_code_button(&mut self, target_code: u8) {
+        let next_target = get_position(target_code);
+        actions_to_move(
+            self.target,
+            next_target,
+            &mut self.keypad_planned_actions,
+            get_value,
+        );
+        self.keypad_planned_actions.push(KeypadAction::Press);
+        self.target = next_target;
     }
 }
 
 #[tracing::instrument(ret)]
-fn get_directions_for(code: &str) -> String {
+fn complexity_of(code: &str) -> usize {
     let mut state = State {
         target: get_position(b'A'),
-        parent: get_directional_keypad_position(b'A'),
-        parent2: get_directional_keypad_position(b'A'),
+        parents: vec![
+            get_directional_keypad_position(DirectionButton::A),
+            get_directional_keypad_position(DirectionButton::A),
+        ],
+        parents_planned: vec![Vec::with_capacity(54), Vec::with_capacity(324)],
         keypad_planned_actions: Vec::with_capacity(9),
-        parent_planned_actions: Vec::with_capacity(54),
-        parent2_planned_actions: Vec::with_capacity(324),
-        my_actions: Vec::with_capacity(1944),
     };
 
     state.enter_code(code);
 
-    String::from_utf8(state.my_actions.iter().map(|x| x.to_u8()).collect_vec()).unwrap()
+    let me_actions_len = state.parents_planned.last().unwrap().len();
+    let num_part = advent_utils::parse::nums::<usize>(code).next().unwrap();
+
+    num_part * me_actions_len
 }
 
 // transitions current position to the target_position
-fn actions_to_move(
+fn actions_to_move<X>(
     current: IVec2,
     target_p: IVec2,
     path: &mut Vec<KeypadAction>,
-    get_v: impl Fn(IVec2) -> Option<u8>,
+    get_v: impl Fn(IVec2) -> Option<X>,
 ) {
     if current == target_p {
         return;
@@ -228,38 +260,37 @@ fn get_value(pos: IVec2) -> Option<u8> {
     }
     None
 }
-fn get_directional_keypad_position(value: u8) -> IVec2 {
+fn get_directional_keypad_position(value: DirectionButton) -> IVec2 {
     match value {
-        b'A' => IVec2::new(2, 0),
-        b'^' => IVec2::new(1, 0),
-        b'<' => IVec2::new(0, 1),
-        b'v' => IVec2::new(1, 1),
-        b'>' => IVec2::new(2, 1),
-        _ => unreachable!(),
+        DirectionButton::Up => IVec2::new(1, 0),
+        DirectionButton::A => IVec2::new(2, 0),
+        DirectionButton::Left => IVec2::new(0, 1),
+        DirectionButton::Down => IVec2::new(1, 1),
+        DirectionButton::Right => IVec2::new(2, 1),
     }
 }
-fn get_directional_keypad_value(pos: IVec2) -> Option<u8> {
+fn get_directional_keypad_value(pos: IVec2) -> Option<DirectionButton> {
     if pos == IVec2::new(2, 0) {
-        return Some(b'A');
+        return Some(DirectionButton::A);
     }
     if pos == IVec2::new(1, 0) {
-        return Some(b'^');
+        return Some(DirectionButton::Up);
     }
     if pos == IVec2::new(0, 1) {
-        return Some(b'<');
+        return Some(DirectionButton::Left);
     }
     if pos == IVec2::new(1, 1) {
-        return Some(b'v');
+        return Some(DirectionButton::Down);
     }
     if pos == IVec2::new(2, 1) {
-        return Some(b'>');
+        return Some(DirectionButton::Right);
     }
     None
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::get_directions_for;
+    use crate::complexity_of;
 
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -267,41 +298,36 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
+    #[case("029A", 68 * 29)]
+    #[case("980A", 60 * 980)]
     #[case(
-        "029A",
-        "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
+        "179A", 68 * 179
     )]
-    // #[case("980A", "<v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A")]
-    // #[case(
-    //     "179A",
-    //     "<v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"
-    // )]
-    // #[case(
-    //     "456A",
-    //     "<v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A"
-    // )]
-    // #[case(
-    //     "379A",
-    //     "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A"
-    // )]
-    fn test_part1(#[case] target_code: &str, #[case] expected_directions: &str) {
+    #[case(
+        "456A", 64 * 456
+    )]
+    #[case(
+        "379A", 64 * 379
+    )]
+    fn test_complexity(#[case] target_code: &str, #[case] expected_result: usize) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(get_directions_for(target_code), expected_directions);
+        assert_eq!(complexity_of(target_code), expected_result);
     }
 
     #[test]
-    #[ignore]
     fn test_part1_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
+        assert_eq!(solve_part_1(EXAMPLE), 126384);
+        assert!(solve_part_1(ACTUAL) > 175970);
+        assert_eq!(solve_part_1(ACTUAL), 0);
     }
 
     #[test]
