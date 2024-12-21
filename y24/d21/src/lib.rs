@@ -322,7 +322,9 @@ fn min_steps_to_execute_controls(
     if let Some(x) = cache.get(&(key, controllers)) {
         return *x;
     }
-    let mut new_controls = vec![vec![]];
+    let mut new_controls: Vec<usize> = Vec::with_capacity(8);
+    new_controls.push(0);
+    let mut buf: Vec<usize> = Vec::with_capacity(8);
     let mut current_pos = get_directional_keypad_position(DirectionButton::A);
     for c in controls {
         let (target_pos, steps) = match c {
@@ -334,36 +336,32 @@ fn min_steps_to_execute_controls(
         };
         if target_pos == current_pos {
             for x in new_controls.iter_mut() {
-                x.push(RobotTask::Press(*steps))
+                *x += min_steps_to_execute_controls(
+                    &[RobotTask::Press(*steps)],
+                    controllers - 1,
+                    cache,
+                );
             }
             continue;
         }
-        let paths = get_paths(current_pos, target_pos, get_directional_keypad_value);
-        new_controls = new_controls
-            .drain(..)
-            .flat_map(|x| {
-                paths.iter().map(move |path| {
-                    let mut res = x.clone();
-                    for c in path {
-                        res.push(*c);
-                    }
-                    res.push(RobotTask::Press(*steps));
-                    res
-                })
-            })
-            .collect_vec();
+        let mut paths = get_paths(current_pos, target_pos, get_directional_keypad_value);
+        for x in &mut paths {
+            x.push(RobotTask::Press(*steps));
+        }
+        for x in new_controls.drain(..) {
+            for path in &paths {
+                buf.push(x + min_steps_to_execute_controls(&path, controllers - 1, cache))
+            }
+        }
+        assert!(new_controls.is_empty());
+
+        std::mem::swap(&mut buf, &mut new_controls);
+        assert!(buf.is_empty());
+
         current_pos = target_pos;
     }
 
-    let min = new_controls
-        .into_iter()
-        .map(|x| {
-            x.split_inclusive(|x| matches!(x, RobotTask::Press(_)))
-                .map(|s| min_steps_to_execute_controls(s, controllers - 1, cache))
-                .sum()
-        })
-        .min()
-        .unwrap_or(usize::MAX);
+    let min = new_controls.into_iter().min().unwrap_or(usize::MAX);
 
     cache.insert((key, controllers), min);
 

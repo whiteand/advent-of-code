@@ -47,3 +47,11 @@ Loop to iter:
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  142.6 µs      │ 199.3 µs      │ 148.7 µs      │ 151.6 µs      │ 100     │ 100
 ╰─ part2  715.9 µs      │ 868.8 µs      │ 734.7 µs      │ 747.4 µs      │ 100     │ 100
+
+Inlined control to controls
+
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  72.16 µs      │ 105.2 µs      │ 75.31 µs      │ 76.46 µs      │ 100     │ 100
+╰─ part2  467.7 µs      │ 605.9 µs      │ 487 µs        │ 490.6 µs      │ 100     │ 100
