@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use advent_utils::glam::IVec2;
+use itertools::Itertools;
 use tracing::info;
 
 #[derive(Debug, Copy, Clone)]
@@ -66,42 +67,65 @@ pub fn solve_part_2(file_content: &str) -> usize {
     file_content.len()
 }
 
-#[tracing::instrument(ret)]
-fn get_directions_for(code: &str) -> String {
-    let mut res = String::with_capacity(128);
-    let mut current_target_input_position = get_position(b'A');
-    let mut current_parent_position = get_directional_keypad_position(b'A');
-    let mut current_parent2_position = get_directional_keypad_position(b'A');
-    info!(
-        ?current_target_input_position,
-        ?current_parent_position,
-        ?current_parent2_position
-    );
-    let mut actions = Vec::with_capacity(9);
+struct State {
+    target: IVec2,
+    parent: IVec2,
+    parent2: IVec2,
+    keypad_planned_actions: Vec<KeypadAction>,
+    parent_planned_actions: Vec<KeypadAction>,
+    parent2_planned_actions: Vec<KeypadAction>,
+    my_actions: Vec<KeypadAction>,
+}
 
-    for target_code in code.as_bytes() {
-        actions.clear();
-        let target_p = get_position(*target_code);
-        actions_to_move(
-            current_target_input_position,
-            target_p,
-            &mut actions,
-            get_value,
-        );
-        actions.push(KeypadAction::Press);
-
-        for action in actions.iter().copied() {
-            execute_keypad_action(
-                action,
-                &mut current_target_input_position,
-                &mut current_parent_position,
-                &mut current_parent2_position,
-                &mut res,
+impl State {
+    fn enter_code(&mut self, code: &str) {
+        for target_code in code.as_bytes() {
+            self.keypad_planned_actions.clear();
+            let next_target = get_position(*target_code);
+            actions_to_move(
+                self.target,
+                next_target,
+                &mut self.keypad_planned_actions,
+                get_value,
             );
+            self.keypad_planned_actions.push(KeypadAction::Press);
+            let mut keypad_planned_actions = std::mem::take(&mut self.keypad_planned_actions);
+
+            for action in keypad_planned_actions.drain(..) {
+                self.execute_keypad_action(action);
+            }
+            std::mem::replace(&mut self.keypad_planned_actions, keypad_planned_actions);
         }
     }
 
-    res
+    fn execute_keypad_action(&mut self, action: KeypadAction) {
+        match action {
+            KeypadAction::Press => self.my_actions.push(KeypadAction::Press),
+            KeypadAction::Move(direction_button) => {
+                let dir = direction_button.to_vec();
+                self.target += dir;
+                self.my_actions.push(KeypadAction::Move(direction_button));
+            }
+        }
+        info!(?action);
+    }
+}
+
+#[tracing::instrument(ret)]
+fn get_directions_for(code: &str) -> String {
+    let mut state = State {
+        target: get_position(b'A'),
+        parent: get_directional_keypad_position(b'A'),
+        parent2: get_directional_keypad_position(b'A'),
+        keypad_planned_actions: Vec::with_capacity(9),
+        parent_planned_actions: Vec::with_capacity(54),
+        parent2_planned_actions: Vec::with_capacity(324),
+        my_actions: Vec::with_capacity(1944),
+    };
+
+    state.enter_code(code);
+
+    String::from_utf8(state.my_actions.iter().map(|x| x.to_u8()).collect_vec()).unwrap()
 }
 
 // transitions current position to the target_position
@@ -150,25 +174,6 @@ fn dir_to_command(dir: IVec2) -> Option<DirectionButton> {
         return Some(DirectionButton::Down);
     }
     unreachable!("{dir}")
-}
-
-/// Outputs commands necessary to
-fn execute_keypad_action(
-    action: KeypadAction,
-    _current_target_input_position: &mut IVec2,
-    _current_parent_position: &mut IVec2,
-    _current_parent2_position: &mut IVec2,
-    res: &mut String,
-) {
-    match action {
-        KeypadAction::Press => res.push('A'),
-        KeypadAction::Move(direction_button) => {
-            let dir = direction_button.to_vec();
-            *_current_target_input_position += dir;
-            res.push(direction_button.to_u8() as char);
-        }
-    }
-    info!(?action);
 }
 
 fn get_position(value: u8) -> IVec2 {
