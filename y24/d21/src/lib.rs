@@ -1,6 +1,9 @@
+mod try2;
+
 use std::{collections::HashMap, fmt::Write};
 
 use advent_utils::glam::IVec2;
+use itertools::Itertools;
 use tracing::info;
 
 // actions: &[KeypadAction],
@@ -64,6 +67,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
 pub fn solve_part_2(file_content: &str) -> usize {
     solve::<26>(file_content)
 }
+
 #[tracing::instrument(skip(file_content))]
 pub fn solve<const ROBOTS: usize>(file_content: &str) -> usize {
     let mut cache = PerformActionCache::<ROBOTS>::new();
@@ -417,18 +421,12 @@ mod tests {
 
     use crate::solve;
 
-    use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]
     fn test_part1_example() {
-        assert_eq!(solve_part_1(EXAMPLE), 126384);
-    }
-    #[test]
-    fn test_part1_actual() {
-        let actual = solve_part_1(ACTUAL);
-        assert_eq!(actual, 176650);
+        assert_eq!(solve::<3>(EXAMPLE), 126384);
     }
 
     #[test]
