@@ -257,31 +257,24 @@ fn total_steps(controls: &[RobotTask]) -> usize {
 }
 
 fn controls_key(controls: &[RobotTask]) -> usize {
-    let mut res = 0;
-    for c in controls {
-        match c {
-            RobotTask::Move { direction, steps } => {
-                res <<= 3;
-                res |= match direction {
+    controls.iter().fold(0, |res, c| match c {
+        RobotTask::Move { direction, steps } => {
+            assert!(*steps <= 3, "{} > 3", *steps);
+            (((res << 3)
+                | match direction {
                     Direction::Up => 0b000,
                     Direction::Down => 0b010,
                     Direction::Left => 0b011,
                     Direction::Right => 0b100,
-                };
-                assert!(*steps <= 3, "{} > 3", *steps);
-                res <<= 2;
-                res |= *steps;
-            }
-            RobotTask::Press(steps) => {
-                res <<= 3;
-                res |= 0b101;
-                assert!(*steps <= 3, "{} > 3", *steps);
-                res <<= 2;
-                res |= *steps;
-            }
+                })
+                << 2)
+                | *steps
         }
-    }
-    res
+        RobotTask::Press(steps) => {
+            assert!(*steps <= 3, "{} > 3", *steps);
+            (((res << 3) | 0b101) << 2) | *steps
+        }
+    })
 }
 fn min_steps_to_execute_controls(
     controls: &[RobotTask],
