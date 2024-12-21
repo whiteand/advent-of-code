@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Write};
 
 use advent_utils::{glam::IVec2, vec_on_stack};
-use itertools::Itertools;
+use itertools::{Either, Itertools};
 use tracing::info;
 
 #[tracing::instrument(skip(file_content))]
@@ -205,6 +205,55 @@ fn numeric_to_control(code: &str) -> impl Iterator<Item = Vec<RobotTask>> + '_ {
         .map(|x| x.into_iter().flatten().collect_vec())
 }
 
+fn get_paths2<X>(
+    ap: IVec2,
+    bp: IVec2,
+    get_v: impl Fn(IVec2) -> Option<X>,
+) -> Either<RobotTask, Either<[RobotTask; 2], ([RobotTask; 2], [RobotTask; 2])>> {
+    if ap.x == bp.x {
+        if ap.y > bp.y {
+            return Either::Left(RobotTask::Move {
+                direction: Direction::Up,
+                steps: (ap.y - bp.y) as usize,
+            });
+        } else {
+            return Either::Left(RobotTask::Move {
+                direction: Direction::Down,
+                steps: (bp.y - ap.y) as usize,
+            });
+        }
+    }
+    if ap.y == bp.y {
+        if ap.x > bp.x {
+            return Either::Left(RobotTask::Move {
+                direction: Direction::Left,
+                steps: (ap.x - bp.x) as usize,
+            });
+        } else {
+            return Either::Left(RobotTask::Move {
+                direction: Direction::Right,
+                steps: (bp.x - ap.x) as usize,
+            });
+        }
+    }
+    let angle1 = IVec2::new(ap.x, bp.y);
+    let angle2 = IVec2::new(bp.x, ap.y);
+    match (get_v(angle1), get_v(angle2)) {
+        (None, None) => unreachable!(),
+        (None, Some(_)) => {
+            let path = [move_from_to(ap, angle2), move_from_to(angle2, bp)];
+            Either::Right(Either::Left(path))
+        }
+        (Some(_), None) => Either::Right(Either::Left([
+            move_from_to(ap, angle1),
+            move_from_to(angle1, bp),
+        ])),
+        (Some(_), Some(_)) => Either::Right(Either::Right((
+            [move_from_to(ap, angle1), move_from_to(angle1, bp)],
+            [move_from_to(ap, angle2), move_from_to(angle2, bp)],
+        ))),
+    }
+}
 fn get_paths<X>(ap: IVec2, bp: IVec2, get_v: impl Fn(IVec2) -> Option<X>) -> Vec<Vec<RobotTask>> {
     if ap.x == bp.x {
         if ap.y > bp.y {
@@ -328,6 +377,9 @@ fn min_steps_to_execute_controls(
     vec_on_stack! {
        let (mut buf: Vec<usize>, mut buf_slice) = Vec::with_capacity(8);
     }
+    vec_on_stack! {
+       let (mut temp_path: Vec<RobotTask>, mut temp_path_slice) = Vec::with_capacity(8);
+    }
 
     new_controls.push(0);
 
@@ -350,29 +402,60 @@ fn min_steps_to_execute_controls(
             }
             continue;
         }
-        let mut paths = get_paths(current_pos, target_pos, get_directional_keypad_value);
-        for x in &mut paths {
-            x.push(RobotTask::Press(*steps));
-        }
 
-        while let Some(x) = new_controls.pop() {
-            for path in &paths {
-                buf.push(x + min_steps_to_execute_controls(&path, controllers - 1, cache))
+        match get_paths2(current_pos, target_pos, get_directional_keypad_value) {
+            Either::Left(p) => {
+                for x in new_controls.iter_mut() {
+                    *x += min_steps_to_execute_controls(
+                        &[p, RobotTask::Press(*steps)],
+                        controllers - 1,
+                        cache,
+                    );
+                }
+                current_pos = target_pos;
+            }
+            Either::Right(Either::Left([a, b])) => {
+                for x in new_controls.iter_mut() {
+                    *x += min_steps_to_execute_controls(
+                        &[a, b, RobotTask::Press(*steps)],
+                        controllers - 1,
+                        cache,
+                    );
+                }
+                current_pos = target_pos;
+            }
+            Either::Right(Either::Right((p1, p2))) => {
+                let left_cost = min_steps_to_execute_controls(
+                    &[p1[0], p1[1], RobotTask::Press(*steps)],
+                    controllers - 1,
+                    cache,
+                );
+                let right_cost = min_steps_to_execute_controls(
+                    &[p2[0], p2[1], RobotTask::Press(*steps)],
+                    controllers - 1,
+                    cache,
+                );
+
+                while let Some(x) = new_controls.pop() {
+                    buf.push(x + left_cost);
+                    buf.push(x + right_cost);
+                }
+
+                assert!(new_controls.is_empty());
+
+                std::mem::swap(&mut buf, &mut new_controls);
+
+                assert!(buf.is_empty());
+
+                current_pos = target_pos;
             }
         }
-
-        assert!(new_controls.is_empty());
-
-        std::mem::swap(&mut buf, &mut new_controls);
-
-        assert!(buf.is_empty());
-
-        current_pos = target_pos;
     }
 
     let min = new_controls.iter().copied().min().unwrap_or(usize::MAX);
     drop(buf);
     drop(new_controls);
+    drop(temp_path);
 
     cache.insert((key, controllers), min);
 

@@ -62,3 +62,15 @@ Timer precision: 41 ns
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  69.37 µs      │ 103.9 µs      │ 72.29 µs      │ 73.96 µs      │ 100     │ 100
 ╰─ part2  410.7 µs      │ 555.7 µs      │ 420 µs        │ 428.6 µs      │ 100     │ 100
+
+get_paths to Either
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  52.74 µs      │ 84.37 µs      │ 53.91 µs      │ 55.23 µs      │ 100     │ 100
+╰─ part2  283.3 µs      │ 387.9 µs      │ 294.5 µs      │ 299.4 µs      │ 100     │ 100
+
+get_paths to double Either 
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  29.2 µs       │ 55.37 µs      │ 30.24 µs      │ 31.17 µs      │ 100     │ 100
+╰─ part2  156.7 µs      │ 217.2 µs      │ 166.2 µs      │ 169.4 µs      │ 100     │ 100
