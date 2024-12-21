@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Write};
 
-use advent_utils::glam::IVec2;
+use advent_utils::{glam::IVec2, vec_on_stack};
 use itertools::Itertools;
 use tracing::info;
 
@@ -322,9 +322,15 @@ fn min_steps_to_execute_controls(
     if let Some(x) = cache.get(&(key, controllers)) {
         return *x;
     }
-    let mut new_controls: Vec<usize> = Vec::with_capacity(8);
+    vec_on_stack! {
+       let (mut new_controls: Vec<usize>, mut new_controls_slice) = Vec::with_capacity(8);
+    }
+    vec_on_stack! {
+       let (mut buf: Vec<usize>, mut buf_slice) = Vec::with_capacity(8);
+    }
+
     new_controls.push(0);
-    let mut buf: Vec<usize> = Vec::with_capacity(8);
+
     let mut current_pos = get_directional_keypad_position(DirectionButton::A);
     for c in controls {
         let (target_pos, steps) = match c {
@@ -348,20 +354,25 @@ fn min_steps_to_execute_controls(
         for x in &mut paths {
             x.push(RobotTask::Press(*steps));
         }
-        for x in new_controls.drain(..) {
+
+        while let Some(x) = new_controls.pop() {
             for path in &paths {
                 buf.push(x + min_steps_to_execute_controls(&path, controllers - 1, cache))
             }
         }
+
         assert!(new_controls.is_empty());
 
         std::mem::swap(&mut buf, &mut new_controls);
+
         assert!(buf.is_empty());
 
         current_pos = target_pos;
     }
 
-    let min = new_controls.into_iter().min().unwrap_or(usize::MAX);
+    let min = new_controls.iter().copied().min().unwrap_or(usize::MAX);
+    drop(buf);
+    drop(new_controls);
 
     cache.insert((key, controllers), min);
 

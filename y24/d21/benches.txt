@@ -55,3 +55,10 @@ Timer precision: 41 ns
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  72.16 µs      │ 105.2 µs      │ 75.31 µs      │ 76.46 µs      │ 100     │ 100
 ╰─ part2  467.7 µs      │ 605.9 µs      │ 487 µs        │ 490.6 µs      │ 100     │ 100
+
+Vec on stack:
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  69.37 µs      │ 103.9 µs      │ 72.29 µs      │ 73.96 µs      │ 100     │ 100
+╰─ part2  410.7 µs      │ 555.7 µs      │ 420 µs        │ 428.6 µs      │ 100     │ 100
