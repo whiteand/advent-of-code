@@ -34,3 +34,16 @@ Total steps via raw:
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  145.7 µs      │ 216.7 µs      │ 151.9 µs      │ 155 µs        │ 100     │ 100
 ╰─ part2  720.8 µs      │ 864.1 µs      │ 737 µs        │ 747 µs        │ 100     │ 100
+
+inlined code_section:
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  142.4 µs      │ 215.6 µs      │ 148.3 µs      │ 151.7 µs      │ 100     │ 100
+╰─ part2  715.3 µs      │ 943.8 µs      │ 736.3 µs      │ 750.1 µs      │ 100     │ 100
+
+Loop to iter:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  142.6 µs      │ 199.3 µs      │ 148.7 µs      │ 151.6 µs      │ 100     │ 100
+╰─ part2  715.9 µs      │ 868.8 µs      │ 734.7 µs      │ 747.4 µs      │ 100     │ 100

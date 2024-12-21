@@ -120,7 +120,7 @@ impl LargeGrid {
                 }
                 return;
             }
-            for id in boxes_to_move.into_iter().rev() {
+            for id in boxes_to_move.iter().rev() {
                 self.move_box(*id, m);
             }
             self.player += m;

@@ -204,44 +204,6 @@ fn numeric_to_control(code: &str) -> impl Iterator<Item = Vec<RobotTask>> + '_ {
         .multi_cartesian_product()
         .map(|x| x.into_iter().flatten().collect_vec())
 }
-fn control_to_controls(
-    controls: &[RobotTask],
-    parent_start: IVec2,
-) -> impl Iterator<Item = Vec<RobotTask>> + '_ {
-    let mut new_controls = vec![vec![]];
-    let mut current_pos = parent_start;
-    for c in controls {
-        let (target_pos, steps) = match c {
-            RobotTask::Move { direction, steps } => {
-                let target_button: DirectionButton = (*direction).into();
-                (get_directional_keypad_position(target_button), steps)
-            }
-            RobotTask::Press(steps) => (get_directional_keypad_position(DirectionButton::A), steps),
-        };
-        if target_pos == current_pos {
-            for x in new_controls.iter_mut() {
-                x.push(RobotTask::Press(*steps))
-            }
-            continue;
-        }
-        let paths = get_paths(current_pos, target_pos, get_directional_keypad_value);
-        new_controls = new_controls
-            .drain(..)
-            .flat_map(|x| {
-                paths.iter().map(move |path| {
-                    let mut res = x.clone();
-                    for c in path {
-                        res.push(*c);
-                    }
-                    res.push(RobotTask::Press(*steps));
-                    res
-                })
-            })
-            .collect_vec();
-        current_pos = target_pos;
-    }
-    new_controls.into_iter()
-}
 
 fn get_paths<X>(ap: IVec2, bp: IVec2, get_v: impl Fn(IVec2) -> Option<X>) -> Vec<Vec<RobotTask>> {
     if ap.x == bp.x {
@@ -360,29 +322,52 @@ fn min_steps_to_execute_controls(
     if let Some(x) = cache.get(&(key, controllers)) {
         return *x;
     }
-    let parent_controls = control_to_controls(
-        controls,
-        get_directional_keypad_position(DirectionButton::A),
-    );
-    let mut min = usize::MAX;
-    for c in parent_controls {
-        let mut total = 0;
-        for s in code_windows(&c) {
-            let steps = min_steps_to_execute_controls(s, controllers - 1, cache);
-            total += steps;
+    let mut new_controls = vec![vec![]];
+    let mut current_pos = get_directional_keypad_position(DirectionButton::A);
+    for c in controls {
+        let (target_pos, steps) = match c {
+            RobotTask::Move { direction, steps } => {
+                let target_button: DirectionButton = (*direction).into();
+                (get_directional_keypad_position(target_button), steps)
+            }
+            RobotTask::Press(steps) => (get_directional_keypad_position(DirectionButton::A), steps),
+        };
+        if target_pos == current_pos {
+            for x in new_controls.iter_mut() {
+                x.push(RobotTask::Press(*steps))
+            }
+            continue;
         }
-        if total < min {
-            min = total;
-        }
+        let paths = get_paths(current_pos, target_pos, get_directional_keypad_value);
+        new_controls = new_controls
+            .drain(..)
+            .flat_map(|x| {
+                paths.iter().map(move |path| {
+                    let mut res = x.clone();
+                    for c in path {
+                        res.push(*c);
+                    }
+                    res.push(RobotTask::Press(*steps));
+                    res
+                })
+            })
+            .collect_vec();
+        current_pos = target_pos;
     }
+
+    let min = new_controls
+        .into_iter()
+        .map(|x| {
+            x.split_inclusive(|x| matches!(x, RobotTask::Press(_)))
+                .map(|s| min_steps_to_execute_controls(s, controllers - 1, cache))
+                .sum()
+        })
+        .min()
+        .unwrap_or(usize::MAX);
 
     cache.insert((key, controllers), min);
 
     min
-}
-
-fn code_windows(controls: &[RobotTask]) -> impl Iterator<Item = &[RobotTask]> {
-    controls.split_inclusive(|x| matches!(x, RobotTask::Press(_)))
 }
 
 #[cfg(test)]
