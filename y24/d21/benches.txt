@@ -78,6 +78,19 @@ y24d21    fastest       │ slowest       │ median        │ mean          �
 Removed new_controls array:
 
 Timer precision: 41 ns
+    y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+    ├─ part1  25.7 µs       │ 125.2 µs      │ 27.27 µs      │ 29.79 µs      │ 100     │ 100
+    ╰─ part2  134.9 µs      │ 215.8 µs      │ 146.4 µs      │ 148.9 µs      │ 100     │ 100
+
+Replacing position calculation with array;
+
+Timer precision: 41 ns
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
-├─ part1  25.7 µs       │ 125.2 µs      │ 27.27 µs      │ 29.79 µs      │ 100     │ 100
-╰─ part2  134.9 µs      │ 215.8 µs      │ 146.4 µs      │ 148.9 µs      │ 100     │ 100
+├─ part1  26.95 µs      │ 60.12 µs      │ 28.29 µs      │ 28.93 µs      │ 100     │ 100
+╰─ part2  137.7 µs      │ 240.9 µs      │ 147.2 µs      │ 149.9 µs      │ 100     │ 100
+
+Removing get_paths:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  25.24 µs      │ 46.62 µs      │ 26.87 µs      │ 27.48 µs      │ 100     │ 100
+╰─ part2  135.7 µs      │ 203.7 µs      │ 145.7 µs      │ 149.6 µs      │ 100     │ 100
