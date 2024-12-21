@@ -1,20 +1,15 @@
 use std::io::Read;
 
-use y24d21::{solve_part_1, solve_part_2};
+use tracing_subscriber::layer::SubscriberExt;
+use y24d21::solve;
 
 fn main() {
-    // let (chrome_layer, _guard) = tracing_chrome::ChromeLayerBuilder::new().build();
-    // tracing_subscriber::util::SubscriberInitExt::init(
-    //     tracing_subscriber::layer::SubscriberExt::with(
-    //         tracing_subscriber::registry(),
-    //         chrome_layer,
-    //     ),
-    // );
-    // let _guard = tracing::subscriber::set_default(
-    //     tracing_subscriber::FmtSubscriber::builder()
-    //         .without_time()
-    //         .finish(),
-    // );
+    let _guard = tracing::subscriber::set_default(
+        tracing_subscriber::FmtSubscriber::builder()
+            .without_time()
+            .finish()
+            .with(tracing_subscriber::EnvFilter::from_default_env()),
+    );
 
     // read stdin into a string
     let mut input = String::new();
@@ -22,14 +17,14 @@ fn main() {
 
     let mut instant = std::time::Instant::now();
 
-    let result = solve_part_1(&input);
+    let result = solve::<2>(&input);
     println!("Part 1: {}", result);
     println!("Time: {:?}", instant.elapsed());
 
     println!();
 
     instant = std::time::Instant::now();
-    let result = solve_part_2(&input);
+    let result = solve::<25>(&input);
     println!("Part 2: {}", result);
     println!("Time: {:?}", instant.elapsed());
 }

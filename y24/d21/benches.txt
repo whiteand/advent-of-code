@@ -1,0 +1,36 @@
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  275.9 µs      │ 352.8 µs      │ 285.8 µs      │ 292 µs        │ 100     │ 100
+╰─ part2  1.231 ms      │ 1.55 ms       │ 1.289 ms      │ 1.3 ms        │ 100     │ 100
+
+numeric by pos:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  271.2 µs      │ 351.8 µs      │ 274.8 µs      │ 279.3 µs      │ 100     │ 100
+╰─ part2  1.273 ms      │ 1.615 ms      │ 1.285 ms      │ 1.298 ms      │ 100     │ 100
+
+split inclusive:
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  270 µs        │ 365.7 µs      │ 275.4 µs      │ 282.6 µs      │ 100     │ 100
+╰─ part2  1.264 ms      │ 1.612 ms      │ 1.283 ms      │ 1.301 ms      │ 100     │ 100
+
+Replacing key of the cache with usize
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  142.2 µs      │ 200.7 µs      │ 149.1 µs      │ 151.9 µs      │ 100     │ 100
+╰─ part2  709 µs        │ 982.9 µs      │ 732.7 µs      │ 740.8 µs      │ 100     │ 100
+
+
+After binary robots tasks:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  145 µs        │ 247.5 µs      │ 150.7 µs      │ 154.2 µs      │ 100     │ 100
+╰─ part2  718 µs        │ 952.6 µs      │ 736.4 µs      │ 748.8 µs      │ 100     │ 100
+
+Total steps via raw:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  145.7 µs      │ 216.7 µs      │ 151.9 µs      │ 155 µs        │ 100     │ 100
+╰─ part2  720.8 µs      │ 864.1 µs      │ 737 µs        │ 747 µs        │ 100     │ 100
