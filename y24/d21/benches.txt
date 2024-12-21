@@ -94,3 +94,45 @@ Removing get_paths:
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  25.24 µs      │ 46.62 µs      │ 26.87 µs      │ 27.48 µs      │ 100     │ 100
 ╰─ part2  135.7 µs      │ 203.7 µs      │ 145.7 µs      │ 149.6 µs      │ 100     │ 100
+
+After extracting calculate steps:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  24.24 µs      │ 41.95 µs      │ 25.83 µs      │ 26.3 µs       │ 100     │ 100
+╰─ part2  137.3 µs      │ 256.3 µs      │ 141.8 µs      │ 144.7 µs      │ 100     │ 100
+
+After removing division:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  25.04 µs      │ 41.24 µs      │ 26.58 µs      │ 26.84 µs      │ 100     │ 100
+╰─ part2  127 µs        │ 196.3 µs      │ 134.5 µs      │ 136.9 µs      │ 100     │ 100
+
+After simplifying get_path:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  23.87 µs      │ 53.58 µs      │ 25.08 µs      │ 25.8 µs       │ 100     │ 100
+╰─ part2  129.7 µs      │ 234.7 µs      │ 138.4 µs      │ 141.8 µs      │ 100     │ 100
+
+After removing cache iteration:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  23.91 µs      │ 44.16 µs      │ 25.43 µs      │ 26.03 µs      │ 100     │ 100
+╰─ part2  110.2 µs      │ 136.3 µs      │ 118.2 µs      │ 118.6 µs      │ 100     │ 100
+
+After removing allocation of vectors:
+
+    y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+    ├─ part1  18.95 µs      │ 41.62 µs      │ 19.87 µs      │ 20.47 µs      │ 100     │ 100
+    ╰─ part2  102.3 µs      │ 161.2 µs      │ 111.1 µs      │ 113.7 µs      │ 100     │ 100
+
+After removing more allocations of vectors:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  12.95 µs      │ 26.41 µs      │ 14.37 µs      │ 14.51 µs      │ 100     │ 100
+╰─ part2  95.49 µs      │ 191.8 µs      │ 104.3 µs      │ 106.4 µs      │ 100     │ 100
+
+After using of fxhashmap:
+
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  8.791 µs      │ 22.45 µs      │ 9.228 µs      │ 9.401 µs      │ 100     │ 100
+╰─ part2  33.16 µs      │ 87.7 µs       │ 33.66 µs      │ 35.6 µs       │ 100     │ 100

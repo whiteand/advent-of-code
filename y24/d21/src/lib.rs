@@ -1,24 +1,23 @@
-use std::collections::HashMap;
-
-use advent_utils::glam::IVec2;
+use advent_utils::{glam::IVec2, parse};
 use itertools::{Either, Itertools};
-use tracing::info;
 
-#[tracing::instrument(skip(file_content))]
 pub fn solve<const ROBOTS: usize>(file_content: &str) -> usize {
-    let mut cache = HashMap::new();
-    let res = file_content
+    let mut cache = Cache::default();
+    file_content
         .lines()
         .map(|line| {
-            let num_part = advent_utils::parse::nums::<usize>(line).next().unwrap();
+            let num_part = parse::nums::<usize>(line).next().unwrap();
 
             min_steps_for_code::<ROBOTS>(line, &mut cache) * num_part
         })
-        .sum();
-    for ((tasks, controllers), v) in cache.into_iter().sorted() {
-        info!(?tasks, ?controllers, ?v);
-    }
-    res
+        .sum()
+}
+
+pub fn part1(file_content: &str) -> usize {
+    solve::<2>(file_content)
+}
+pub fn part2(file_content: &str) -> usize {
+    solve::<25>(file_content)
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -122,23 +121,71 @@ enum RobotTask {
     Press(usize),
 }
 
-impl PartialOrd for RobotTask {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
+#[derive(Clone)]
+enum TrajectoryKind {
+    None,
+    JustPress,
+    MovePress(RobotTask),
+    MoveMovePress(RobotTask, RobotTask),
+    Alternative(RobotTask, RobotTask, RobotTask, RobotTask),
+}
+
+#[derive(Clone)]
+enum InstructionSpan {
+    Zero,
+    One(RobotTask),
+    Two(RobotTask, RobotTask),
+    Three(RobotTask, RobotTask, RobotTask),
+}
+impl Iterator for InstructionSpan {
+    type Item = RobotTask;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self {
+            InstructionSpan::Zero => None,
+            InstructionSpan::One(robot_task) => {
+                *self = InstructionSpan::Zero;
+                Some(robot_task)
+            }
+            InstructionSpan::Two(robot_task, robot_task1) => {
+                *self = InstructionSpan::One(robot_task1);
+                Some(robot_task)
+            }
+            InstructionSpan::Three(robot_task, robot_task1, robot_task2) => {
+                *self = InstructionSpan::Two(robot_task1, robot_task2);
+                Some(robot_task)
+            }
+        }
     }
 }
-impl Ord for RobotTask {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let self_steps = match self {
-            RobotTask::Move { steps, .. } => steps,
-            RobotTask::Press(steps) => steps,
-        };
-        let other_steps = match other {
-            RobotTask::Move { steps, .. } => steps,
-            RobotTask::Press(steps) => steps,
+
+impl Iterator for TrajectoryKind {
+    type Item = InstructionSpan;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (new_self, res) = match *self {
+            TrajectoryKind::None => return None,
+            TrajectoryKind::JustPress => (
+                TrajectoryKind::None,
+                InstructionSpan::One(RobotTask::Press(1)),
+            ),
+            TrajectoryKind::MovePress(robot_task) => (
+                TrajectoryKind::None,
+                InstructionSpan::Two(robot_task, RobotTask::Press(1)),
+            ),
+            TrajectoryKind::MoveMovePress(a, b) => (
+                TrajectoryKind::None,
+                InstructionSpan::Three(a, b, RobotTask::Press(1)),
+            ),
+            TrajectoryKind::Alternative(a, b, c, d) => (
+                TrajectoryKind::MoveMovePress(c, d),
+                InstructionSpan::Three(a, b, RobotTask::Press(1)),
+            ),
         };
 
-        self_steps.cmp(other_steps)
+        *self = new_self;
+
+        Some(res)
     }
 }
 
@@ -148,17 +195,16 @@ fn get_possible_trajectories(code: &str) -> impl Iterator<Item = Vec<RobotTask>>
         .tuple_windows()
         .map(|(a, b)| {
             if a == b {
-                return vec![vec![RobotTask::Press(1)]];
+                return TrajectoryKind::JustPress;
             }
             let ap = get_numeric_position(a);
             let bp = get_numeric_position(b);
             match get_paths(ap, bp, get_numeric_value) {
-                Either::Left(x) => vec![vec![x, RobotTask::Press(1)]],
-                Either::Right(Either::Left([x, y])) => vec![vec![x, y, RobotTask::Press(1)]],
-                Either::Right(Either::Right(([a, b], [c, d]))) => vec![
-                    vec![a, b, RobotTask::Press(1)],
-                    vec![c, d, RobotTask::Press(1)],
-                ],
+                Either::Left(x) => TrajectoryKind::MovePress(x),
+                Either::Right(Either::Left([x, y])) => TrajectoryKind::MoveMovePress(x, y),
+                Either::Right(Either::Right(([a, b], [c, d]))) => {
+                    TrajectoryKind::Alternative(a, b, c, d)
+                }
             }
         })
         .multi_cartesian_product()
@@ -170,31 +216,8 @@ fn get_paths<X>(
     bp: IVec2,
     get_v: impl Fn(IVec2) -> Option<X>,
 ) -> Either<RobotTask, Either<[RobotTask; 2], ([RobotTask; 2], [RobotTask; 2])>> {
-    if ap.x == bp.x {
-        if ap.y > bp.y {
-            return Either::Left(RobotTask::Move {
-                direction: Direction::Up,
-                steps: (ap.y - bp.y) as usize,
-            });
-        } else {
-            return Either::Left(RobotTask::Move {
-                direction: Direction::Down,
-                steps: (bp.y - ap.y) as usize,
-            });
-        }
-    }
-    if ap.y == bp.y {
-        if ap.x > bp.x {
-            return Either::Left(RobotTask::Move {
-                direction: Direction::Left,
-                steps: (ap.x - bp.x) as usize,
-            });
-        } else {
-            return Either::Left(RobotTask::Move {
-                direction: Direction::Right,
-                steps: (bp.x - ap.x) as usize,
-            });
-        }
+    if ap.x == bp.x || ap.y == bp.y {
+        return Either::Left(move_from_to(ap, bp));
     }
     let angle1 = IVec2::new(ap.x, bp.y);
     let angle2 = IVec2::new(bp.x, ap.y);
@@ -215,32 +238,38 @@ fn get_paths<X>(
     }
 }
 
+#[inline(always)]
 fn move_from_to(a: IVec2, b: IVec2) -> RobotTask {
     let delta = b - a;
     let dir = delta.signum();
-    let steps = ((delta.x + delta.y) / (dir.x + dir.y)) as usize;
-    match (dir.x, dir.y) {
-        (-1, 0) => RobotTask::Move {
-            direction: Direction::Left,
-            steps,
-        },
-        (1, 0) => RobotTask::Move {
-            direction: Direction::Right,
-            steps,
-        },
-        (0, -1) => RobotTask::Move {
-            direction: Direction::Up,
-            steps,
-        },
-        (0, 1) => RobotTask::Move {
-            direction: Direction::Down,
-            steps,
-        },
-        x => unreachable!("{x:?}"),
+    if dir.x == 0 {
+        if dir.y == -1 {
+            RobotTask::Move {
+                direction: Direction::Up,
+                steps: (-delta.y) as usize,
+            }
+        } else {
+            RobotTask::Move {
+                direction: Direction::Down,
+                steps: delta.y as usize,
+            }
+        }
+    } else {
+        if dir.x == -1 {
+            RobotTask::Move {
+                direction: Direction::Left,
+                steps: (-delta.x) as usize,
+            }
+        } else {
+            RobotTask::Move {
+                direction: Direction::Right,
+                steps: delta.x as usize,
+            }
+        }
     }
 }
 
-type Cache = HashMap<(usize, usize), usize>;
+type Cache = fxhash::FxHashMap<(usize, usize), usize>;
 
 fn min_steps_for_code<const ROBOTS: usize>(code: &str, cache: &mut Cache) -> usize {
     get_possible_trajectories(code)
@@ -256,7 +285,7 @@ fn total_steps(controls: &[RobotTask]) -> usize {
     })
 }
 
-fn controls_key(controls: &[RobotTask]) -> usize {
+fn tasks_key(controls: &[RobotTask]) -> usize {
     controls.iter().fold(0, |res, c| match c {
         RobotTask::Move { direction, steps } => {
             assert!(*steps <= 3, "{} > 3", *steps);
@@ -277,21 +306,34 @@ fn controls_key(controls: &[RobotTask]) -> usize {
     })
 }
 fn min_steps_to_execute_controls(
-    controls: &[RobotTask],
-    controllers: usize,
+    tasks: &[RobotTask],
+    intermediate_robots: usize,
     cache: &mut Cache,
 ) -> usize {
-    if controllers == 0 {
-        return total_steps(controls);
+    if intermediate_robots == 0 {
+        return total_steps(tasks);
     }
-    let key = controls_key(controls);
-    if let Some(x) = cache.get(&(key, controllers)) {
+    let key = tasks_key(tasks);
+    if let Some(x) = cache.get(&(key, intermediate_robots)) {
         return *x;
     }
+    let min_steps = calculate_min_steps(tasks, intermediate_robots, cache);
+
+    cache.insert((key, intermediate_robots), min_steps);
+
+    min_steps
+}
+
+/// Calculates min steps without using cache directly
+fn calculate_min_steps(
+    tasks: &[RobotTask],
+    intermediate_robots: usize,
+    cache: &mut Cache,
+) -> usize {
     let mut min_steps = 0;
 
     let mut current_pos = get_directional_keypad_position(DirectionButton::A);
-    for c in controls {
+    for c in tasks {
         let (target_pos, steps) = match c {
             RobotTask::Move { direction, steps } => {
                 let target_button: DirectionButton = (*direction).into();
@@ -300,8 +342,11 @@ fn min_steps_to_execute_controls(
             RobotTask::Press(steps) => (get_directional_keypad_position(DirectionButton::A), steps),
         };
         if target_pos == current_pos {
-            min_steps +=
-                min_steps_to_execute_controls(&[RobotTask::Press(*steps)], controllers - 1, cache);
+            min_steps += min_steps_to_execute_controls(
+                &[RobotTask::Press(*steps)],
+                intermediate_robots - 1,
+                cache,
+            );
             continue;
         }
 
@@ -309,7 +354,7 @@ fn min_steps_to_execute_controls(
             Either::Left(p) => {
                 min_steps += min_steps_to_execute_controls(
                     &[p, RobotTask::Press(*steps)],
-                    controllers - 1,
+                    intermediate_robots - 1,
                     cache,
                 );
                 current_pos = target_pos;
@@ -317,7 +362,7 @@ fn min_steps_to_execute_controls(
             Either::Right(Either::Left([a, b])) => {
                 min_steps += min_steps_to_execute_controls(
                     &[a, b, RobotTask::Press(*steps)],
-                    controllers - 1,
+                    intermediate_robots - 1,
                     cache,
                 );
                 current_pos = target_pos;
@@ -325,12 +370,12 @@ fn min_steps_to_execute_controls(
             Either::Right(Either::Right((p1, p2))) => {
                 let left_cost = min_steps_to_execute_controls(
                     &[p1[0], p1[1], RobotTask::Press(*steps)],
-                    controllers - 1,
+                    intermediate_robots - 1,
                     cache,
                 );
                 let right_cost = min_steps_to_execute_controls(
                     &[p2[0], p2[1], RobotTask::Press(*steps)],
-                    controllers - 1,
+                    intermediate_robots - 1,
                     cache,
                 );
 
@@ -340,9 +385,6 @@ fn min_steps_to_execute_controls(
             }
         }
     }
-
-    cache.insert((key, controllers), min_steps);
-
     min_steps
 }
 

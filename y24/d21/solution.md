@@ -32,11 +32,14 @@ If you want to see a Rust solution with:
 - constant type parameters
 - itertools trait
 - usage of `Either` from itertools
-- 
+- usage of custom iterators
+- usage of FxHashMap for caching
+
+You can see here: https://github.com/whiteand/advent-of-code/blob/7ff107f8ca3b9b9f0e322226fdaa60d8b40ab170/y24/d21/src/lib.rs
 
 Performance:
 
     
     y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
-    ├─ part1  25.7 µs       │ 125.2 µs      │ 27.27 µs      │ 29.79 µs      │ 100     │ 100
-    ╰─ part2  134.9 µs      │ 215.8 µs      │ 146.4 µs      │ 148.9 µs      │ 100     │ 100
+    ├─ part1  8.791 µs      │ 22.45 µs      │ 9.228 µs      │ 9.401 µs      │ 100     │ 100
+    ╰─ part2  33.16 µs      │ 87.7 µs       │ 33.66 µs      │ 35.6 µs       │ 100     │ 100
