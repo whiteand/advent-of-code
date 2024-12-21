@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Write};
 
-use advent_utils::{glam::IVec2, vec_on_stack};
+use advent_utils::glam::IVec2;
 use itertools::{Either, Itertools};
 use tracing::info;
 
@@ -371,17 +371,7 @@ fn min_steps_to_execute_controls(
     if let Some(x) = cache.get(&(key, controllers)) {
         return *x;
     }
-    vec_on_stack! {
-       let (mut new_controls: Vec<usize>, mut new_controls_slice) = Vec::with_capacity(8);
-    }
-    vec_on_stack! {
-       let (mut buf: Vec<usize>, mut buf_slice) = Vec::with_capacity(8);
-    }
-    vec_on_stack! {
-       let (mut temp_path: Vec<RobotTask>, mut temp_path_slice) = Vec::with_capacity(8);
-    }
-
-    new_controls.push(0);
+    let mut min_steps = 0;
 
     let mut current_pos = get_directional_keypad_position(DirectionButton::A);
     for c in controls {
@@ -393,35 +383,26 @@ fn min_steps_to_execute_controls(
             RobotTask::Press(steps) => (get_directional_keypad_position(DirectionButton::A), steps),
         };
         if target_pos == current_pos {
-            for x in new_controls.iter_mut() {
-                *x += min_steps_to_execute_controls(
-                    &[RobotTask::Press(*steps)],
-                    controllers - 1,
-                    cache,
-                );
-            }
+            min_steps +=
+                min_steps_to_execute_controls(&[RobotTask::Press(*steps)], controllers - 1, cache);
             continue;
         }
 
         match get_paths2(current_pos, target_pos, get_directional_keypad_value) {
             Either::Left(p) => {
-                for x in new_controls.iter_mut() {
-                    *x += min_steps_to_execute_controls(
-                        &[p, RobotTask::Press(*steps)],
-                        controllers - 1,
-                        cache,
-                    );
-                }
+                min_steps += min_steps_to_execute_controls(
+                    &[p, RobotTask::Press(*steps)],
+                    controllers - 1,
+                    cache,
+                );
                 current_pos = target_pos;
             }
             Either::Right(Either::Left([a, b])) => {
-                for x in new_controls.iter_mut() {
-                    *x += min_steps_to_execute_controls(
-                        &[a, b, RobotTask::Press(*steps)],
-                        controllers - 1,
-                        cache,
-                    );
-                }
+                min_steps += min_steps_to_execute_controls(
+                    &[a, b, RobotTask::Press(*steps)],
+                    controllers - 1,
+                    cache,
+                );
                 current_pos = target_pos;
             }
             Either::Right(Either::Right((p1, p2))) => {
@@ -436,30 +417,16 @@ fn min_steps_to_execute_controls(
                     cache,
                 );
 
-                while let Some(x) = new_controls.pop() {
-                    buf.push(x + left_cost);
-                    buf.push(x + right_cost);
-                }
-
-                assert!(new_controls.is_empty());
-
-                std::mem::swap(&mut buf, &mut new_controls);
-
-                assert!(buf.is_empty());
+                min_steps += left_cost.min(right_cost);
 
                 current_pos = target_pos;
             }
         }
     }
 
-    let min = new_controls.iter().copied().min().unwrap_or(usize::MAX);
-    drop(buf);
-    drop(new_controls);
-    drop(temp_path);
+    cache.insert((key, controllers), min_steps);
 
-    cache.insert((key, controllers), min);
-
-    min
+    min_steps
 }
 
 #[cfg(test)]

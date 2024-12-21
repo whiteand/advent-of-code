@@ -74,3 +74,10 @@ Timer precision: 41 ns
 y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  29.2 µs       │ 55.37 µs      │ 30.24 µs      │ 31.17 µs      │ 100     │ 100
 ╰─ part2  156.7 µs      │ 217.2 µs      │ 166.2 µs      │ 169.4 µs      │ 100     │ 100
+
+Removed new_controls array:
+
+Timer precision: 41 ns
+y24d21    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  25.7 µs       │ 125.2 µs      │ 27.27 µs      │ 29.79 µs      │ 100     │ 100
+╰─ part2  134.9 µs      │ 215.8 µs      │ 146.4 µs      │ 148.9 µs      │ 100     │ 100
