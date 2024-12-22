@@ -25,3 +25,15 @@ String::from_utf8_unchecked:
 y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  301.7 ns      │ 307 ns        │ 304.3 ns      │ 305.3 ns      │ 100     │ 1600
 ╰─ part2  30.87 ms      │ 59.26 ms      │ 31.8 ms       │ 32.25 ms      │ 100     │ 100
+
+Rewrote to seqs:
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  874.6 ns      │ 6.708 µs      │ 915.6 ns      │ 965 ns        │ 100     │ 100
+╰─ part2  163.1 ms      │ 222.3 ms      │ 180.2 ms      │ 180.2 ms      │ 100     │ 100
+
+Rewriting checksum step with pointer logic
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  124.6 ns      │ 701.4 ns      │ 127.3 ns      │ 136.3 ns      │ 100     │ 3200
+╰─ part2  6.358 ms      │ 8.377 ms      │ 7.126 ms      │ 7.093 ms      │ 100     │ 100

@@ -24,15 +24,20 @@ fn checksum<const N: usize>(mut file: Vec<u8>) -> String {
 }
 
 fn checksum_step(file: &mut Vec<u8>) {
-    let mut dst = 0;
-    for src in (0..(file.len() - 1)).step_by(2) {
-        let a = file[src];
-        let b = file[src + 1];
-
-        file[dst] = if a == b { b'1' } else { b'0' };
-        dst += 1;
+    let mut src = file.as_mut_ptr();
+    let mut dst = src;
+    let end = unsafe { src.add(file.len()) };
+    while src != end {
+        unsafe {
+            let a = *src;
+            src = src.add(1);
+            let b = *src;
+            src = src.add(1);
+            *dst = if a == b { b'1' } else { b'0' };
+            dst = dst.add(1)
+        }
     }
-    file.truncate(dst);
+    file.truncate(file.len() >> 1);
 }
 
 /// Call the data you have at this point "a".  
