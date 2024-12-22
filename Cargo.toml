@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["template", "scripts"]
 members = [
     "advent_utils",
     "fuzz",

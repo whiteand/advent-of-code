@@ -1,6 +1,6 @@
 use std::io::Read;
-
-use y{{year}}d{{day}}::{solve_part_1, solve_part_2};
+use tracing_subscriber::layer::SubscriberExt;
+use y{{year}}d{{day}}::{part1, part2};
 
 fn main() {
     // let (chrome_layer, _guard) = tracing_chrome::ChromeLayerBuilder::new().build();
@@ -23,14 +23,14 @@ fn main() {
 
     let mut instant = std::time::Instant::now();
 
-    let result = solve_part_1(&input);
+    let result = part1(&input);
     println!("Part 1: {}", result);
     println!("Time: {:?}", instant.elapsed());
 
     println!();
 
     instant = std::time::Instant::now();
-    let result = solve_part_2(&input);
+    let result = part2(&input);
     println!("Part 2: {}", result);
     println!("Time: {:?}", instant.elapsed());
 }

@@ -1,27 +1,39 @@
 use advent_utils::parse;
 use itertools::Itertools;
-use tracing::info;
+
+#[tracing::instrument(skip(file_content))]
+pub fn part1(file_content: &str) -> usize {
+    let initials = parse::nums::<u32>(file_content).map(Random).collect_vec();
+
+    initials
+        .into_iter()
+        .map(|x| x.into_iter().nth(2000).map(|x| x.0).unwrap() as usize)
+        .sum::<usize>()
+}
+
+#[tracing::instrument(skip(file_content))]
+pub fn part2(file_content: &str) -> u16 {
+    get_max_benefit(parse::nums::<u32>(file_content).map(Random))
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-struct Random(usize);
+struct Random(u32);
 impl Random {
     fn next(&self) -> Random {
         let secret = self.0;
-
         let a = ((secret << 6) ^ secret) & 0b111111111111111111111111;
         let b = ((a >> 5) ^ a) & 0b111111111111111111111111;
         let c = ((b << 11) ^ b) & 0b111111111111111111111111;
         Self(c)
     }
 
-    fn prices(self) -> impl Iterator<Item = usize> {
+    fn prices(self) -> impl Iterator<Item = u32> {
         self.into_iter().map(|x| x.0 % 10)
     }
-    fn prices_with_offsets(self) -> impl Iterator<Item = (usize, i32)> {
+    fn prices_with_offsets(self) -> impl Iterator<Item = (u32, i32)> {
         self.prices()
-            .skip(1)
-            .zip(self.prices())
-            .map(|(a, b)| (a, (a as i32 - b as i32)))
+            .tuple_windows()
+            .map(|(b, a)| (a, (a as i32 - b as i32)))
     }
 }
 
@@ -49,60 +61,46 @@ impl Iterator for RandomIter {
     fn size_hint(&self) -> (usize, Option<usize>) {
         (usize::MAX, None)
     }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let mut r = self.0;
+        for _ in 0..n {
+            r = r.next();
+        }
+        self.0 = r;
+        self.next()
+    }
 }
 
-#[tracing::instrument(skip(file_content))]
-pub fn solve_part_1(file_content: &str) -> usize {
-    let initials = parse::nums::<usize>(file_content).map(Random).collect_vec();
+fn get_max_benefit(randoms: impl Iterator<Item = Random>) -> u16 {
+    let mut total_by_key = vec![0u16; 19 * 19 * 19 * 19];
+    let mut max_visited_by_key = [None; 19 * 19 * 19 * 19];
+    let mut max_total = 0;
+    randoms.into_iter().enumerate().for_each(|(i, r)| {
+        for (seq, n) in r
+            .prices_with_offsets()
+            .tuple_windows()
+            .take(1997)
+            .map(|(a, b, c, d)| ([a, b, c, d].map(|x| x.1), d.0))
+        {
+            let key = get_seq_key(seq);
+            if max_visited_by_key[key].map_or(true, |x| x < i) {
+                max_visited_by_key[key] = Some(i);
 
-    initials
-        .into_iter()
-        .map(|x| x.into_iter().nth(2000).map(|x| x.0).unwrap())
-        .sum::<usize>()
-}
-
-#[tracing::instrument(skip(file_content))]
-pub fn solve_part_2(file_content: &str) -> usize {
-    get_max_benefit(parse::nums::<usize>(file_content).map(Random))
-}
-
-fn get_max_benefit(randoms: impl Iterator<Item = Random>) -> usize {
-    let results = randoms
-        .into_iter()
-        .map(|r| {
-            let mut sequences = fxhash::FxHashMap::default();
-            for (seq, n) in r
-                .prices_with_offsets()
-                .tuple_windows()
-                .take(1997)
-                .map(|(a, b, c, d)| ([a, b, c, d].map(|x| x.1), d.0))
-            {
-                let key = get_seq_key(seq);
-                sequences.entry(key).or_insert_with(|| n);
+                let total = total_by_key[key] + (n as u16);
+                total_by_key[key] = total;
+                if total > max_total {
+                    max_total = total;
+                }
             }
+        }
+    });
 
-            sequences
-        })
-        .collect_vec();
-
-    results
-        .iter()
-        .flat_map(|x| x.keys())
-        .copied()
-        .unique()
-        .map(|x| {
-            results
-                .iter()
-                .flat_map(|prices| prices.get(&x).copied())
-                .sum()
-        })
-        .max()
-        .unwrap_or(0)
+    max_total
 }
 
 fn get_seq_key(seq: [i32; 4]) -> usize {
     let x = seq.map(|x| x + 9);
-    (x[0] * 19 * 19 * 19 + x[1] * 19 * 19 + x[2] * 19 + x[3]) as usize
+    (((x[0] * 19 + x[1]) * 19 + x[2]) * 19 + x[3]) as usize
 }
 
 #[cfg(test)]
@@ -111,7 +109,7 @@ mod tests {
 
     use crate::{get_max_benefit, Random};
 
-    use super::{solve_part_1, solve_part_2};
+    use super::{part1, part2};
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[test]
@@ -156,7 +154,7 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(EXAMPLE)), "37327623");
+        assert_eq!(format!("{}", part1(EXAMPLE)), "37327623");
     }
 
     #[test]
@@ -166,7 +164,7 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "19458130434");
+        assert_eq!(format!("{}", part1(ACTUAL)), "19458130434");
     }
 
     #[test]
@@ -180,13 +178,14 @@ mod tests {
     }
 
     #[test]
+    /// runs 2.53s
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        let actual = solve_part_2(ACTUAL);
+        let actual = part2(ACTUAL);
         assert_eq!(actual, 2130);
     }
 }
