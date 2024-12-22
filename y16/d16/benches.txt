@@ -1,0 +1,27 @@
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  838.1 ns      │ 916.3 ns      │ 843.4 ns      │ 852.3 ns      │ 100     │ 800
+╰─ part2  88.96 ms      │ 98.36 ms      │ 91.03 ms      │ 92.22 ms      │ 100     │ 100
+
+After extend from slice
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  723.6 ns      │ 796.5 ns      │ 739.1 ns      │ 744 ns        │ 100     │ 800
+╰─ part2  70.22 ms      │ 102.5 ms      │ 79.84 ms      │ 79.86 ms      │ 100     │ 100
+
+After right capacity:
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  445 ns        │ 1.546 µs      │ 454 ns        │ 467.7 ns      │ 100     │ 1600
+╰─ part2  49.38 ms      │ 52.7 ms       │ 50.26 ms      │ 50.31 ms      │ 100     │ 100
+
+After removing buffer array:
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  312.1 ns      │ 338.2 ns      │ 322.6 ns      │ 323.3 ns      │ 100     │ 1600
+╰─ part2  31.26 ms      │ 60.63 ms      │ 31.9 ms       │ 32.52 ms      │ 100     │ 100
+
+String::from_utf8_unchecked:
+
+y16d16    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  301.7 ns      │ 307 ns        │ 304.3 ns      │ 305.3 ns      │ 100     │ 1600
+╰─ part2  30.87 ms      │ 59.26 ms      │ 31.8 ms       │ 32.25 ms      │ 100     │ 100
