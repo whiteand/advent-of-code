@@ -14,19 +14,19 @@ Main ideas:
 
 - After you get some trajectory, for example `v<<A>>^A<A>AvA<^AA>A<vAAA>^A`. The resulting min_steps for these instructions will be the sum of the min_steps of the "sub-trajectories" ending with `A`:
 
-    min_steps("v<<A>>^A<A>AvA<^AA>A<vAAA>^A") =
-        min_steps("v<<A") +
-        min_steps(">>^A") +
-        min_steps("<A") +
-        min_steps(">A") +
-        min_steps("vA") +
-        min_steps("<^A") +
-        min_steps("A") +
-        min_steps(">A") +
-        min_steps("<vA") +
-        min_steps("A") +
-        min_steps("A") +
-        min_steps(">^A")
+    min_steps("v<<A>>^A<A>AvA<^AA>A<vAAA>^A") =  
+        min_steps("v<<A") +  
+        min_steps(">>^A") +  
+        min_steps("<A") +  
+        min_steps(">A") +  
+        min_steps("vA") +  
+        min_steps("<^A") +  
+        min_steps("A") +  
+        min_steps(">A") +  
+        min_steps("<vA") +  
+        min_steps("A") +  
+        min_steps("A") +  
+        min_steps(">^A")  
 
 If you want to see a Rust solution with:
 - constant type parameters

@@ -2759,3 +2759,16 @@ dependencies = [
  "tracing-chrome",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "y24d22"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "divan",
+ "fxhash",
+ "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
