@@ -1,5 +1,3 @@
-use std::collections::binary_heap;
-
 use advent_utils::parse;
 use itertools::Itertools;
 use tracing::info;
@@ -14,14 +12,6 @@ impl Random {
         let b = ((a >> 5) ^ a) & 0b111111111111111111111111;
         let c = ((b << 11) ^ b) & 0b111111111111111111111111;
         Self(c)
-    }
-
-    fn cycle_len(self) -> usize {
-        self.into_iter()
-            .skip(1)
-            .find_position(|x| *x == self)
-            .map(|(p, _)| p + 1)
-            .unwrap()
     }
 
     fn prices(self) -> impl Iterator<Item = usize> {
@@ -65,26 +55,18 @@ impl Iterator for RandomIter {
 pub fn solve_part_1(file_content: &str) -> usize {
     let initials = parse::nums::<usize>(file_content).map(Random).collect_vec();
 
-    // let cycles = initials.iter().map(|x| x.cycle_len()).collect_vec();
-
-    let t2000 = initials
+    initials
         .into_iter()
         .map(|x| x.into_iter().nth(2000).map(|x| x.0).unwrap())
-        .collect_vec();
-
-    info!(?t2000);
-
-    t2000.into_iter().sum::<usize>()
+        .sum::<usize>()
 }
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let randoms = parse::nums::<usize>(file_content).map(Random).collect_vec();
-
-    get_sequence(&randoms)
+    get_max_benefit(parse::nums::<usize>(file_content).map(Random))
 }
 
-fn get_sequence(randoms: &[Random]) -> usize {
+fn get_max_benefit(randoms: impl Iterator<Item = Random>) -> usize {
     let results = randoms
         .into_iter()
         .map(|r| {
@@ -103,17 +85,19 @@ fn get_sequence(randoms: &[Random]) -> usize {
         })
         .collect_vec();
 
-    let possible_seqs = results.iter().flat_map(|x| x.keys()).copied().unique();
-
-    let mut max_total = 0;
-    for x in possible_seqs {
-        let total = get_total(x, &results);
-        if total > max_total {
-            max_total = total;
-        }
-    }
-
-    max_total
+    results
+        .iter()
+        .flat_map(|x| x.keys())
+        .copied()
+        .unique()
+        .map(|x| {
+            results
+                .iter()
+                .flat_map(|prices| prices.get(&x).copied())
+                .sum()
+        })
+        .max()
+        .unwrap_or(0)
 }
 
 fn get_seq_key(seq: [i32; 4]) -> usize {
@@ -121,18 +105,11 @@ fn get_seq_key(seq: [i32; 4]) -> usize {
     (x[0] * 19 * 19 * 19 + x[1] * 19 * 19 + x[2] * 19 + x[3]) as usize
 }
 
-fn get_total(seq_key: usize, seqs_with_prices: &[fxhash::FxHashMap<usize, usize>]) -> usize {
-    seqs_with_prices
-        .iter()
-        .flat_map(|prices| prices.get(&seq_key).copied())
-        .sum::<usize>()
-}
-
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
 
-    use crate::{get_sequence, Random};
+    use crate::{get_max_benefit, Random};
 
     use super::{solve_part_1, solve_part_2};
     const EXAMPLE: &str = include_str!("../example.txt");
@@ -199,10 +176,7 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(
-            get_sequence(&[1, 2, 3, 2024].map(Random)),
-            ([-2, 1, -1, 3], 23)
-        );
+        assert_eq!(get_max_benefit([1, 2, 3, 2024].map(Random).into_iter()), 23);
     }
 
     #[test]
