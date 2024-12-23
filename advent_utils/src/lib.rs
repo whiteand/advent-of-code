@@ -4,12 +4,14 @@ pub mod doubly_linked_list;
 pub mod fixed_slice_vec;
 pub mod genetic;
 pub mod grid;
+pub mod immutable_lists;
 pub mod math;
 pub mod parse;
 pub mod reduces;
 
 pub use binary_search::binary_search;
 pub use glam;
+pub use immutable_lists::*;
 pub use rand;
 pub mod nom {
     pub use nom::*;

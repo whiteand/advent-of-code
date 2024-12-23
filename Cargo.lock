@@ -306,6 +306,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "disjoint"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c37b399c91d093763e38c7a57a740e0005e30e5aff7132e791aada5eef3fed99"
+
+[[package]]
 name = "divan"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2781,6 +2787,22 @@ dependencies = [
  "divan",
  "fxhash",
  "itertools 0.13.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y24d23"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "disjoint",
+ "divan",
+ "fxhash",
+ "itertools 0.13.0",
+ "pathfinding",
+ "petgraph",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
