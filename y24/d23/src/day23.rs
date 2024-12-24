@@ -3,7 +3,6 @@ use std::str::FromStr;
 use advent_utils::ImmutableLists;
 use itertools::Itertools;
 use petgraph::prelude::{UnGraph, *};
-use tracing::info;
 
 #[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Computer(usize);
