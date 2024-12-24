@@ -6,3 +6,4 @@ work.nu
 y*/d*/input*.txt
 cron.sh
 trace-*.json
+y24/d24/adder.dot

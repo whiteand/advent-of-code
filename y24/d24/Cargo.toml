@@ -12,6 +12,7 @@ tracing-subscriber.workspace = true
 tracing.workspace = true
 tracing-chrome.workspace = true
 fxhash = "0.2.1"
+petgraph = "0.6.5"
 
 [dev-dependencies]
 divan.workspace = true

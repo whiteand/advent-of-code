@@ -10,7 +10,7 @@ pub struct ImmutableList<T>(usize, PhantomData<T>);
 
 impl<T> Clone for ImmutableList<T> {
     fn clone(&self) -> Self {
-        Self(self.0, PhantomData)
+        *self
     }
 }
 impl<T> Copy for ImmutableList<T> {}

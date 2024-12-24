@@ -16,7 +16,7 @@ fn main() {
             .finish()
             .with(tracing_subscriber::EnvFilter::from_default_env()),
     );
-    
+
     // read stdin into a string
     let mut input = String::new();
     std::io::stdin().read_to_string(&mut input).unwrap();

@@ -2816,6 +2816,7 @@ dependencies = [
  "divan",
  "fxhash",
  "itertools 0.13.0",
+ "petgraph",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
