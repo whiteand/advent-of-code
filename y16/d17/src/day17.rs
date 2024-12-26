@@ -1,51 +1,74 @@
-use core::hash;
 use std::fmt::Write;
 
-use advent_utils::{declare_array, declare_field, glam::IVec2, nom::AsBytes};
+use advent_utils::{declare_field, glam::IVec2, nom::AsBytes};
 use itertools::Itertools;
-use tracing::{info, span, Level};
+use tracing::info;
 
 #[tracing::instrument(ret)]
 pub fn part1(passcode: &str) -> String {
     let map = Map {
         passcode: passcode.trim(),
     };
-    for x in pathfinding::prelude::dijkstra_reach(
-        &(IVec2::new(0, 0), Path::empty()),
-        |(pos, path), _| {
+    for x in
+        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path), _| {
             let pos = *pos;
-            let path = *path;
-            let doors = map.get_doors(path);
-            info!(?pos, %path, %doors);
+            let doors = map.get_doors(path.iter().copied());
+            let prev_path = path.clone();
+            info!(?pos, ?path, %doors);
             doors
-                .filter(move |_| path.len() < Path::MAX_LEN)
                 .filter_map(move |t| {
-                    let _span = span!(Level::INFO, "suc", p = %path, ?pos, %t).entered();
                     let next_pos = pos + t.to_vec();
-                    info!(?next_pos);
-                    if !(0..=3i32).contains(&next_pos.x) {
-                        return None;
-                    }
-                    if !(0..=3i32).contains(&next_pos.y) {
-                        return None;
-                    }
-                    let next_path = path.push_back(t);
-                    info!(%next_path);
-                    // tracing::info!(?next_pos, t = ?(t.to_letter() as char), new_path = ?next_path.clone().map(|x| x.to_letter() as char).join(""));
-                    Some(((next_pos, next_path), 1))
+
+                    (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
+                        .then_some((next_pos, t))
                 })
-        },
-    ) {
+                .map(move |(next_pos, t)| {
+                    let mut new_path = prev_path.clone();
+                    new_path.push(t);
+                    ((next_pos, new_path), 1)
+                })
+        })
+    {
         if x.node.0 == IVec2::new(3, 3) {
-            return x.node.1.map(|x| x.to_letter() as char).join("");
+            return x.node.1.into_iter().map(|x| x.to_letter() as char).join("");
         }
     }
 
     "".to_owned()
 }
-#[tracing::instrument(skip(file_content))]
-pub fn part2(file_content: &str) -> usize {
-    file_content.len()
+#[tracing::instrument(ret)]
+pub fn part2(passcode: &str) -> usize {
+    let map = Map {
+        passcode: passcode.trim(),
+    };
+    let mut max_path_len = 0;
+    for x in
+        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path), _| {
+            let pos = *pos;
+            let doors = map.get_doors(path.iter().copied());
+            let prev_path = path.clone();
+            info!(?pos, ?path, %doors);
+            doors
+                .filter(move |_| pos != IVec2::new(3, 3))
+                .filter_map(move |t| {
+                    let next_pos = pos + t.to_vec();
+
+                    (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
+                        .then_some((next_pos, t))
+                })
+                .map(move |(next_pos, t)| {
+                    let mut new_path = prev_path.clone();
+                    new_path.push(t);
+                    ((next_pos, new_path), 1)
+                })
+        })
+    {
+        if x.node.0 == IVec2::new(3, 3) {
+            max_path_len = x.total_cost;
+        }
+    }
+
+    max_path_len
 }
 
 struct Map<'t> {
@@ -95,70 +118,6 @@ impl Doors {
     declare_field!(u8, bool, open_right, set_right, 3);
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-struct Path(u128);
-
-impl std::fmt::Display for Path {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for c in (*self).map(|x| x.to_letter() as char) {
-            f.write_char(c)?;
-        }
-        Ok(())
-    }
-}
-
-impl Path {
-    const MAX_LEN: usize = 127;
-    const ITEMS_OFFSET: usize = 7;
-    const ITEM_SIZE: usize = 2;
-    fn empty() -> Self {
-        Self(0)
-    }
-    declare_field!(u128, usize, len, set_len, 0, 0b1111111);
-    declare_array!(
-        u128,
-        u8,
-        get_turn,
-        set_turn,
-        Self::ITEMS_OFFSET,
-        Self::ITEM_SIZE,
-        0b11
-    );
-
-    fn split_first(&mut self) -> Option<(Turn, Self)> {
-        let prev_len = self.len();
-        if prev_len > 0 {
-            let value = self.get_turn(0);
-            let turn = Turn::from_bitmask(value);
-            let mut rest = self.0 >> Self::ITEMS_OFFSET + Self::ITEM_SIZE;
-            rest <<= Self::ITEMS_OFFSET;
-            rest |= (prev_len - 1) as u128;
-
-            Some((turn, Self(rest)))
-        } else {
-            None
-        }
-    }
-    fn push_back(&self, turn: Turn) -> Self {
-        let prev_len = self.len();
-        assert!(prev_len < Self::MAX_LEN);
-        self.set_turn(prev_len, turn as u8).set_len(prev_len + 1)
-    }
-}
-
-impl Iterator for Path {
-    type Item = Turn;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some((first, rest)) = self.split_first() {
-            *self = rest;
-            Some(first)
-        } else {
-            None
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Hash, Copy, Clone)]
 #[repr(u8)]
 enum Turn {
@@ -168,6 +127,11 @@ enum Turn {
     Right = 0b11,
 }
 
+impl std::fmt::Debug for Turn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char(self.to_letter() as char)
+    }
+}
 impl std::fmt::Display for Turn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_char(self.to_letter() as char)
@@ -175,15 +139,6 @@ impl std::fmt::Display for Turn {
 }
 
 impl Turn {
-    fn from_bitmask(bits: u8) -> Turn {
-        match bits {
-            0b00 => Turn::Up,
-            0b01 => Turn::Down,
-            0b10 => Turn::Left,
-            0b11 => Turn::Right,
-            x => unreachable!("unknown turn {x}"),
-        }
-    }
     fn to_vec(&self) -> IVec2 {
         match self {
             Turn::Up => IVec2::NEG_Y,
@@ -203,10 +158,10 @@ impl Turn {
 }
 
 impl Map<'_> {
-    fn get_doors(&self, path: Path) -> Doors {
-        let mut payload = Vec::with_capacity(path.len() + self.passcode.len());
+    fn get_doors(&self, it: impl Iterator<Item = Turn>) -> Doors {
+        let it_len = it.try_len().map(|x| x).unwrap_or_default();
+        let mut payload = Vec::with_capacity(it_len + self.passcode.len());
         payload.extend_from_slice(self.passcode.as_bytes());
-        let it = path;
         for x in it {
             payload.push(x.to_letter());
         }
@@ -230,15 +185,19 @@ impl Map<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{part1, part2};
-    use super::{Doors, Map, Path, Turn};
+    use super::part1;
+    use super::{Doors, Map, Turn};
     use rstest::rstest;
     const ACTUAL: &str = include_str!("../input.txt");
 
     #[rstest]
-    #[case("hijkl", Path::empty(), Doors(0b0111))]
-    #[case("hijkl", Path::empty().push_back(Turn::Down), Doors(0b1101))]
-    fn test_opened(#[case] passcode: &str, #[case] path: Path, #[case] expected: Doors) {
+    #[case("hijkl", Vec::new().into_iter(), Doors(0b0111))]
+    #[case("hijkl", [Turn::Down].into_iter(), Doors(0b1101))]
+    fn test_opened(
+        #[case] passcode: &str,
+        #[case] path: impl Iterator<Item = Turn>,
+        #[case] expected: Doors,
+    ) {
         let map = Map { passcode };
         let doors = map.get_doors(path);
         assert_eq!(doors, expected);
@@ -249,21 +208,14 @@ mod tests {
     #[case::example("ulqzkmiv", "DRURDRUDDLLDLUURRDULRLDUUDDDRR")]
     #[case::actual(ACTUAL, "RDURRDDLRD")]
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
         assert_eq!(format!("{}", part1(input)), expected);
     }
-    // #[rstest]
-    // #[case::actual(ACTUAL, "0")]
-    // fn test_part2(#[case] input: &str, #[case] expected: &str) {
-    //     let _guard = tracing::subscriber::set_default(
-    //         tracing_subscriber::FmtSubscriber::builder()
-    //             .without_time()
-    //             .finish(),
-    //     );
-    //     assert_eq!(format!("{}", part2(input)), expected);
-    // }
+    #[rstest]
+    #[case::example("ihgpwlah", "370")]
+    #[case::actual(ACTUAL, "526")]
+    #[ignore]
+    fn test_part2(#[case] input: &str, #[case] expected: &str) {
+        use crate::part2;
+        assert_eq!(format!("{}", part2(input)), expected);
+    }
 }

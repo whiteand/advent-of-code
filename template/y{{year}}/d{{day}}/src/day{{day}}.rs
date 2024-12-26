@@ -27,6 +27,7 @@ mod tests {
     #[rstest]
     #[case::example(EXAMPLE, "0")]
     // #[case::actual(ACTUAL, "0")]
+    #[ignore]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
