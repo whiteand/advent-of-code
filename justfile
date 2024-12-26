@@ -34,8 +34,8 @@ solve-log year day:
 example year day:
     cat ./y{{year}}/d{{day}}/example.txt | cargo run --release --package y{{year}}d{{day}}
 
-test year day:
-    cargo test --package y{{year}}d{{day}} --lib -- --nocapture tests
+test year day *PARAMS:
+    cargo test --package y{{year}}d{{day}} --lib -- --nocapture tests {{PARAMS}}
 
 test-watch year day:
     cargo watch test --package y{{year}}d{{day}} --lib -- --nocapture tests
