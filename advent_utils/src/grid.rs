@@ -3,10 +3,19 @@ use std::ops::Range;
 use glam::IVec2;
 use itertools::Itertools;
 
-#[derive(Debug)]
 pub struct Grid<T> {
     arr: Vec<T>,
     row_start_indexes: Vec<usize>,
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for Grid<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "[")?;
+        for row in self.rows() {
+            writeln!(f, " {:?}", row)?;
+        }
+        writeln!(f, "]")
+    }
 }
 
 /// Represents neighbours from top, right,bottom and left.
