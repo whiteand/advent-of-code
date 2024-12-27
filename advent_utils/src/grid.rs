@@ -3,6 +3,7 @@ use std::ops::Range;
 use glam::IVec2;
 use itertools::Itertools;
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct Grid<T> {
     arr: Vec<T>,
     row_start_indexes: Vec<usize>,
@@ -46,7 +47,7 @@ impl<T> Grid<T> {
 
     pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
         (0..self.rows_len()).flat_map(|r| {
-            (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(r as i32, c as i32))
+            (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(c as i32, r as i32))
         })
     }
     pub fn elements_len(&self) -> usize {
