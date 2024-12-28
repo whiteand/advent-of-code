@@ -15,6 +15,14 @@ pub fn ascii_grid(file_content: &str) -> Grid<u8> {
         .collect()
 }
 
+pub fn digits<'t>(line: &'t str) -> impl Iterator<Item = u8> + 't {
+    line.as_bytes()
+        .iter()
+        .copied()
+        .filter(|x| x.is_ascii_digit())
+        .map(|x| x - b'0')
+}
+
 pub fn nums<T>(line: &str) -> ParseNumsIter<'_, T> {
     ParseNumsIter {
         bytes: line.as_bytes(),
