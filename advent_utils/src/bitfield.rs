@@ -39,7 +39,9 @@ macro_rules! declare_field {
     };
 }
 /// Example:
+///
 /// - `declare_array!(usize, microchip, set_microchip, 0, 2, 0b11)`;
+///   - `declare_array!(elem_type, getter_name, setter_name, offset, elem_bits, elem_mask)`
 ///   - declares bit array of elements named microchip at offset 0 with element size = 2 and mask 0b11
 #[macro_export]
 macro_rules! declare_array {
