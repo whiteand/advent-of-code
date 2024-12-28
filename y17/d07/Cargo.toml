@@ -1,0 +1,24 @@
+[package]
+name = "y17d07"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advent_utils.workspace = true
+itertools.workspace = true
+rstest.workspace = true
+tracing-chrome.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+petgraph = "0.6.5"
+fxhash = "0.2.1"
+
+[dev-dependencies]
+divan.workspace = true
+
+[[bench]]
+name = "y17d07"
+path = "benches/y17d07.rs"
+harness = false

@@ -2189,6 +2189,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "y17d07"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "divan",
+ "fxhash",
+ "itertools 0.13.0",
+ "petgraph",
+ "rstest 0.23.0",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "y18d01"
 version = "0.1.0"
 dependencies = [
