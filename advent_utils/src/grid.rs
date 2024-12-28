@@ -28,7 +28,37 @@ impl IntoIterator for NonDiagonal {
     type IntoIter = std::array::IntoIter<IVec2, 4>;
 
     fn into_iter(self) -> Self::IntoIter {
-        [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X].into_iter()
+        const { [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X] }.into_iter()
+    }
+}
+
+/// Represents neighbours from
+/// ```ignore
+/// top-left    top       top-right
+/// left                      right
+/// bottom-left bottom bottom-right
+/// ```
+pub struct N8;
+
+impl IntoIterator for N8 {
+    type Item = IVec2;
+
+    type IntoIter = std::array::IntoIter<IVec2, 8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        const {
+            [
+                IVec2::new(-1, -1),
+                IVec2::new(0, -1),
+                IVec2::new(1, -1),
+                IVec2::new(1, 0),
+                IVec2::new(1, 1),
+                IVec2::new(0, 1),
+                IVec2::new(-1, 1),
+                IVec2::new(-1, 0),
+            ]
+        }
+        .into_iter()
     }
 }
 
