@@ -12,7 +12,6 @@ use advent_utils::nom::{
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, prelude::DiGraph, visit::EdgeRef};
-use tracing::info;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> String {
@@ -29,42 +28,48 @@ pub fn part2(file_content: &str) -> usize {
 
     let root_id = ids.get(root).copied().unwrap();
 
-    let (_actual, expected) = get_balanced_size(&graph, &weights, root_id).unwrap_or_default();
-    info!(?_actual, ?expected);
+    let expected = get_weight(&graph, &weights, root_id).unwrap_err();
     expected
 }
 
-fn get_balanced_size<'t>(
+#[derive(Debug)]
+struct Weight {
+    children: usize,
+    total: usize,
+}
+fn get_weight<'t>(
     graph: &DiGraph<&'t str, ()>,
     weights: &FxHashMap<&str, usize>,
     id: NodeIndex,
-) -> Option<(usize, usize)> {
+) -> Result<Weight, usize> {
+    let mut children_weights: Vec<Weight> = Vec::with_capacity(10);
     for c in graph.edges(id) {
-        if let Some(s) = get_balanced_size(graph, weights, c.target()) {
-            return Some(s);
-        }
+        let weight = get_weight(graph, weights, c.target())?;
+        children_weights.push(weight);
     }
-    let mut children_weights = graph
-        .edges(id)
-        .map(|e| e.target())
-        .map(|id| {
-            let name = graph.node_weight(id).copied().unwrap();
-            let w = weights.get(name).copied().unwrap();
-            w
-        })
-        .collect_vec();
+    let mut children_totals = children_weights.iter().map(|x| x.total).collect_vec();
 
-    children_weights.sort_unstable();
+    children_totals.sort_unstable();
 
-    if children_weights.last() == children_weights.first() {
-        return None;
+    let name = graph.node_weight(id).copied().unwrap();
+    let self_weight = weights.get(name).copied().unwrap();
+
+    let children_total = children_totals.iter().copied().sum();
+    if children_totals.last() == children_totals.first() {
+        return Ok(Weight {
+            total: self_weight + children_total,
+            children: children_total,
+        });
     }
-    let first = children_weights.first().copied().unwrap();
-    let last = children_weights.last().copied().unwrap();
-    assert!(children_weights.len() > 2);
-    let middle = children_weights.get(1).copied().unwrap();
+
+    let first = children_totals.first().copied().unwrap();
+    let last = children_totals.last().copied().unwrap();
+    assert!(children_totals.len() > 2);
+    let middle = children_totals.get(1).copied().unwrap();
     let actual = if middle == first { last } else { first };
-    Some((actual, middle))
+    let wrong_weight = children_weights.iter().find(|x| x.total == actual).unwrap();
+
+    Err((wrong_weight.total - wrong_weight.children) + middle - actual)
 }
 
 fn find_root<'t>(graph: &DiGraph<&'t str, ()>) -> Option<&'t str> {
@@ -161,7 +166,7 @@ mod tests {
     }
     #[rstest]
     #[case::example(EXAMPLE, "60")]
-    // #[case::actual(ACTUAL, "0")]
+    #[case::actual(ACTUAL, "1079")]
     #[ignore]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
