@@ -120,29 +120,66 @@ fn steps_to_yt(dy: usize, y0: usize, yt: usize) -> Option<usize> {
 }
 
 impl State {
-    fn collect(&mut self) {
-        self.ore += self.ore_robots;
-        self.clay += self.clay_robots;
-        self.obsidian += self.obsidian_robots;
-    }
-    fn spent_minutes(&mut self, n: usize) {
-        self.remaining_minutes -= n;
-    }
-    fn skip_minutes(&mut self, n: usize) {
+    fn do_nothing_n_times(&mut self, n: usize) {
         self.ore += self.ore_robots * n;
         self.clay += self.clay_robots * n;
         self.obsidian += self.obsidian_robots * n;
-        self.spent_minutes(n);
+        self.remaining_minutes -= n;
+    }
+    fn cmp_by_obsidian_robot(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
+        match (
+            self.minutes_until_obsidian_robot_available(blueprint),
+            other.minutes_until_obsidian_robot_available(blueprint),
+        ) {
+            (Some(_), None) => std::cmp::Ordering::Greater,
+            (None, Some(_)) => std::cmp::Ordering::Less,
+            (Some(a), Some(b)) => b.cmp(&a),
+            _ => std::cmp::Ordering::Equal,
+        }
+    }
+    fn cmp_by_geode_robot(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
+        match (
+            self.minutes_until_geode_robot_available(blueprint),
+            other.minutes_until_geode_robot_available(blueprint),
+        ) {
+            (Some(_), None) => std::cmp::Ordering::Greater,
+            (None, Some(_)) => std::cmp::Ordering::Less,
+            (Some(a), Some(b)) => b.cmp(&a),
+            _ => std::cmp::Ordering::Equal,
+        }
+    }
+
+    fn cmp_with_blueprint(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
+        self.geode
+            .cmp(&other.geode)
+            // .then_with(|| self.cmp_by_geode_robot(other, blueprint))
+            // .then_with(|| self.cmp_by_obsidian_robot(other, blueprint))
+            .then_with(|| {
+                let total_ore = self.ore + self.remaining_minutes * self.ore_robots;
+                let total_clay = self.clay + self.remaining_minutes * self.clay_robots;
+                let total_obsidian = self.obsidian + self.remaining_minutes * self.obsidian_robots;
+                let other_ore = other.ore + other.remaining_minutes * other.ore_robots;
+                let other_clay = other.clay + other.remaining_minutes * other.clay_robots;
+                let other_obsidian =
+                    other.obsidian + other.remaining_minutes * other.obsidian_robots;
+                total_obsidian
+                    .cmp(&other_obsidian)
+                    .then_with(|| total_clay.cmp(&other_clay))
+                    .then_with(|| total_ore.cmp(&other_ore))
+            })
     }
     fn minutes_until_ore_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
         steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_ore_robot)
+            .filter(|x| *x < self.remaining_minutes)
     }
     fn minutes_until_clay_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
         steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_clay_robot)
+            .filter(|x| *x < self.remaining_minutes)
     }
     fn minutes_until_obsidian_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
         let Some(until_enough_ore) =
             steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_obsidian_robot)
+                .filter(|x| *x < self.remaining_minutes)
         else {
             return None;
         };
@@ -150,7 +187,8 @@ impl State {
             self.clay_robots,
             self.clay,
             blueprint.clay_per_obsidian_robot,
-        ) else {
+        )
+        .filter(|x| *x < self.remaining_minutes) else {
             return None;
         };
 
@@ -159,6 +197,7 @@ impl State {
     fn minutes_until_geode_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
         let Some(until_enough_ore) =
             steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_geode_robot)
+                .filter(|x| *x < self.remaining_minutes)
         else {
             return None;
         };
@@ -166,134 +205,139 @@ impl State {
             self.obsidian_robots,
             self.obsidian,
             blueprint.obsidian_per_geode_robot,
-        ) else {
+        )
+        .filter(|x| *x < self.remaining_minutes) else {
             return None;
         };
 
         Some(until_enough_obsidian.max(until_enough_ore))
     }
     fn build_geode(&mut self, blueprint: &Blueprint) {
+        self.ore += self.ore_robots;
+        self.clay += self.clay_robots;
+        self.obsidian += self.obsidian_robots;
         self.ore -= blueprint.ore_per_geode_robot;
         self.obsidian -= blueprint.obsidian_per_geode_robot;
+        self.remaining_minutes -= 1;
         self.geode += self.remaining_minutes;
     }
     fn build_obsidian(&mut self, blueprint: &Blueprint) {
+        self.ore += self.ore_robots;
+        self.clay += self.clay_robots;
+        self.obsidian += self.obsidian_robots;
         self.ore -= blueprint.ore_per_obsidian_robot;
         self.clay -= blueprint.clay_per_obsidian_robot;
         self.obsidian_robots += 1;
+        self.remaining_minutes -= 1;
     }
     fn build_ore(&mut self, blueprint: &Blueprint) {
+        self.ore += self.ore_robots;
+        self.clay += self.clay_robots;
+        self.obsidian += self.obsidian_robots;
         self.ore -= blueprint.ore_per_ore_robot;
         self.ore_robots += 1;
+        self.remaining_minutes -= 1;
     }
     fn build_clay(&mut self, blueprint: &Blueprint) {
+        self.ore += self.ore_robots;
+        self.clay += self.clay_robots;
+        self.obsidian += self.obsidian_robots;
         self.ore -= blueprint.ore_per_clay_robot;
         self.clay_robots += 1;
+        self.remaining_minutes -= 1;
     }
     fn next_states(self, blueprint: &Blueprint, states: &mut Vec<State>) {
         if self.remaining_minutes == 0 {
             return;
         }
-        // Do nothing
-        {
-            let mut s = self.clone();
-            s.collect();
-            s.spent_minutes(1);
-            states.push(s);
-        }
+
+        let initial_len = states.len();
 
         // Build ore robot
-        if self.ore >= blueprint.ore_per_ore_robot {
-            let mut s = self.clone();
-            s.build_ore(blueprint);
-            s.collect();
-            s.spent_minutes(1);
-            states.push(s);
-        }
-
-        if self.ore >= blueprint.ore_per_clay_robot {
-            let mut s = self.clone();
-            s.build_clay(blueprint);
-            s.collect();
-            s.spent_minutes(1);
-            states.push(s);
-        }
-
-        if self.ore >= blueprint.ore_per_obsidian_robot
-            && self.clay >= blueprint.clay_per_obsidian_robot
         {
             let mut s = self.clone();
-            s.build_obsidian(blueprint);
-            s.collect();
-            s.spent_minutes(1);
-            states.push(s);
+            let ore = s.ore;
+            if ore < blueprint.ore_per_clay_robot
+                || ore < blueprint.ore_per_ore_robot
+                || ore < blueprint.ore_per_obsidian_robot
+                || ore < blueprint.ore_per_geode_robot
+            {
+                if let Some(time_to_ore) = s.minutes_until_ore_robot_available(blueprint) {
+                    s.do_nothing_n_times(time_to_ore);
+                    s.build_ore(blueprint);
+                    states.push(s);
+                }
+            }
         }
 
-        if self.ore >= blueprint.ore_per_geode_robot
-            && self.obsidian >= blueprint.obsidian_per_geode_robot
         {
             let mut s = self.clone();
-            s.build_geode(blueprint);
-            s.collect();
-            s.spent_minutes(1);
+            let clay = s.clay;
+            if clay < blueprint.clay_per_obsidian_robot {
+                if let Some(time_to_clay) = s.minutes_until_clay_robot_available(blueprint) {
+                    s.do_nothing_n_times(time_to_clay);
+                    s.build_clay(blueprint);
+                    states.push(s);
+                }
+            }
+        }
+
+        {
+            let mut s = self.clone();
+            let obsidian = s.obsidian;
+            if obsidian < blueprint.obsidian_per_geode_robot {
+                if let Some(time_to_obsidian) = s.minutes_until_obsidian_robot_available(blueprint)
+                {
+                    s.do_nothing_n_times(time_to_obsidian);
+                    s.build_obsidian(blueprint);
+                    states.push(s);
+                }
+            }
+        }
+
+        {
+            let mut s = self.clone();
+            if let Some(time_to_geode) = s.minutes_until_geode_robot_available(blueprint) {
+                s.do_nothing_n_times(time_to_geode);
+                s.build_geode(blueprint);
+                states.push(s);
+            }
+        }
+
+        // Do nothing
+        if initial_len == states.len() {
+            let mut s = self.clone();
+            s.do_nothing_n_times(s.remaining_minutes);
             states.push(s);
         }
     }
 }
 
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.geode.cmp(&other.geode).then_with(|| {
-            let total_ore = self.ore + self.remaining_minutes * self.ore_robots;
-            let total_clay = self.clay + self.remaining_minutes * self.clay_robots;
-            let total_obsidian = self.obsidian + self.remaining_minutes * self.obsidian_robots;
-            let other_ore = other.ore + other.remaining_minutes * other.ore_robots;
-            let other_clay = other.clay + other.remaining_minutes * other.clay_robots;
-            let other_obsidian = other.obsidian + other.remaining_minutes * other.obsidian_robots;
-            total_obsidian
-                .cmp(&other_obsidian)
-                .then_with(|| total_clay.cmp(&other_clay))
-                .then_with(|| total_ore.cmp(&other_ore))
-        })
-    }
-}
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-fn get_best<T: Ord>(elements: &mut Vec<T>) -> Option<T> {
+fn get_best(elements: &mut Vec<State>, blueprint: &Blueprint) -> Option<State> {
     let position = elements
         .iter()
         .enumerate()
-        .max_by_key(|(_, e)| *e)
+        .max_by(|(_, e), (_, e2)| e.cmp_with_blueprint(e2, blueprint))
         .map(|(i, _)| i)?;
     let res = elements.swap_remove(position);
     Some(res)
 }
 
-fn get_max_geodes(blueprint: &Blueprint) -> usize {
-    let mut states = vec![State {
-        ore: 0,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-        ore_robots: 1,
-        clay_robots: 0,
-        obsidian_robots: 0,
-        remaining_minutes: 24,
-    }];
+fn get_max_geodes(blueprint: &Blueprint, init: State) -> usize {
+    let mut states = vec![init];
 
     let mut max_geodes = 0;
 
-    while let Some(state) = get_best(&mut states) {
+    let mut buffer = Vec::new();
+    while let Some(state) = get_best(&mut states, blueprint) {
         if state.remaining_minutes == 0 {
-            println!("{:?} {:?}", state.geode, max_geodes);
             max_geodes = max_geodes.max(state.geode);
             continue;
         }
-        state.next_states(blueprint, &mut states);
+        state.next_states(blueprint, &mut buffer);
+        buffer.retain(|s| s.remaining_minutes > 0 || s.geode > max_geodes);
+        states.extend_from_slice(&buffer);
+        buffer.clear();
     }
     max_geodes
 }
@@ -302,11 +346,50 @@ pub fn solve_part_1(file_content: &str) -> usize {
     let (_, blueprints) = separated_list1(newline, blueprint)(file_content.trim()).unwrap();
     blueprints
         .into_iter()
-        .map(|b| get_max_geodes(&b) * b.id)
+        .map(|b| {
+            println!("Evaluating  blueprint #{}", b.id);
+            let res = get_max_geodes(
+                &b,
+                State {
+                    ore: 0,
+                    clay: 0,
+                    obsidian: 0,
+                    geode: 0,
+                    ore_robots: 1,
+                    clay_robots: 0,
+                    obsidian_robots: 0,
+                    remaining_minutes: 24,
+                },
+            ) * b.id;
+            println!("Finiahed = {}\n", res);
+            res
+        })
         .sum()
 }
-pub fn solve_part_2(_file_content: &str) -> usize {
-    0
+pub fn solve_part_2(file_content: &str) -> usize {
+    let (_, blueprints) = separated_list1(newline, blueprint)(file_content.trim()).unwrap();
+    blueprints
+        .into_iter()
+        .take(3)
+        .map(|b| {
+            println!("Evaluating  blueprint #{}", b.id);
+            let res = get_max_geodes(
+                &b,
+                State {
+                    ore: 0,
+                    clay: 0,
+                    obsidian: 0,
+                    geode: 0,
+                    ore_robots: 1,
+                    clay_robots: 0,
+                    obsidian_robots: 0,
+                    remaining_minutes: 32,
+                },
+            );
+            println!("Finished = {}\n", res);
+            res
+        })
+        .product()
 }
 #[cfg(test)]
 mod tests {
@@ -362,19 +445,15 @@ mod tests {
             state.minutes_until_clay_robot_available(&blueprint),
             Some(2)
         );
-        state.skip_minutes(2);
-        state.collect();
+        state.do_nothing_n_times(2);
         state.build_clay(&blueprint);
-        state.spent_minutes(1);
         for _ in 0..2 {
             assert_eq!(
                 state.minutes_until_clay_robot_available(&blueprint),
                 Some(1)
             );
-            state.skip_minutes(1);
-            state.collect();
+            state.do_nothing_n_times(1);
             state.build_clay(&blueprint);
-            state.spent_minutes(1);
         }
         assert_eq!(state.ore, 1);
         assert_eq!(state.clay, 6);
@@ -383,48 +462,82 @@ mod tests {
             state.minutes_until_obsidian_robot_available(&blueprint),
             Some(3)
         );
-        state.skip_minutes(3);
-        state.collect();
+        state.do_nothing_n_times(3);
         state.build_obsidian(&blueprint);
-        state.spent_minutes(1);
         assert_eq!(state.ore, 2);
         assert_eq!(state.clay, 4);
         assert_eq!(state.clay_robots, 3);
         assert_eq!(state.obsidian_robots, 1);
+
         assert_eq!(
             state.minutes_until_clay_robot_available(&blueprint),
             Some(0)
         );
-        state.collect();
         state.build_clay(&blueprint);
-        state.spent_minutes(1);
         assert_eq!(state.ore, 1);
         assert_eq!(state.clay, 7);
         assert_eq!(state.clay_robots, 4);
         assert_eq!(state.obsidian_robots, 1);
+        assert_eq!(state.remaining_minutes, 12);
+
+        assert_eq!(
+            state.minutes_until_obsidian_robot_available(&blueprint),
+            Some(2)
+        );
+        state.do_nothing_n_times(2);
+        state.build_obsidian(&blueprint);
+        assert_eq!(state.ore, 1);
+        assert_eq!(state.clay, 5);
+        assert_eq!(state.clay_robots, 4);
+        assert_eq!(state.obsidian_robots, 2);
+        assert_eq!(state.remaining_minutes, 9);
+
+        assert_eq!(
+            state.minutes_until_geode_robot_available(&blueprint),
+            Some(2)
+        );
+        state.do_nothing_n_times(2);
+        state.build_geode(&blueprint);
+        assert_eq!(state.ore, 2);
+        assert_eq!(state.clay, 17);
+        assert_eq!(state.obsidian, 3);
+        assert_eq!(state.geode, 6);
+        assert_eq!(state.remaining_minutes, 6);
+
+        assert_eq!(
+            state.minutes_until_geode_robot_available(&blueprint),
+            Some(2)
+        );
+        state.do_nothing_n_times(2);
+        state.build_geode(&blueprint);
+        assert_eq!(state.ore, 3);
+        assert_eq!(state.clay, 29);
+        assert_eq!(state.obsidian, 2);
+        assert_eq!(state.geode, 9);
+        assert_eq!(state.remaining_minutes, 3);
     }
 
     #[test]
-    #[ignore]
-    fn test_part_1() {
-        assert_eq!(format!("{}", solve_part_1(INPUT)), "0");
+    fn test_part1() {
+        assert_eq!(format!("{}", solve_part_1(INPUT)), "33");
     }
 
+    // Solution for part2 does not solve part1
     #[test]
     #[ignore]
     fn test_part_1_actual() {
-        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_1(ACTUAL)), "1365");
     }
 
+    // My solution is not for all inputs
     #[test]
     #[ignore]
     fn test_part_2() {
-        assert_eq!(format!("{}", solve_part_2(INPUT)), "0");
+        assert_eq!(format!("{}", solve_part_2(INPUT)), "3472");
     }
 
     #[test]
-    #[ignore]
     fn test_part_2_actual() {
-        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "0");
+        assert_eq!(format!("{}", solve_part_2(ACTUAL)), "4864");
     }
 }
