@@ -53,7 +53,7 @@ t year day test:
 test-p1-example year day:
     cargo test --package y{{year}}d{{day}} --lib -- day{{day}}::tests::test_part1::case_1_example --exact --show-output
 test-p1 year day:
-    cargo test --package y{{year}}d{{day}} --lib -- tests::test_part1_actual --exact --show-output
+    cargo test --package y{{year}}d{{day}} --lib -- day{{day}}::tests::test_part1::case_2_actual --exact --show-output
 
 test-p2-example year day:
     cargo test --package y{{year}}d{{day}} --lib -- tests::test_part2 --exact --show-output
