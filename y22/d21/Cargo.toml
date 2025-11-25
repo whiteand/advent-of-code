@@ -1,5 +1,5 @@
 [package]
-name = "y17d07"
+name = "y22d21"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,14 +12,13 @@ rstest.workspace = true
 tracing-chrome.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
-
-petgraph = "0.6.5"
-fxhash = "0.2.1"
+petgraph = "0.8.3"
+fxhash = "0.1.2"
 
 [dev-dependencies]
 divan.workspace = true
 
 [[bench]]
-name = "y17d07"
-path = "benches/y17d07.rs"
+name = "y22d21"
+path = "benches/y22d21.rs"
 harness = false
