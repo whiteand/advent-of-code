@@ -22,6 +22,27 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Grid<T> {
 /// Represents neighbours from top, right,bottom and left.
 pub struct NonDiagonal;
 
+impl NonDiagonal {
+    pub fn to_str(dir: IVec2) -> &'static str {
+        match (dir.x, dir.y) {
+            (0, 1) => "v",
+            (0, -1) => "^",
+            (1, 0) => ">",
+            (-1, 0) => "<",
+            _ => "?",
+        }
+    }
+    pub fn to_ascii_char(dir: IVec2) -> u8 {
+        match (dir.x, dir.y) {
+            (0, 1) => b'v',
+            (0, -1) => b'^',
+            (1, 0) => b'>',
+            (-1, 0) => b'<',
+            _ => b'?',
+        }
+    }
+}
+
 impl IntoIterator for NonDiagonal {
     type Item = IVec2;
 
@@ -40,25 +61,28 @@ impl IntoIterator for NonDiagonal {
 /// ```
 pub struct N8;
 
+impl N8 {
+    pub const fn directions() -> [IVec2; 8] {
+        [
+            IVec2::new(-1, -1),
+            IVec2::new(0, -1),
+            IVec2::new(1, -1),
+            IVec2::new(1, 0),
+            IVec2::new(1, 1),
+            IVec2::new(0, 1),
+            IVec2::new(-1, 1),
+            IVec2::new(-1, 0),
+        ]
+    }
+}
+
 impl IntoIterator for N8 {
     type Item = IVec2;
 
     type IntoIter = std::array::IntoIter<IVec2, 8>;
 
     fn into_iter(self) -> Self::IntoIter {
-        const {
-            [
-                IVec2::new(-1, -1),
-                IVec2::new(0, -1),
-                IVec2::new(1, -1),
-                IVec2::new(1, 0),
-                IVec2::new(1, 1),
-                IVec2::new(0, 1),
-                IVec2::new(-1, 1),
-                IVec2::new(-1, 0),
-            ]
-        }
-        .into_iter()
+        Self::directions().into_iter()
     }
 }
 
@@ -87,10 +111,10 @@ impl<T> Grid<T> {
         let f = &f;
         self.rows()
             .enumerate()
-            .map(|(i, row)| {
+            .map(|(row_index, row)| {
                 row.iter()
                     .enumerate()
-                    .map(move |(j, x)| f(x, IVec2::new(i as i32, j as i32)))
+                    .map(move |(col_index, x)| f(x, IVec2::new(col_index as i32, row_index as i32)))
             })
             .collect()
     }
@@ -103,7 +127,9 @@ impl<T> Grid<T> {
     }
     #[inline(always)]
     pub fn cols(&self, row: usize) -> usize {
-        let start = self.row_start_indexes[row];
+        let Some(start) = self.row_start_indexes.get(row) else {
+            return 0;
+        };
         let end = self
             .row_start_indexes
             .get(row + 1)
@@ -234,6 +260,7 @@ impl<T> Grid<T> {
         self.arr.iter_mut()
     }
 
+    /// Iterates all cells in order of (0..rows).flatMap(|r| (0..cols))
     #[inline(always)]
     pub fn entries(&self) -> impl Iterator<Item = (IVec2, &T)> + '_ {
         let arr = &self.arr;
@@ -252,7 +279,7 @@ impl<T> Grid<T> {
     }
 
     pub fn size(&self) -> IVec2 {
-        IVec2::new(self.rows_len() as i32, self.cols(0) as i32)
+        IVec2::new(self.cols(0) as i32, self.rows_len() as i32)
     }
 
     pub fn resize(&mut self, new_size: IVec2, value: T)
@@ -330,11 +357,40 @@ impl<T> IntoIterator for Grid<T> {
     }
 }
 
-impl Grid<u8> {
+pub trait ToAsciiChar {
+    fn to_ascii_char(&self) -> u8;
+}
+
+impl ToAsciiChar for bool {
+    fn to_ascii_char(&self) -> u8 {
+        if *self {
+            b'#'
+        } else {
+            b'.'
+        }
+    }
+}
+
+impl ToAsciiChar for u8 {
+    fn to_ascii_char(&self) -> u8 {
+        *self
+    }
+}
+
+impl<T: ToAsciiChar> ToAsciiChar for Option<T> {
+    fn to_ascii_char(&self) -> u8 {
+        match self {
+            Some(t) => t.to_ascii_char(),
+            None => b' ',
+        }
+    }
+}
+
+impl<T: ToAsciiChar> Grid<T> {
     pub fn render_ascii(&self) -> String {
         let mut res = String::with_capacity(self.arr.len() + self.row_start_indexes.len() + 1);
         for row in self.rows() {
-            res.extend(row.iter().copied().map(char::from));
+            res.extend(row.iter().map(ToAsciiChar::to_ascii_char).map(char::from));
             res.push('\n');
         }
         res
@@ -426,6 +482,9 @@ mod tests {
     fn test_new() {
         let grid = super::Grid::new(IVec2::new(3, 3), b'a');
         assert_eq!(grid.render_ascii(), "aaa\naaa\naaa\n");
+        let grid = super::Grid::new(IVec2::new(2, 3), b'a');
+        assert_eq!(grid.size(), IVec2::new(2, 3));
+        assert_eq!(grid.render_ascii(), "aa\naa\naa\n");
     }
     #[test]
     fn test_resize() {

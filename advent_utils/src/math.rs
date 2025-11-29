@@ -1,9 +1,15 @@
-use std::{
-    num::TryFromIntError,
-    ops::{AddAssign, DivAssign, RangeInclusive},
-};
+mod per_non_diagonal;
+mod rat;
+mod rat_vec2;
+mod rat_vec3;
+mod systems;
 
-use thiserror::Error;
+use glam::IVec2;
+pub use per_non_diagonal::PerNonDiagonalDirection;
+pub use rat::Rat;
+pub use rat_vec2::Vec2;
+pub use rat_vec3::Vec3;
+pub use systems::{solve_system, Equations, SolveError};
 
 pub fn get_gcd(mut a: u128, mut b: u128) -> u128 {
     if b == 1 {
@@ -40,466 +46,145 @@ pub fn get_lcm(a: u128, b: u128) -> u128 {
     a * (b / get_gcd(a, b))
 }
 
-#[derive(Copy, Clone)]
-pub struct Rat {
-    pub top: i128,
-    pub bottom: u128,
+pub trait LinearProgressionElement: Copy {
+    fn linear_progression_add(self, other: Self) -> Self;
+    fn linear_progression_mul(self, times: usize) -> Self;
 }
 
-impl Rat {
-    #[inline(always)]
-    fn checked_set(&mut self, top: i128, bottom: u128) {
-        let gcd = get_gcd(top.unsigned_abs(), bottom);
-        if gcd == 1 {
-            self.top = top;
-            self.bottom = bottom;
-        } else {
-            self.top = top / (gcd as i128);
-            self.bottom = bottom / gcd;
-        }
-    }
-}
-
-impl std::iter::Sum for Rat {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut initial = Self::ZERO;
-        for x in iter {
-            initial += x;
-        }
-        initial
-    }
-}
-
-impl Rat {
-    pub const ZERO: Self = Self { top: 0, bottom: 1 };
-    pub const ONE: Self = Self { top: 1, bottom: 1 };
-    pub const MINUS_ONE: Self = Self { top: -1, bottom: 1 };
-    pub fn new(top: i128, bottom: u128) -> Self {
-        if top == 0 {
-            return Self::ZERO;
-        }
-        if top == bottom as i128 {
-            return Self::ONE;
-        }
-        if top == -(bottom as i128) {
-            return Self::MINUS_ONE;
-        }
-        let gcd = get_gcd_i(top, bottom as i128);
-        Self {
-            top: top / gcd as i128,
-            bottom: bottom / gcd,
-        }
-    }
-    pub fn reverse(&self) -> Rat {
-        if self.top >= 0 {
-            Self {
-                top: self.bottom as i128,
-                bottom: self.top as u128,
+macro_rules! impl_linear_progression_for_nums {
+    ($($t:ty),*) => {
+        $(impl LinearProgressionElement for $t {
+            fn linear_progression_add(self, other: Self) -> Self {
+                self + other
             }
-        } else {
-            Self {
-                top: -(self.bottom as i128),
-                bottom: (-self.top) as u128,
-            }
-        }
-    }
-    pub fn is_non_negative(&self) -> bool {
-        self.top >= 0
-    }
-    pub fn is_zero(&self) -> bool {
-        self.top == 0
-    }
-
-    pub fn in_range(&self, range: &RangeInclusive<i128>) -> bool {
-        let min = *range.start();
-        let max = *range.end();
-        let bottom = self.bottom as i128;
-        min * bottom <= self.top && self.top <= max * bottom
-    }
-
-    pub fn signum(&self) -> i128 {
-        match self.top {
-            0 => 0,
-            1.. => 1,
-            _ => -1,
-        }
-    }
-}
-
-impl std::ops::Neg for Rat {
-    type Output = Self;
-
-    fn neg(self) -> Self::Output {
-        Self {
-            top: -self.top,
-            bottom: self.bottom,
-        }
-    }
-}
-
-impl std::cmp::PartialOrd for Rat {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl std::cmp::Ord for Rat {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let a = self.top * other.bottom as i128;
-        let b = other.top * self.bottom as i128;
-        a.cmp(&b)
-    }
-}
-
-impl std::fmt::Debug for Rat {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.bottom == 1 {
-            return write!(f, "{}", self.top);
-        }
-        write!(f, "{}/{}", self.top, self.bottom)
-    }
-}
-
-impl std::ops::Add for Rat {
-    type Output = Self;
-
-    fn add(mut self, rhs: Self) -> Self::Output {
-        self.add_assign(rhs);
-        self
-    }
-}
-impl std::ops::Mul for Rat {
-    type Output = Self;
-
-    fn mul(mut self, rhs: Self) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl std::ops::AddAssign for Rat {
-    fn add_assign(&mut self, rhs: Self) {
-        if self.bottom == rhs.bottom {
-            self.checked_set(self.top + rhs.top, self.bottom);
-            return;
-        }
-        let bottom = get_lcm(self.bottom, rhs.bottom);
-        let top =
-            self.top * ((bottom / self.bottom) as i128) + rhs.top * ((bottom / rhs.bottom) as i128);
-        self.checked_set(top, bottom);
-    }
-}
-
-macro_rules! happy_path_mul {
-    ($a:expr, $b:expr, $d:expr) => {
-        if $a.bottom == 1 {
-            $d.checked_set($a.top * $b.top, $b.bottom);
-            return;
-        }
-    };
-}
-impl std::ops::MulAssign for Rat {
-    fn mul_assign(&mut self, rhs: Self) {
-        happy_path_mul!(self, rhs, self);
-        happy_path_mul!(rhs, self, self);
-
-        let left_g = get_gcd_i(self.top, rhs.bottom as i128) as i128;
-        let right_g = get_gcd_i(self.bottom as i128, rhs.top);
-        let top = self.top / left_g * (rhs.top / (right_g as i128));
-        let bottom = self.bottom / right_g * (rhs.bottom / left_g as u128);
-        self.checked_set(top, bottom);
-    }
-}
-
-impl std::ops::Div for Rat {
-    type Output = Self;
-
-    fn div(mut self, rhs: Self) -> Self::Output {
-        self.div_assign(rhs);
-        self
-    }
-}
-impl std::ops::DivAssign for Rat {
-    fn div_assign(&mut self, rhs: Self) {
-        if rhs.top == 0 && self.top == 0 {
-            self.top = 1;
-            self.bottom = 1;
-        } else {
-            let new_sign = self.signum() * rhs.signum();
-            let top = self.top.abs() * (rhs.bottom as i128) * new_sign;
-            let bottom = self.bottom * (rhs.top.unsigned_abs());
-            self.checked_set(top, bottom);
-        }
-    }
-}
-
-impl std::ops::Sub for Rat {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        let new_bottom = get_lcm(self.bottom, rhs.bottom);
-        let top = self.top * ((new_bottom / self.bottom) as i128)
-            - rhs.top * ((new_bottom / rhs.bottom) as i128);
-        Self::new(top, new_bottom)
-    }
-}
-
-impl std::ops::SubAssign for Rat {
-    fn sub_assign(&mut self, rhs: Self) {
-        if self.bottom == rhs.bottom {
-            self.checked_set(self.top - rhs.top, self.bottom);
-            return;
-        }
-        let bottom = get_lcm(self.bottom, rhs.bottom);
-        let top =
-            self.top * ((bottom / self.bottom) as i128) - rhs.top * ((bottom / rhs.bottom) as i128);
-        self.checked_set(top, bottom);
-    }
-}
-
-impl From<i128> for Rat {
-    fn from(i: i128) -> Self {
-        Self { top: i, bottom: 1 }
-    }
-}
-
-macro_rules! impl_from_num {
-    ($($typ:ty),+) => {
-        $(
-            impl From<$typ> for Rat {
-                fn from(i: $typ) -> Self {
-                    Self {
-                        top: i as i128,
-                        bottom: 1,
-                    }
+            fn linear_progression_mul(self, other: usize) -> Self {
+                if Self::MAX as usize > other {
+                    panic!("Too large multiplier");
                 }
+                self * (other as $t)
             }
-        )+
-    };
-}
-impl_from_num!(u64, i64, u32, i32, u16, i16, u8, i8, usize, isize);
-impl TryFrom<u128> for Rat {
-    type Error = TryFromIntError;
-
-    fn try_from(value: u128) -> Result<Self, Self::Error> {
-        i128::try_from(value).map(|top| Rat { top, bottom: 1 })
-    }
-}
-
-macro_rules! try_from_rat_to_num {
-    ($($typ:ty),+) => {
-        $(
-            impl TryFrom<Rat> for $typ {
-                type Error = ();
-                fn try_from(r: Rat) -> Result<Self, Self::Error> {
-                    if r.bottom != 1 {
-                        return Err(());
-                    }
-                    r.top.try_into().map_err(|_| ())
-                }
-            }
-        )+
+        })*
     };
 }
 
-try_from_rat_to_num!(i64, i32, i16, i8, isize, u128, u64, u32, u16, u8, usize);
+impl_linear_progression_for_nums! {u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize}
 
-impl TryFrom<Rat> for i128 {
-    type Error = ();
-    fn try_from(r: Rat) -> Result<Self, Self::Error> {
-        if r.bottom != 1 {
-            return Err(());
-        }
-        Ok(r.top)
+impl LinearProgressionElement for IVec2 {
+    fn linear_progression_add(self, other: Self) -> Self {
+        self + other
+    }
+
+    fn linear_progression_mul(self, times: usize) -> Self {
+        self.wrapping_mul(IVec2::splat(times as i32))
     }
 }
 
-impl std::cmp::PartialEq for Rat {
-    fn eq(&self, other: &Self) -> bool {
-        let new_bottom = get_lcm(self.bottom, other.bottom);
-        let a = self.top * ((new_bottom / self.bottom) as i128);
-        let b = other.top * ((new_bottom / other.bottom) as i128);
-        a == b
-    }
-}
-impl std::cmp::Eq for Rat {}
-
-#[derive(Clone, PartialEq, Eq)]
-pub struct Vec2 {
-    pub x: Rat,
-    pub y: Rat,
-}
-
-impl Vec2 {
-    pub fn new<X: Into<Rat>, Y: Into<Rat>>(x: X, y: Y) -> Self {
-        Self {
-            x: x.into(),
-            y: y.into(),
-        }
-    }
-}
-
-impl std::fmt::Debug for Vec2 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({:?},{:?})", self.x, self.y)
-    }
-}
 #[derive(Clone)]
-pub struct Vec3 {
-    pub x: Rat,
-    pub y: Rat,
-    pub z: Rat,
+pub struct LinearProgression<T> {
+    pub current: T,
+    pub remaining: usize,
+    pub inc: T,
 }
 
-impl Vec3 {
-    pub fn new<X: Into<Rat>, Y: Into<Rat>, Z: Into<Rat>>(x: X, y: Y, z: Z) -> Self {
+impl<T: LinearProgressionElement> LinearProgression<T> {
+    #[inline]
+    fn get(&self, index: usize) -> T {
+        self.current
+            .linear_progression_add(self.inc.linear_progression_mul(index))
+    }
+}
+
+impl<T> LinearProgression<T> {
+    pub fn new(init: T, inc: T, remaining: usize) -> Self
+    where
+        T: Clone,
+    {
         Self {
-            x: x.into(),
-            y: y.into(),
-            z: z.into(),
+            current: init.clone(),
+            inc,
+            remaining,
         }
     }
-    pub fn xy(&self) -> Vec2 {
-        Vec2 {
-            x: self.x,
-            y: self.y,
-        }
-    }
-}
-impl std::ops::Add for Vec3 {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
+    pub fn new_unbound(init: T, inc: T) -> Self
+    where
+        T: Clone,
+    {
         Self {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-            z: self.z + rhs.z,
-        }
-    }
-}
-impl std::ops::Sub for Vec3 {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self {
-            x: self.x - rhs.x,
-            y: self.y - rhs.y,
-            z: self.z - rhs.z,
+            current: init.clone(),
+            inc,
+            remaining: usize::MAX,
         }
     }
 }
 
-impl std::fmt::Debug for Vec3 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({:?},{:?},{:?})", self.x, self.y, self.z)
+impl<T: LinearProgressionElement> Iterator for LinearProgression<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.remaining <= 0 {
+            None
+        } else {
+            let value = self.current;
+            self.current = self.current.linear_progression_add(self.inc);
+            self.remaining -= 1;
+            Some(value)
+        }
+    }
+
+    fn nth(&mut self, index: usize) -> Option<Self::Item> {
+        if index >= self.remaining {
+            self.remaining = 0;
+            None
+        } else {
+            let value = self.get(index);
+            self.current = value.linear_progression_add(self.inc);
+            self.remaining -= index + 1;
+            Some(value)
+        }
+    }
+
+    fn last(mut self) -> Option<Self::Item>
+    where
+        Self: Sized,
+    {
+        self.nth(self.remaining - 1)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.remaining, Some(self.remaining))
     }
 }
 
-#[derive(Debug, Error)]
-pub enum SolveError {
-    #[error("lefts should have the same len as rights")]
-    IncompatibleLeftAndRight,
-    #[error("failed to determine the variable at index {0}")]
-    CannotSolveFor(usize),
-}
-
-pub struct Equations<'t> {
-    pub lefts: &'t mut [&'t mut [Rat]],
-    pub rights: &'t mut [Rat],
-}
-
-impl Equations<'_> {
-    fn multiply_row(&mut self, row_index: usize, k: &Rat) {
-        let vars = self.lefts[0].len();
-        for j in 0..vars {
-            self.lefts[row_index][j] *= *k;
-        }
-        self.rights[row_index] *= *k;
-    }
-
-    fn sub_row(&mut self, row_index: usize, other_row_index: usize) {
-        let vars = self.lefts[0].len();
-        for j in 0..vars {
-            let new_value = self.lefts[row_index][j] - self.lefts[other_row_index][j];
-            self.lefts[row_index][j] = new_value;
-        }
-
-        self.rights[row_index] -= self.rights[other_row_index];
-    }
-
-    pub fn solve(mut self) -> Result<(), SolveError> {
-        let vars = self.lefts[0].len();
-        let eqs = self.rights.len();
-
-        if vars > eqs {
-            return Err(SolveError::IncompatibleLeftAndRight);
-        }
-        for var_index in 0..vars {
-            let Some(non_zero_row) = self
-                .lefts
-                .iter()
-                .enumerate()
-                .skip(var_index)
-                .find(|(_, row)| !row[var_index].is_zero())
-                .map(|(i, _)| i)
-            else {
-                return Err(SolveError::CannotSolveFor(var_index));
-            };
-            self.multiply_row(non_zero_row, &self.lefts[non_zero_row][var_index].reverse());
-            self.swap_rows(var_index, non_zero_row);
-            for eq_index in (var_index + 1)..eqs {
-                let own_coef = self.lefts[eq_index][var_index];
-                if own_coef.is_zero() {
-                    continue;
-                }
-                let k = own_coef.reverse();
-
-                self.multiply_row(eq_index, &k);
-                self.sub_row(eq_index, var_index);
-            }
-        }
-
-        for var_index in (0..vars).rev() {
-            for eq in (0..var_index).rev() {
-                let own_coef = self.lefts[eq][var_index];
-                if own_coef.is_zero() {
-                    continue;
-                }
-                let k = own_coef.reverse();
-                self.multiply_row(var_index, &own_coef);
-                self.sub_row(eq, var_index);
-                self.multiply_row(var_index, &k);
-            }
-        }
-        Ok(())
-    }
-
-    fn swap_rows(&mut self, var_index: usize, non_zero_row: usize) {
-        if var_index == non_zero_row {
-            return;
-        }
-        let vars = self.lefts[0].len();
-        for j in 0..vars {
-            let tmp = self.lefts[var_index][j];
-            self.lefts[var_index][j] = self.lefts[non_zero_row][j];
-            self.lefts[non_zero_row][j] = tmp;
-        }
-        self.rights.swap(var_index, non_zero_row);
+impl<T: LinearProgressionElement> ExactSizeIterator for LinearProgression<T> {
+    fn len(&self) -> usize {
+        self.remaining
     }
 }
 
-pub fn solve_system<const VARS: usize, const EQS: usize>(
-    mut lefts: [[Rat; VARS]; EQS],
-    mut rights: [Rat; EQS],
-) -> Option<[Rat; EQS]> {
-    let mut lefts: [&mut [Rat]; EQS] =
-        array_init::from_iter(lefts.iter_mut().map(|x| x.as_mut())).unwrap();
-    let rights_mut = rights.as_mut();
-    Equations {
-        lefts: &mut lefts,
-        rights: rights_mut,
-    }
-    .solve()
-    .ok()?;
+#[cfg(test)]
+mod tests {
+    use crate::math::LinearProgression;
 
-    Some(rights)
+    #[test]
+    fn test_lin_progression_next() {
+        let mut a = LinearProgression::new(0, 2, 10);
+        assert_eq!(a.next(), Some(0));
+        assert_eq!(a.next(), Some(2));
+        assert_eq!(a.next(), Some(4));
+        assert_eq!(a.next(), Some(6));
+        assert_eq!(a.next(), Some(8));
+        assert_eq!(a.next(), Some(10));
+        assert_eq!(a.next(), Some(12));
+        assert_eq!(a.next(), Some(14));
+        assert_eq!(a.next(), Some(16));
+        assert_eq!(a.next(), Some(18));
+        assert_eq!(a.next(), None);
+    }
+    #[test]
+    fn test_lin_progression_nth() {
+        let mut a = LinearProgression::new(0, 2, 10);
+        assert_eq!(a.nth(3), Some(6));
+        assert_eq!(a.nth(5), Some(18));
+        assert_eq!(a.next(), None);
+    }
 }
