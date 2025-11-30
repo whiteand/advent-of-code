@@ -19,73 +19,6 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Grid<T> {
     }
 }
 
-/// Represents neighbours from top, right,bottom and left.
-pub struct NonDiagonal;
-
-impl NonDiagonal {
-    pub fn to_str(dir: IVec2) -> &'static str {
-        match (dir.x, dir.y) {
-            (0, 1) => "v",
-            (0, -1) => "^",
-            (1, 0) => ">",
-            (-1, 0) => "<",
-            _ => "?",
-        }
-    }
-    pub fn to_ascii_char(dir: IVec2) -> u8 {
-        match (dir.x, dir.y) {
-            (0, 1) => b'v',
-            (0, -1) => b'^',
-            (1, 0) => b'>',
-            (-1, 0) => b'<',
-            _ => b'?',
-        }
-    }
-}
-
-impl IntoIterator for NonDiagonal {
-    type Item = IVec2;
-
-    type IntoIter = std::array::IntoIter<IVec2, 4>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        const { [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X] }.into_iter()
-    }
-}
-
-/// Represents neighbours from
-/// ```ignore
-/// top-left    top       top-right
-/// left                      right
-/// bottom-left bottom bottom-right
-/// ```
-pub struct N8;
-
-impl N8 {
-    pub const fn directions() -> [IVec2; 8] {
-        [
-            IVec2::new(-1, -1),
-            IVec2::new(0, -1),
-            IVec2::new(1, -1),
-            IVec2::new(1, 0),
-            IVec2::new(1, 1),
-            IVec2::new(0, 1),
-            IVec2::new(-1, 1),
-            IVec2::new(-1, 0),
-        ]
-    }
-}
-
-impl IntoIterator for N8 {
-    type Item = IVec2;
-
-    type IntoIter = std::array::IntoIter<IVec2, 8>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Self::directions().into_iter()
-    }
-}
-
 impl<T> Grid<T> {
     pub fn new(size: IVec2, value: T) -> Self
     where
@@ -107,16 +40,25 @@ impl<T> Grid<T> {
     pub fn elements_len(&self) -> usize {
         self.arr.len()
     }
-    pub fn map<U>(&self, f: impl Fn(&T, IVec2) -> U) -> Grid<U> {
-        let f = &f;
-        self.rows()
-            .enumerate()
-            .map(|(row_index, row)| {
-                row.iter()
-                    .enumerate()
-                    .map(move |(col_index, x)| f(x, IVec2::new(col_index as i32, row_index as i32)))
-            })
-            .collect()
+    pub fn map<U>(&self, mut f: impl FnMut(&T, IVec2) -> U) -> Grid<U> {
+        let mut arr: Vec<U> = Vec::with_capacity(self.arr.len());
+        let row_start_indexes = self.row_start_indexes.clone();
+        arr.extend((0..self.arr.len()).scan(IVec2::new(0, -1), |pos, i| {
+            if row_start_indexes.contains(&i) {
+                pos.y += 1;
+                pos.x = 0;
+            } else {
+                pos.x += 1;
+            }
+            let x = &self.arr[i];
+            let u = f(x, *pos);
+            Some(u)
+        }));
+
+        Grid {
+            arr,
+            row_start_indexes,
+        }
     }
 
     pub fn fill(&mut self, value: T)
@@ -419,6 +361,79 @@ where
     }
 }
 
+/// Represents neighbours from top, right,bottom and left.
+pub struct NonDiagonal;
+
+impl NonDiagonal {
+    pub const fn directions() -> [IVec2; 4] {
+        [IVec2::NEG_Y, IVec2::X, IVec2::Y, IVec2::NEG_X]
+    }
+}
+
+impl NonDiagonal {
+    pub fn to_str(dir: IVec2) -> &'static str {
+        match (dir.x, dir.y) {
+            (0, 1) => "v",
+            (0, -1) => "^",
+            (1, 0) => ">",
+            (-1, 0) => "<",
+            _ => "?",
+        }
+    }
+    pub fn to_ascii_char(dir: IVec2) -> u8 {
+        match (dir.x, dir.y) {
+            (0, 1) => b'v',
+            (0, -1) => b'^',
+            (1, 0) => b'>',
+            (-1, 0) => b'<',
+            _ => b'?',
+        }
+    }
+}
+
+impl IntoIterator for NonDiagonal {
+    type Item = IVec2;
+
+    type IntoIter = std::array::IntoIter<IVec2, 4>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::directions().into_iter()
+    }
+}
+
+/// Represents neighbours from
+/// ```ignore
+/// top-left    top       top-right
+/// left                      right
+/// bottom-left bottom bottom-right
+/// ```
+pub struct N8;
+
+impl N8 {
+    pub const fn directions() -> [IVec2; 8] {
+        [
+            IVec2::new(-1, -1),
+            IVec2::new(0, -1),
+            IVec2::new(1, -1),
+            IVec2::new(1, 0),
+            IVec2::new(1, 1),
+            IVec2::new(0, 1),
+            IVec2::new(-1, 1),
+            IVec2::new(-1, 0),
+        ]
+    }
+}
+
+impl IntoIterator for N8 {
+    type Item = IVec2;
+
+    type IntoIter = std::array::IntoIter<IVec2, 8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::directions().into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use glam::IVec2;
@@ -485,6 +500,20 @@ mod tests {
         let grid = super::Grid::new(IVec2::new(2, 3), b'a');
         assert_eq!(grid.size(), IVec2::new(2, 3));
         assert_eq!(grid.render_ascii(), "aa\naa\naa\n");
+    }
+    #[test]
+    fn test_map() {
+        let grid = super::Grid::new(IVec2::new(3, 3), b'a');
+        let mut inc = 0;
+        assert_eq!(grid.render_ascii(), "aaa\naaa\naaa\n");
+        let grid = grid.map(|x, p| {
+            let res = x + p.x as u8 + p.y as u8;
+            inc += 1;
+            res
+        });
+        assert_eq!(grid.size(), IVec2::new(3, 3));
+        assert_eq!(grid.render_ascii(), "abc\nbcd\ncde\n");
+        assert_eq!(inc, 9);
     }
     #[test]
     fn test_resize() {

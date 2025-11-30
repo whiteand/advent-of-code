@@ -8,21 +8,25 @@ use super::cell::Cell;
 
 pub fn precalculate_neighbours<'t>(
     grid: &'t Grid<Option<Cell>>,
-    find_wrap: impl Fn(&'t Grid<Option<Cell>>, IVec2, IVec2) -> Option<IVec2>,
-) -> Grid<PerNonDiagonalDirection<IVec2>> {
+    mut find_wrap: impl FnMut(&'t Grid<Option<Cell>>, IVec2, IVec2) -> Option<(IVec2, IVec2)>,
+) -> Grid<PerNonDiagonalDirection<(IVec2, IVec2)>> {
     grid.map(|cell, pos| match cell {
         Some(Cell::Free) => {
             PerNonDiagonalDirection::from_fn(|direction| match grid.get(pos + direction) {
-                Some(Some(Cell::Wall)) => pos,
-                Some(Some(Cell::Free)) => pos + direction,
-                Some(None) | None => find_wrap(grid, pos, direction).unwrap_or(pos),
+                Some(Some(Cell::Wall)) => (pos, direction),
+                Some(Some(Cell::Free)) => (pos + direction, direction),
+                Some(None) | None => find_wrap(grid, pos, direction).unwrap_or((pos, direction)),
             })
         }
-        _ => PerNonDiagonalDirection::splat(&pos),
+        _ => PerNonDiagonalDirection::from_fn(|direction| (pos, direction)),
     })
 }
 
-pub fn find_2d_wrap(grid: &Grid<Option<Cell>>, pos: IVec2, direction: IVec2) -> Option<IVec2> {
+pub fn find_2d_wrap(
+    grid: &Grid<Option<Cell>>,
+    pos: IVec2,
+    direction: IVec2,
+) -> Option<(IVec2, IVec2)> {
     let opposite_pos = match direction.to_array() {
         [0, 1] => IVec2::new(pos.x, 0),
         [0, -1] => IVec2::new(pos.x, (grid.rows_len() - 1) as i32),
@@ -36,7 +40,7 @@ pub fn find_2d_wrap(grid: &Grid<Option<Cell>>, pos: IVec2, direction: IVec2) -> 
     let filled_cell = grid.get(filled_pos).unwrap().unwrap();
 
     match filled_cell {
-        Cell::Wall => Some(pos),
-        Cell::Free => Some(filled_pos),
+        Cell::Wall => Some((pos, direction)),
+        Cell::Free => Some((filled_pos, direction)),
     }
 }
