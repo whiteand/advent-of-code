@@ -87,9 +87,8 @@ pub fn part2(file_content: &str) -> usize {
     let empty_node = grid.get(empty).unwrap();
     for y in 0..grid.rows_len() {
         let row = grid.row(y).unwrap();
-        for x in 0..row.len() {
+        for (x, node) in row.iter().enumerate() {
             let pos = IVec2::new(x as i32, y as i32);
-            let node = row[x];
             if node.used == 0 {
                 print!("_");
                 continue;
@@ -104,7 +103,7 @@ pub fn part2(file_content: &str) -> usize {
             }
             let n = grid
                 .neighbours(pos, NonDiagonal)
-                .filter(|(_, n)| n.can_include(&node))
+                .filter(|(_, n)| n.can_include(node))
                 .count();
             match n {
                 0 => print!("#"),

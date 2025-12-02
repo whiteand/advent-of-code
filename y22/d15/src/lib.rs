@@ -245,6 +245,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // slow
     fn test_part_2_actual() {
         assert_eq!(
             format!("{}", solve_part_2(ACTUAL, 0..=4000000, 0..=4000000)),

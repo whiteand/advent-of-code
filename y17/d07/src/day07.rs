@@ -29,8 +29,7 @@ pub fn part2(file_content: &str) -> usize {
 
     let root_id = ids.get(root).copied().unwrap();
 
-    let expected = get_weight(&graph, &weights, root_id).unwrap_err();
-    expected
+    get_weight(&graph, &weights, root_id).unwrap_err()
 }
 
 #[derive(Debug)]
@@ -38,8 +37,8 @@ struct Weight {
     children: usize,
     total: usize,
 }
-fn get_weight<'t>(
-    graph: &DiGraph<&'t str, ()>,
+fn get_weight(
+    graph: &DiGraph<&str, ()>,
     weights: &FxHashMap<&str, usize>,
     id: NodeIndex,
 ) -> Result<Weight, usize> {
@@ -85,13 +84,13 @@ fn find_root<'t>(graph: &DiGraph<&'t str, ()>) -> Option<&'t str> {
     }
     None
 }
-fn parse_graph(
-    file_content: &str,
-) -> (
-    DiGraph<&str, ()>,
-    FxHashMap<&str, usize>,
-    FxHashMap<&str, NodeIndex>,
-) {
+type GraphAndMaps<'t> = (
+    DiGraph<&'t str, ()>,
+    FxHashMap<&'t str, usize>,
+    FxHashMap<&'t str, NodeIndex>,
+);
+
+fn parse_graph(file_content: &str) -> GraphAndMaps<'_> {
     let node_specs = parse_input(file_content).map(|x| x.1).unwrap();
     let mut graph = DiGraph::<&str, ()>::new();
     let mut weights = FxHashMap::default();

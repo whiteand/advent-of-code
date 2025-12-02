@@ -112,7 +112,7 @@ impl Default for State {
 fn steps_to_yt(dy: usize, y0: usize, yt: usize) -> Option<usize> {
     if yt <= y0 {
         Some(0)
-    } else if dy  == 0 {
+    } else if dy == 0 {
         None
     } else {
         Some((yt - y0).div_ceil(dy))
@@ -153,7 +153,7 @@ impl State {
         let until_enough_ore =
             steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_obsidian_robot)
                 .filter(|x| *x < self.remaining_minutes)?;
-        let until_enough_clay= steps_to_yt(
+        let until_enough_clay = steps_to_yt(
             self.clay_robots,
             self.clay,
             blueprint.clay_per_obsidian_robot,

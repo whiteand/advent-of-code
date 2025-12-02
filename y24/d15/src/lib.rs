@@ -24,7 +24,7 @@ fn play(grid: &mut Grid<u8>, mut player: IVec2, moves: &[IVec2]) -> IVec2 {
         let boxes = (1i32..)
             .take_while(|i| {
                 let p = player + m * *i;
-                grid.get(p).copied().map_or(false, |x| x == b'O')
+                grid.get(p).copied() == Some(b'O')
             })
             .count();
         if boxes == 0 {
@@ -112,7 +112,7 @@ impl LargeGrid {
                     break;
                 };
                 if let Entity::Box(id) = e {
-                    if boxes_to_move.last().map_or(true, |x| *x != id) {
+                    if boxes_to_move.last().is_none_or(|x| *x != id) {
                         boxes_to_move.push(id);
                     }
                     p += m;
@@ -151,7 +151,7 @@ impl LargeGrid {
             [m, m + IVec2::X]
                 .map(|offset| self.boxes[box_id] + offset)
                 .into_iter()
-                .any(|p| self.get(p).map_or(false, |e| matches!(e, Entity::Wall)))
+                .any(|p| self.get(p).is_some_and(|e| matches!(e, Entity::Wall)))
         });
 
         if cannot_move {

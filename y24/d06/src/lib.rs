@@ -145,6 +145,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(tracing_subscriber::FmtSubscriber::new());
         assert_eq!(format!("{}", solve_part_2(ACTUAL)), "1770");

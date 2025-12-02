@@ -203,7 +203,7 @@ fn parse_inc(input: &str) -> nom::IResult<&str, Instruction> {
 fn parse_tgl(input: &str) -> nom::IResult<&str, Instruction> {
     preceded(
         (tag("tgl"), multispace1),
-        parse_operand.map(|operand| Instruction::Tgl(operand)),
+        parse_operand.map(Instruction::Tgl),
     )
     .parse(input)
 }

@@ -111,7 +111,7 @@ pub fn part2(file_content: &str) -> String {
 
     while let Some(vertices) = to_visit.pop() {
         if lists.len(vertices) > lists.len(max_vertices) {
-            max_vertices = vertices.clone();
+            max_vertices = vertices;
         }
 
         let last = lists.head(vertices).copied().unwrap().into();

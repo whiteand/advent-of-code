@@ -40,6 +40,14 @@ test year day *PARAMS:
 test-watch year day:
     cargo watch test --package y{{year}}d{{day}} --lib -- --nocapture tests
 
+test-all:
+    cargo nextest run --no-fail-fast
+
+lint-all:
+    cargo fmt --all
+    cargo clippy --workspace --profile ci --locked --benches --tests --all-features --no-deps
+    cargo nextest run --no-fail-fast
+
 bench year day:
     cargo bench --package y{{year}}d{{day}}
 

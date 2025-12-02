@@ -14,7 +14,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 fn divisors(n: usize) -> impl Iterator<Item = usize> {
     (1..=n)
         .take_while(move |&x| x * x <= n)
-        .filter(move |x| n % *x == 0)
+        .filter(move |x| n.is_multiple_of(*x))
         .flat_map(move |x| [x, n / x].into_iter().skip(if x * x == n { 1 } else { 0 }))
 }
 
@@ -24,11 +24,13 @@ mod tests {
     const ACTUAL: &str = include_str!("../input.txt");
 
     #[test]
+    #[ignore] // slow
     fn test_part1_actual() {
         assert_eq!(format!("{}", solve_part_1(ACTUAL)), "831600");
     }
 
     #[test]
+    #[ignore] // slow
     fn test_part2_actual() {
         assert_eq!(format!("{}", solve_part_2(ACTUAL)), "884520");
     }

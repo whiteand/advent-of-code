@@ -14,7 +14,7 @@ impl Condition {
         }
     }
     pub fn choose(&self, worry_level: u64) -> usize {
-        if worry_level % self.divisor == 0 {
+        if worry_level.is_multiple_of(self.divisor) {
             self.if_true
         } else {
             self.if_false

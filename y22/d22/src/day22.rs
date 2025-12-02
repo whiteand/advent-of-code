@@ -30,11 +30,11 @@ fn solve<'t>(
     find_wrap: impl FnMut(&'t Shape, IVec2, IVec2) -> Option<(IVec2, IVec2)>,
 ) -> i32 {
     // tracing::info!("Grid:\n```\n{}\n```", grid.render_ascii());
-    let initial_position = find_initial_position(&grid);
+    let initial_position = find_initial_position(grid);
 
     let mut dir = IVec2::X;
     let mut pos = initial_position;
-    let neighbours = precalculate_neighbours(&grid, find_wrap);
+    let neighbours = precalculate_neighbours(grid, find_wrap);
 
     for c in commands {
         match c {
@@ -55,7 +55,7 @@ fn solve<'t>(
         }
     }
 
-    let final_password = (pos.y + 1) * 1000
+    (pos.y + 1) * 1000
         + (pos.x + 1) * 4
         + match NonDiagonal::to_ascii_char(dir) {
             b'>' => 0,
@@ -63,9 +63,7 @@ fn solve<'t>(
             b'<' => 2,
             b'^' => 3,
             _ => unreachable!(),
-        };
-
-    final_password
+        }
 }
 
 #[tracing::instrument(skip(file_content))]
@@ -211,7 +209,7 @@ fn is_inner_angle(grid: &Shape, p: IVec2) -> bool {
 }
 
 fn parse_corners(grid: &Shape) -> Vec<IVec2> {
-    let top_left_corner = find_initial_position(&grid);
+    let top_left_corner = find_initial_position(grid);
     let mut direction = IVec2::X;
     let mut res = Vec::new();
 
@@ -239,7 +237,7 @@ fn parse_corners(grid: &Shape) -> Vec<IVec2> {
         });
         let should_go_forward = forward != 0 && left == 0;
         if should_go_forward {
-            pos = pos + direction;
+            pos += direction;
             if has_intermediate_points {
                 res.pop();
             } else {

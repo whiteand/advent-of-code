@@ -139,7 +139,7 @@ impl std::fmt::Display for Turn {
 }
 
 impl Turn {
-    fn to_vec(&self) -> IVec2 {
+    fn to_vec(self) -> IVec2 {
         match self {
             Turn::Up => IVec2::NEG_Y,
             Turn::Down => IVec2::Y,
@@ -147,7 +147,7 @@ impl Turn {
             Turn::Right => IVec2::X,
         }
     }
-    fn to_letter(&self) -> u8 {
+    fn to_letter(self) -> u8 {
         match self {
             Turn::Up => b'U',
             Turn::Down => b'D',
@@ -159,7 +159,7 @@ impl Turn {
 
 impl Map<'_> {
     fn get_doors(&self, it: impl Iterator<Item = Turn>) -> Doors {
-        let it_len = it.try_len().map(|x| x).unwrap_or_default();
+        let it_len = it.try_len().unwrap_or_default();
         let mut payload = Vec::with_capacity(it_len + self.passcode.len());
         payload.extend_from_slice(self.passcode.as_bytes());
         for x in it {

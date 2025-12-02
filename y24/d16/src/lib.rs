@@ -37,7 +37,7 @@ fn next(grid: &Grid<u8>, p: IVec2, dir: IVec2) -> impl Iterator<Item = ((IVec2, 
     ]
     .map(|d| ((p + d.0, d.0), d.1))
     .into_iter()
-    .filter(|((p, _), _)| grid.get(*p).map_or(false, |x| *x != b'#'))
+    .filter(|((p, _), _)| grid.get(*p).is_some_and(|x| *x != b'#'))
 }
 
 fn heuristic(end: IVec2, x: &IVec2) -> i32 {

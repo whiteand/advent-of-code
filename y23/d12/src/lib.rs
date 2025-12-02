@@ -100,16 +100,16 @@ fn get_arrangements_number(row: Row, damaged_ranges: &[usize]) -> usize {
     s[0][0] = 1;
     match (1..=len).find(|i| row.damaged.is_set(*i - 1)) {
         Some(i) => {
-            for j in 0..i {
-                s[0][j] = 1;
+            for p in s[0].iter_mut().take(i) {
+                *p = 1;
             }
-            for j in i..=len {
-                s[0][j] = 0;
+            for p in s[0].iter_mut().take(len + 1).skip(i) {
+                *p = 0;
             }
         }
         None => {
-            for j in 0..=len {
-                s[0][j] = 1;
+            for p in s[0].iter_mut().take(len + 1) {
+                *p = 1;
             }
         }
     };

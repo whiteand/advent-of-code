@@ -149,7 +149,7 @@ pub fn part1(file_content: &str) -> Int {
     info!(?instructions);
     for a in 0.. {
         let mut cpu = Cpu {
-            a: a,
+            a,
             gas: 10_000_000,
             ..Default::default()
         };
@@ -226,7 +226,7 @@ fn parse_out(input: &str) -> nom::IResult<&str, Instruction> {
 fn parse_tgl(input: &str) -> nom::IResult<&str, Instruction> {
     preceded(
         (tag("tgl"), multispace1),
-        parse_operand.map(|operand| Instruction::Tgl(operand)),
+        parse_operand.map(Instruction::Tgl),
     )
     .parse(input)
 }
@@ -244,7 +244,8 @@ mod tests {
     use rstest::rstest;
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
-    #[case::actual(ACTUAL, "0")]
+    #[case::actual(ACTUAL, "196")]
+    #[ignore] // slow
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

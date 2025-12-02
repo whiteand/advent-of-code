@@ -42,7 +42,7 @@ impl<T> Loop<T> {
         }
         let leni = self.len() as isize - 1;
         if shift > leni {
-            shift = shift % leni;
+            shift %= leni;
         } else if shift < -leni {
             shift = -((-shift) % leni)
         }
@@ -200,7 +200,7 @@ mod tests {
 
     #[rstest]
     #[case::example(EXAMPLE, "3")]
-    #[case::actual(ACTUAL, "0")]
+    #[case::actual(ACTUAL, "13289")]
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -210,8 +210,8 @@ mod tests {
         assert_eq!(format!("{}", part1(input)), expected);
     }
     #[rstest]
-    #[case::example(EXAMPLE, "0")]
-    // #[case::actual(ACTUAL, "0")]
+    #[case::example(EXAMPLE, "1623178306")]
+    // #[case::actual(ACTUAL, "2865721299243")]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

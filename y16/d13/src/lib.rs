@@ -2,7 +2,10 @@ use itertools::Either;
 use pathfinding::num_traits::CheckedSub;
 
 fn get_cell(favorite_num: usize, x: usize, y: usize) -> Cell {
-    if (x * x + 3 * x + 2 * x * y + y + y * y + favorite_num).count_ones() % 2 == 0 {
+    if (x * x + 3 * x + 2 * x * y + y + y * y + favorite_num)
+        .count_ones()
+        .is_multiple_of(2)
+    {
         Cell::Open
     } else {
         Cell::Wall

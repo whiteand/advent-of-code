@@ -11,7 +11,7 @@ pub fn solve(file_content: &str, get_checksum: impl FnOnce(&[usize]) -> usize) -
         .bytes()
         .map(|x| (x - b'0') as usize)
         .collect_vec();
-    return get_checksum(&map);
+    get_checksum(&map)
 }
 
 #[tracing::instrument(skip(map))]

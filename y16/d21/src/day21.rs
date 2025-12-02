@@ -109,97 +109,94 @@ fn unscramble(input: Vec<u8>, instructions: &[Instruction]) -> Vec<Vec<u8>> {
     let mut reversed = vec![input];
     let mut buf = vec![];
     for instruction in instructions.iter().copied().rev() {
-        buf.extend(reversed.drain(..));
-        reversed.extend(
-            buf.drain(..)
-                .flat_map(|mut state| match instruction.clone() {
-                    Instruction::SwapPosition(a, b) => {
-                        state.swap(a, b);
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
+        buf.append(&mut reversed);
+        reversed.extend(buf.drain(..).flat_map(|mut state| match instruction {
+            Instruction::SwapPosition(a, b) => {
+                state.swap(a, b);
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::SwapLetter(a, b) => {
+                for x in state.iter_mut() {
+                    if *x == a {
+                        *x = b;
+                    } else if *x == b {
+                        *x = a;
                     }
-                    Instruction::SwapLetter(a, b) => {
-                        for x in state.iter_mut() {
-                            if *x == a {
-                                *x = b;
-                            } else if *x == b {
-                                *x = a;
-                            }
+                }
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::ReversePositions(a, b) => {
+                let (a, b) = (a.min(b), a.max(b));
+                state[a..=b].reverse();
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::RotateLeft(offset) => {
+                rotate_right(&mut state, offset);
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::RotateRight(offset) => {
+                rotate_left(&mut state, offset);
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::MovePosition(a, b) => {
+                let value = state[b];
+                state.remove(b);
+                state.insert(a, value);
+                trace!(
+                    ?instruction,
+                    text = unsafe { String::from_utf8_unchecked(state.clone()) }
+                );
+                Either::Left(std::iter::once(state))
+            }
+            Instruction::RotateBasedOnPositionOfLetter(letter) => {
+                let j = state.iter().position(|x| *x == letter).unwrap();
+                let is = (0..state.len())
+                    .filter(|i| {
+                        let i = *i;
+                        if i >= 4 {
+                            ((i + i + 2) % state.len()) == j
+                        } else {
+                            ((i + i + 1) % state.len()) == j
                         }
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
-                    }
-                    Instruction::ReversePositions(a, b) => {
-                        let (a, b) = (a.min(b), a.max(b));
-                        state[a..=b].reverse();
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
-                    }
-                    Instruction::RotateLeft(offset) => {
-                        rotate_right(&mut state, offset);
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
-                    }
-                    Instruction::RotateRight(offset) => {
-                        rotate_left(&mut state, offset);
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
-                    }
-                    Instruction::MovePosition(a, b) => {
-                        let value = state[b];
-                        state.remove(b);
-                        state.insert(a, value);
-                        trace!(
-                            ?instruction,
-                            text = unsafe { String::from_utf8_unchecked(state.clone()) }
-                        );
-                        Either::Left(std::iter::once(state))
-                    }
-                    Instruction::RotateBasedOnPositionOfLetter(letter) => {
-                        let j = state.iter().position(|x| *x == letter).unwrap();
-                        let is = (0..state.len())
-                            .filter(|i| {
-                                let i = *i;
-                                if i >= 4 {
-                                    ((i + i + 2) % state.len()) == j
-                                } else {
-                                    ((i + i + 1) % state.len()) == j
-                                }
-                            })
-                            .collect_vec();
+                    })
+                    .collect_vec();
 
-                        assert!(!is.is_empty());
+                assert!(!is.is_empty());
 
-                        Either::Right(is.into_iter().map(move |i| {
-                            let mut new_state = state.clone();
+                Either::Right(is.into_iter().map(move |i| {
+                    let mut new_state = state.clone();
 
-                            let lefts = if i >= 4 { i + 2 } else { i + 1 };
+                    let lefts = if i >= 4 { i + 2 } else { i + 1 };
 
-                            rotate_left(&mut new_state, lefts);
-                            trace!(
-                                ?instruction,
-                                text = unsafe { String::from_utf8_unchecked(new_state.clone()) }
-                            );
-                            new_state
-                        }))
-                    }
-                }),
-        )
+                    rotate_left(&mut new_state, lefts);
+                    trace!(
+                        ?instruction,
+                        text = unsafe { String::from_utf8_unchecked(new_state.clone()) }
+                    );
+                    new_state
+                }))
+            }
+        }))
     }
     reversed
 }
@@ -277,14 +274,14 @@ fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
             .map(|(_, from, _, to)| Instruction::MovePosition(from, to)),
         // rotate left 1 step
         // rotate left 4 steps
-        preceded(tag("rotate left "), parse_steps).map(|steps| Instruction::RotateLeft(steps)),
-        preceded(tag("rotate right "), parse_steps).map(|steps| Instruction::RotateRight(steps)),
+        preceded(tag("rotate left "), parse_steps).map(Instruction::RotateLeft),
+        preceded(tag("rotate right "), parse_steps).map(Instruction::RotateRight),
         // rotate based on position of letter g
         preceded(
             tag("rotate based on position of letter "),
             nom::character::complete::anychar.map(|x| x as u8),
         )
-        .map(|c| Instruction::RotateBasedOnPositionOfLetter(c)),
+        .map(Instruction::RotateBasedOnPositionOfLetter),
     ))
     .parse(input)
 }

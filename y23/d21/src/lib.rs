@@ -846,7 +846,7 @@ fn get_grid_row_sum<T: MinDistances>(
     }
 
     let mut totally_full_grids = (max_col - min_col + 1) as usize;
-    if totally_full_grids % 2 != 0 {
+    if !totally_full_grids.is_multiple_of(2) {
         let sum = get_grid_sum(size, steps, distances, (same, other), (row, min_col));
         total += sum;
         totally_full_grids -= 1;

@@ -58,7 +58,7 @@ macro_rules! impl_linear_progression_for_nums {
                 self + other
             }
             fn linear_progression_mul(self, other: usize) -> Self {
-                if Self::MAX as usize > other {
+                if other > Self::MAX as usize {
                     panic!("Too large multiplier");
                 }
                 self * (other as $t)
@@ -182,7 +182,7 @@ mod tests {
     }
     #[test]
     fn test_lin_progression_nth() {
-        let mut a = LinearProgression::new(0, 2, 10);
+        let mut a = LinearProgression::new(0usize, 2, 10);
         assert_eq!(a.nth(3), Some(6));
         assert_eq!(a.nth(5), Some(18));
         assert_eq!(a.next(), None);

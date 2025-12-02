@@ -30,7 +30,7 @@ pub fn solve<const MIN_WIN: usize, const CHEAT_LEN: usize>(file_content: &str) -
 
             without_cheat
                 .checked_sub(new_cost)
-                .map_or(false, |x| x >= MIN_WIN)
+                .is_some_and(|x| x >= MIN_WIN)
         })
         .count()
 }

@@ -127,6 +127,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // slow 3s
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

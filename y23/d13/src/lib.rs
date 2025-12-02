@@ -158,7 +158,7 @@ impl Pattern {
         (0..(self.rows() - 1)).filter(move |&mr| {
             if mr * 2 + 2 == self.rows() {
                 let n = prefix_rocks_sum[self.rows() - 1];
-                if n % 2 != 0 {
+                if !n.is_multiple_of(2) {
                     return false;
                 }
                 let top_part_sum = prefix_row_col_product_sum[mr];
@@ -175,7 +175,7 @@ impl Pattern {
             // 2mr + 2
             if mr < self.rows() / 2 {
                 let n = prefix_rocks_sum[2 * mr + 1];
-                if n % 2 != 0 {
+                if !n.is_multiple_of(2) {
                     return false;
                 }
                 let coef_sum = prefix_row_coef_sum[2 * mr + 1];
@@ -192,7 +192,7 @@ impl Pattern {
             } else {
                 // only bottom part is reflecting
                 let n = suffix_rocks_sum[2 + 2 * mr - self.rows()];
-                if n % 2 != 0 {
+                if !n.is_multiple_of(2) {
                     return false;
                 }
 

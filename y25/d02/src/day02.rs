@@ -1,6 +1,5 @@
-use std::ops::Range;
-
 use itertools::Itertools;
+use std::ops::Range;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
@@ -33,9 +32,10 @@ fn solve(file_content: &str, repeats: Range<usize>) -> usize {
 fn parse_ranges(file_content: &str) -> impl Iterator<Item = Range<usize>> {
     file_content.trim().split(',').map(|pair| {
         let (a, b) = pair.split_once("-").unwrap();
+
         tracing::info!(?a, ?b, "splitted pair");
-        let a = usize::from_str_radix(a, 10).unwrap();
-        let b = usize::from_str_radix(b, 10).unwrap();
+        let a = a.parse::<usize>().unwrap();
+        let b = b.parse::<usize>().unwrap();
         a..(b + 1)
     })
 }

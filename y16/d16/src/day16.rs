@@ -16,7 +16,7 @@ fn solve<const N: usize>(file_content: &str) -> String {
 fn checksum<const N: usize>(mut file: Vec<u8>) -> String {
     file.truncate(N);
 
-    while file.len() % 2 == 0 {
+    while file.len().is_multiple_of(2) {
         checksum_step(&mut file);
     }
 

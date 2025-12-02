@@ -33,6 +33,8 @@ impl<T> PerNonDiagonalDirection<T> {
             _ => None,
         }
     }
+    /// # Safety
+    /// dir should be a unit vector in one of four directions: X, NEG_X, Y, NEG_Y
     pub unsafe fn unsafe_get(&self, dir: IVec2) -> &T {
         match (dir.x, dir.y) {
             (0, 1) => &self.down,
@@ -51,6 +53,8 @@ impl<T> PerNonDiagonalDirection<T> {
             _ => None,
         }
     }
+    /// # Safety
+    /// dir should be a unit vector in one of four directions: X, NEG_X, Y, NEG_Y
     pub unsafe fn unsafe_get_mut(&mut self, dir: IVec2) -> &mut T {
         match (dir.x, dir.y) {
             (0, 1) => &mut self.down,

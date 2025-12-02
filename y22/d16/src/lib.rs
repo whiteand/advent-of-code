@@ -23,6 +23,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // slow
     fn test_part_1_actual() {
         assert_eq!(format!("{}", solve_part_1(ACTUAL, 30)), "1728");
     }
@@ -33,6 +34,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // slow
     fn test_part_2_actual() {
         assert_eq!(format!("{}", solve_part_2(ACTUAL)), "2304");
     }

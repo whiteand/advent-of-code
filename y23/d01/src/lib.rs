@@ -11,7 +11,7 @@ fn process_line_1(line: &str) -> u32 {
     });
 
     let a = digits_iter.next().unwrap();
-    let b = digits_iter.last().unwrap_or(a);
+    let b = digits_iter.next_back().unwrap_or(a);
 
     (a * 10 + b).into()
 }

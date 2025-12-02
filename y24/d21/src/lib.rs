@@ -211,11 +211,9 @@ fn get_possible_trajectories(code: &str) -> impl Iterator<Item = Vec<RobotTask>>
         .map(|x| x.into_iter().flatten().collect_vec())
 }
 
-fn get_paths<X>(
-    ap: IVec2,
-    bp: IVec2,
-    get_v: impl Fn(IVec2) -> Option<X>,
-) -> Either<RobotTask, Either<[RobotTask; 2], ([RobotTask; 2], [RobotTask; 2])>> {
+type PathsIter = Either<RobotTask, Either<[RobotTask; 2], ([RobotTask; 2], [RobotTask; 2])>>;
+
+fn get_paths<X>(ap: IVec2, bp: IVec2, get_v: impl Fn(IVec2) -> Option<X>) -> PathsIter {
     if ap.x == bp.x || ap.y == bp.y {
         return Either::Left(move_from_to(ap, bp));
     }
@@ -254,17 +252,15 @@ fn move_from_to(a: IVec2, b: IVec2) -> RobotTask {
                 steps: delta.y as usize,
             }
         }
+    } else if dir.x == -1 {
+        RobotTask::Move {
+            direction: Direction::Left,
+            steps: (-delta.x) as usize,
+        }
     } else {
-        if dir.x == -1 {
-            RobotTask::Move {
-                direction: Direction::Left,
-                steps: (-delta.x) as usize,
-            }
-        } else {
-            RobotTask::Move {
-                direction: Direction::Right,
-                steps: delta.x as usize,
-            }
+        RobotTask::Move {
+            direction: Direction::Right,
+            steps: delta.x as usize,
         }
     }
 }

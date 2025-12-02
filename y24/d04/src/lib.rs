@@ -60,7 +60,7 @@ impl GridExt for Grid<u8> {
         self.iter_line(pos, dir)
             .zip_longest(str.as_bytes())
             .take_while(|r| r.has_right())
-            .all(|r| r.both().map_or(false, |(a, b)| a == b))
+            .all(|r| r.both().is_some_and(|(a, b)| a == b))
     }
 }
 

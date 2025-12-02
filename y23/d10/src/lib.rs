@@ -224,7 +224,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
         grid.iter(start_row, start_col, r, c)
             .enumerate()
             .find(|(_, (r, c))| *r == start_row && *c == start_col)
-            .map(|(ind, _)| (ind + 1) / 2)
+            .map(|(ind, _)| ind.div_ceil(2))
     })
     .expect("at least one loop should start from start")
 }

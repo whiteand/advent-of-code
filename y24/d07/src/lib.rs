@@ -52,7 +52,12 @@ macro_rules! impl_op {
         }
     };
 }
-impl_op!(Mul, result, op, (result % op == 0).then(|| result / op));
+impl_op!(
+    Mul,
+    result,
+    op,
+    result.is_multiple_of(op).then(|| result / op)
+);
 impl_op!(Add, result, op, (result >= op).then(|| result - op));
 impl_op!(Concat, result, op, deconcat(result, op));
 
