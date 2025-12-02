@@ -75,7 +75,7 @@ fn parse_wire_maps(input: &str) -> HashMap<&str, Vec<Wire<'_>>> {
 
 fn parse_and_const_source(input: &str) -> nom::IResult<&str, Source<'_>> {
     let (input, value) = nom::character::complete::u16(input)?;
-    let (input, _) = nom::bytes::complete::tag(" AND ")(input)?;
+    let (input, _) = nom::bytes::complete::tag(" AND ").parse(input)?;
     let (input, id) = nom::character::complete::alpha1(input)?;
 
     Ok((input, Source::AndConst((id, value))))

@@ -6,7 +6,7 @@ use nom::{
     character::{self, complete::line_ending},
     multi::separated_list1,
     sequence::separated_pair,
-    IResult,
+    IResult, Parser,
 };
 use petgraph::{
     graph::{DiGraph, UnGraph},
@@ -97,7 +97,8 @@ fn parse(input: &str) -> IResult<&str, Vec<(&str, &str)>> {
             tag(")"),
             character::complete::alphanumeric1,
         ),
-    )(input)
+    )
+    .parse(input)
 }
 
 #[cfg(test)]

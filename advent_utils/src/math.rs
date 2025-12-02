@@ -121,7 +121,7 @@ impl<T: LinearProgressionElement> Iterator for LinearProgression<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.remaining <= 0 {
+        if self.remaining == 0 {
             None
         } else {
             let value = self.current;

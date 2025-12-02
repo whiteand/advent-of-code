@@ -56,7 +56,8 @@ fn parse_group(input: &str) -> nom::IResult<&str, (usize, usize)> {
             complete::u32.map(|x| x as usize),
         ),
         tag(")"),
-    )(input)
+    )
+    .parse(input)
 }
 
 #[cfg(test)]

@@ -6,54 +6,52 @@ use advent_utils::nom::{
     character::{self, complete::newline},
     combinator,
     multi::separated_list1,
-    sequence::{self, delimited, preceded, separated_pair, tuple},
-    IResult,
+    sequence::{self, delimited, preceded, separated_pair},
+    IResult, Parser,
 };
 
 fn parse_index(input: &str) -> IResult<&str, u64> {
-    let mut parse_line =
-        nom::sequence::delimited(tag("Monkey "), character::complete::u64, tag(":\n"));
-    parse_line(input)
+    nom::sequence::delimited(tag("Monkey "), character::complete::u64, tag(":\n")).parse(input)
 }
 
 fn parse_items(input: &str) -> IResult<&str, Vec<Item>> {
-    let mut parse = nom::sequence::delimited(
+    nom::sequence::delimited(
         tag("  Starting items: "),
         separated_list1(
             tag(", "),
             nom::combinator::map(character::complete::u64, |x| Item { worry_level: x }),
         ),
         newline,
-    );
-    parse(input)
+    )
+    .parse(input)
 }
 
 fn parse_int(input: &str) -> IResult<&str, Expression<'_>> {
-    let mut parse_int = combinator::map(character::complete::u64, Expression::Integer);
-    parse_int(input)
+    combinator::map(character::complete::u64, Expression::Integer).parse(input)
 }
 fn parse_old(input: &str) -> IResult<&str, Expression<'_>> {
-    let mut parse_old = combinator::map(tag("old"), |_| Expression::Var("old"));
-    parse_old(input)
+    combinator::map(tag("old"), |_| Expression::Var("old")).parse(input)
 }
 fn parse_sum(input: &str) -> IResult<&str, Expression<'_>> {
     combinator::map(
         separated_pair(parse_expression, tag(" + "), parse_expression),
         |(a, b)| Expression::Sum(Box::new((a, b))),
-    )(input)
+    )
+    .parse(input)
 }
 fn parse_product(input: &str) -> IResult<&str, Expression<'_>> {
     combinator::map(
         separated_pair(parse_expression, tag(" * "), parse_expression),
         |(a, b)| Expression::Product(Box::new((a, b))),
-    )(input)
+    )
+    .parse(input)
 }
 fn parse_expression(input: &str) -> IResult<&str, Expression<'_>> {
-    alt((parse_int, parse_old, parse_sum, parse_product))(input)
+    alt((parse_int, parse_old, parse_sum, parse_product)).parse(input)
 }
 
 fn parse_operation(input: &str) -> IResult<&str, Expression<'_>> {
-    let mut parse = nom::sequence::preceded(
+    nom::sequence::preceded(
         tag("  Operation: new = "),
         alt((
             nom::sequence::terminated(parse_int, newline),
@@ -61,13 +59,13 @@ fn parse_operation(input: &str) -> IResult<&str, Expression<'_>> {
             nom::sequence::terminated(parse_sum, newline),
             nom::sequence::terminated(parse_product, newline),
         )),
-    );
-    parse(input)
+    )
+    .parse(input)
 }
 
 fn parse_condition(input: &str) -> IResult<&str, Condition> {
     nom::combinator::map(
-        tuple((
+        (
             delimited(
                 tag("  Test: divisible by "),
                 character::complete::u64,
@@ -82,21 +80,21 @@ fn parse_condition(input: &str) -> IResult<&str, Condition> {
                 tag("    If false: throw to monkey "),
                 character::complete::u32,
             ),
-        )),
+        ),
         |(divisor, if_true, if_false)| {
             Condition::new_division_condition(divisor, if_true as usize, if_false as usize)
         },
-    )(input)
+    )
+    .parse(input)
 }
 
 fn parse_monkey(input: &str) -> IResult<&str, Monkey<'_>> {
-    let parse_tuple = tuple((parse_index, parse_items, parse_operation, parse_condition));
-    let mut parse = nom::combinator::map(parse_tuple, |(_, items, operation, condition)| {
-        Monkey::new(items, operation, condition)
-    });
-
-    parse(input)
+    nom::combinator::map(
+        (parse_index, parse_items, parse_operation, parse_condition),
+        |(_, items, operation, condition)| Monkey::new(items, operation, condition),
+    )
+    .parse(input)
 }
 pub(crate) fn parse_monkeys(input: &str) -> IResult<&str, Vec<Monkey<'_>>> {
-    separated_list1(sequence::pair(newline, newline), parse_monkey)(input)
+    separated_list1(sequence::pair(newline, newline), parse_monkey).parse(input)
 }

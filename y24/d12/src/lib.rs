@@ -15,7 +15,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 }
 
 #[tracing::instrument(skip(file_content))]
-pub fn solve<V: GroupVisitor>(file_content: &str) -> usize {
+fn solve<V: GroupVisitor>(file_content: &str) -> usize {
     let grid = parse::ascii_grid(file_content);
     let mut groups = grid.map(|_, _| 0);
     let mut group_id = 0;

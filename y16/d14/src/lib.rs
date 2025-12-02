@@ -160,7 +160,7 @@ where
 }
 
 #[tracing::instrument(skip(salt))]
-pub fn solve<const I: usize, H>(salt: &str) -> usize
+fn solve<const I: usize, H>(salt: &str) -> usize
 where
     H: HashAlgo,
     H::Out: Deref<Target = [u8; 16]>,

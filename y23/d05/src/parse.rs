@@ -5,18 +5,19 @@ use advent_utils::nom::{
     character::complete::{self, newline, not_line_ending, space1},
     combinator::map,
     multi::{separated_list0, separated_list1},
-    sequence::{delimited, preceded, separated_pair, terminated, tuple},
-    IResult,
+    sequence::{delimited, preceded, separated_pair, terminated},
+    IResult, Parser,
 };
 
 use super::{int_map::IntMap, map_pipeline::MapPipeline, range_map::RangeMap};
 
 fn range_map(input: &str) -> IResult<&str, RangeMap> {
-    let (input, (dst, src, length)) = tuple((
+    let (input, (dst, src, length)) = (
         (terminated(complete::u32, space1)),
         (terminated(complete::u32, space1)),
         complete::u32,
-    ))(input)?;
+    )
+        .parse(input)?;
     Ok((
         input,
         RangeMap::new(dst as usize, src as usize, length as usize),
@@ -24,14 +25,15 @@ fn range_map(input: &str) -> IResult<&str, RangeMap> {
 }
 
 fn int_map(input: &str) -> IResult<&str, IntMap> {
-    map(separated_list0(newline, range_map), IntMap::new)(input)
+    map(separated_list0(newline, range_map), IntMap::new).parse(input)
 }
 
 fn maps(input: &str) -> IResult<&str, MapPipeline> {
     let (input, maps) = separated_list0(
-        tuple((newline, newline)),
-        preceded(tuple((not_line_ending, newline)), int_map),
-    )(input)?;
+        (newline, newline),
+        preceded((not_line_ending, newline), int_map),
+    )
+    .parse(input)?;
 
     Ok((input, MapPipeline::new(maps)))
 }
@@ -39,8 +41,9 @@ pub(super) fn part_1_inputs(file_content: &str) -> IResult<&str, (Vec<usize>, Ma
     let (input, seeds) = delimited(
         tag("seeds: "),
         separated_list1(space1, map(complete::u32, |x| x as usize)),
-        tuple((newline, newline)),
-    )(file_content)?;
+        (newline, newline),
+    )
+    .parse(file_content)?;
 
     let (input, maps) = maps(input)?;
     Ok((input, (seeds, maps)))
@@ -56,9 +59,10 @@ pub(super) fn part_2_inputs(file_content: &str) -> IResult<&str, (Vec<Range<usiz
                 |(x, y)| (x as usize)..((x + y) as usize),
             ),
         ),
-        tuple((newline, newline)),
-    )(file_content)?;
+        (newline, newline),
+    )
+    .parse(file_content)?;
 
-    let (input, maps) = maps(input)?;
+    let (input, maps) = maps.parse(input)?;
     Ok((input, (seeds, maps)))
 }

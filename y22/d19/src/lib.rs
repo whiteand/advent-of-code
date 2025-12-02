@@ -3,7 +3,7 @@ use advent_utils::nom::{
     bytes::complete::tag,
     character::complete::{multispace0, newline},
     multi::separated_list1,
-    sequence::{delimited, separated_pair, tuple},
+    sequence::{delimited, separated_pair},
     IResult, Parser,
 };
 
@@ -22,20 +22,20 @@ fn blueprint(input: &str) -> IResult<&str, Blueprint> {
     let (input, id) = delimited(
         tag("Blueprint "),
         nom::character::complete::u32.map(|n| n as usize),
-        tuple((tag(":"), multispace0)),
+        (tag(":"), multispace0),
     )
     .parse(input)?;
 
     let (input, ore_per_ore_robot) = delimited(
         tag("Each ore robot costs "),
         nom::character::complete::u32.map(|n| n as usize),
-        nom::sequence::tuple((tag(" ore."), multispace0)),
+        (tag(" ore."), multispace0),
     )
     .parse(input)?;
     let (input, ore_per_clay_robot) = delimited(
         tag("Each clay robot costs "),
         nom::character::complete::u32.map(|n| n as usize),
-        nom::sequence::tuple((tag(" ore."), multispace0)),
+        (tag(" ore."), multispace0),
     )
     .parse(input)?;
     let (input, (ore_per_obsidian_robot, clay_per_obsidian_robot)) = separated_pair(
@@ -47,7 +47,7 @@ fn blueprint(input: &str) -> IResult<&str, Blueprint> {
         tag(" and "),
         nom::sequence::terminated(
             nom::character::complete::u32.map(|n| n as usize),
-            nom::sequence::tuple((tag(" clay."), multispace0)),
+            (tag(" clay."), multispace0),
         ),
     )
     .parse(input)?;
@@ -112,7 +112,7 @@ impl Default for State {
 fn steps_to_yt(dy: usize, y0: usize, yt: usize) -> Option<usize> {
     if yt <= y0 {
         Some(0)
-    } else if dy <= 0 {
+    } else if dy  == 0 {
         None
     } else {
         Some((yt - y0).div_ceil(dy))
@@ -150,38 +150,28 @@ impl State {
             .filter(|x| *x < self.remaining_minutes)
     }
     fn minutes_until_obsidian_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
-        let Some(until_enough_ore) =
+        let until_enough_ore =
             steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_obsidian_robot)
-                .filter(|x| *x < self.remaining_minutes)
-        else {
-            return None;
-        };
-        let Some(until_enough_clay) = steps_to_yt(
+                .filter(|x| *x < self.remaining_minutes)?;
+        let until_enough_clay= steps_to_yt(
             self.clay_robots,
             self.clay,
             blueprint.clay_per_obsidian_robot,
         )
-        .filter(|x| *x < self.remaining_minutes) else {
-            return None;
-        };
+        .filter(|x| *x < self.remaining_minutes)?;
 
         Some(until_enough_clay.max(until_enough_ore))
     }
     fn minutes_until_geode_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
-        let Some(until_enough_ore) =
+        let until_enough_ore =
             steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_geode_robot)
-                .filter(|x| *x < self.remaining_minutes)
-        else {
-            return None;
-        };
-        let Some(until_enough_obsidian) = steps_to_yt(
+                .filter(|x| *x < self.remaining_minutes)?;
+        let until_enough_obsidian = steps_to_yt(
             self.obsidian_robots,
             self.obsidian,
             blueprint.obsidian_per_geode_robot,
         )
-        .filter(|x| *x < self.remaining_minutes) else {
-            return None;
-        };
+        .filter(|x| *x < self.remaining_minutes)?;
 
         Some(until_enough_obsidian.max(until_enough_ore))
     }
@@ -316,7 +306,9 @@ fn get_max_geodes(blueprint: &Blueprint, init: State) -> usize {
 }
 
 pub fn solve_part_1(file_content: &str) -> usize {
-    let (_, blueprints) = separated_list1(newline, blueprint)(file_content.trim()).unwrap();
+    let (_, blueprints) = separated_list1(newline, blueprint)
+        .parse(file_content.trim())
+        .unwrap();
     blueprints
         .into_iter()
         .map(|b| {
@@ -340,7 +332,9 @@ pub fn solve_part_1(file_content: &str) -> usize {
         .sum()
 }
 pub fn solve_part_2(file_content: &str) -> usize {
-    let (_, blueprints) = separated_list1(newline, blueprint)(file_content.trim()).unwrap();
+    let (_, blueprints) = separated_list1(newline, blueprint)
+        .parse(file_content.trim())
+        .unwrap();
     blueprints
         .into_iter()
         .take(3)

@@ -83,7 +83,7 @@ fn get_max_benefit(randoms: impl Iterator<Item = Random>) -> u16 {
             .map(|(a, b, c, d)| ([a, b, c, d].map(|x| x.1), d.0))
         {
             let key = get_seq_key(seq);
-            if max_visited_by_key[key].map_or(true, |x| x < i) {
+            if max_visited_by_key[key].is_none_or(|x| x < i) {
                 max_visited_by_key[key] = Some(i);
 
                 let total = total_by_key[key] + (n as u16);

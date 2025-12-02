@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use advent_utils::nom::{
     bytes::complete::tag, character::complete, combinator, multi::separated_list1,
-    sequence::separated_pair, IResult,
+    sequence::separated_pair, IResult, Parser,
 };
 use itertools::Itertools;
 
@@ -24,13 +24,14 @@ fn parse_color(line: &str) -> IResult<&str, Color> {
         combinator::map(tag("red"), |_| Color::Red),
         combinator::map(tag("green"), |_| Color::Green),
         combinator::map(tag("blue"), |_| Color::Blue),
-    ))(line)
+    ))
+    .parse(line)
 }
 
 fn game_parser(line: &str) -> IResult<&str, Game> {
     let (input, _) = tag("Game ")(line)?;
     let (input, id) = complete::u32(input)?;
-    let (input, _) = tag(": ")(input)?;
+    let (input, _) = tag(": ").parse(input)?;
     let (input, sets) = separated_list1(
         tag("; "),
         separated_list1(
@@ -41,7 +42,8 @@ fn game_parser(line: &str) -> IResult<&str, Game> {
                 parse_color,
             ),
         ),
-    )(input)?;
+    )
+    .parse(input)?;
 
     let sets = sets
         .into_iter()

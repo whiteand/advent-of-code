@@ -60,7 +60,7 @@ fn check<'a, 'b>(
 type Orderings = Vec<(usize, usize)>;
 type Reports = Vec<Vec<usize>>;
 fn parse(input: &str) -> IResult<&str, (Orderings, Reports)> {
-    separated_pair(parse_ordering, tag("\n\n"), parse_lists)(input)
+    separated_pair(parse_ordering, tag("\n\n"), parse_lists).parse(input)
 }
 fn parse_ordering(input: &str) -> IResult<&str, Vec<(usize, usize)>> {
     separated_list1(
@@ -70,13 +70,15 @@ fn parse_ordering(input: &str) -> IResult<&str, Vec<(usize, usize)>> {
             tag("|"),
             complete::u64.map(|x| x as usize),
         ),
-    )(input)
+    )
+    .parse(input)
 }
 fn parse_lists(input: &str) -> IResult<&str, Vec<Vec<usize>>> {
     separated_list1(
         tag("\n"),
         separated_list1(tag(","), complete::u64.map(|x| x as usize)),
-    )(input)
+    )
+    .parse(input)
 }
 
 #[cfg(test)]

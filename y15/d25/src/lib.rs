@@ -1,6 +1,6 @@
 use advent_utils::{
     glam::UVec2,
-    nom::{self, IResult},
+    nom::{self, IResult, Parser},
 };
 use itertools::Itertools;
 
@@ -10,11 +10,12 @@ const FIRST_CODE: usize = 20151125;
 fn parse_coords(input: &str) -> IResult<&str, UVec2> {
     let (input, _) = nom::bytes::complete::tag(
         "To continue, please consult the code grid in the manual.  Enter the code at row ",
-    )(input)?;
+    )
+    .parse(input)?;
     let (input, row) = nom::character::complete::u32(input)?;
-    let (input, _) = nom::bytes::complete::tag(", column ")(input)?;
+    let (input, _) = nom::bytes::complete::tag(", column ").parse(input)?;
     let (input, col) = nom::character::complete::u32(input)?;
-    let (input, _) = nom::bytes::complete::tag(".")(input)?;
+    let (input, _) = nom::bytes::complete::tag(".").parse(input)?;
 
     Ok((input, UVec2::new(col - 1, row - 1)))
 }

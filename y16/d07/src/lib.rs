@@ -25,7 +25,8 @@ fn parse_ip(input: &str) -> IResult<&str, Vec<Seq<'_>>> {
     many1(alt((
         nom::sequence::delimited(tag("["), alpha1, tag("]")).map(Seq::Hypernet),
         alpha1.map(Seq::Supernet),
-    )))(input)
+    )))
+    .parse(input)
 }
 fn supports_tls(input: &str) -> bool {
     let values = parse_ip(input).map(|x| x.1).unwrap();

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use advent_utils::nom::{self, IResult};
+use advent_utils::nom::{self, IResult, Parser};
 
 fn parse_next<'a, T, U>(x: &mut T) -> U
 where
@@ -63,14 +63,14 @@ impl FromStr for Pair {
 
 fn parse_range(line: &str) -> IResult<&str, Range> {
     let (input, start) = nom::character::complete::u32(line)?;
-    let (input, _) = nom::bytes::complete::tag("-")(input)?;
+    let (input, _) = nom::bytes::complete::tag("-").parse(input)?;
     let (input, end) = nom::character::complete::u32(input)?;
     Ok((input, Range { start, end }))
 }
 
 fn parse_pair(line: &str) -> IResult<&str, Pair> {
     let (input, first) = parse_range(line)?;
-    let (input, _) = nom::bytes::complete::tag(",")(input)?;
+    let (input, _) = nom::bytes::complete::tag(",").parse(input)?;
     let (input, second) = parse_range(input)?;
 
     Ok((input, Pair(first, second)))

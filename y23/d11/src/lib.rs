@@ -38,8 +38,8 @@ pub fn solve<const N: usize>(file_content: &str) -> usize {
         .enumerate()
         .flat_map(|(ind, s)| {
             stars.iter().skip(ind).map(move |s2| {
-                let dr = if s2.0 > s.0 { s2.0 - s.0 } else { s.0 - s2.0 };
-                let dc = if s2.1 > s.1 { s2.1 - s.1 } else { s.1 - s2.1 };
+                let dr = s2.0.abs_diff(s.0);
+                let dc = s2.1.abs_diff(s.1);
                 dr + dc
             })
         })

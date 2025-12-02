@@ -1,6 +1,6 @@
 use super::command::Command;
 use advent_utils::nom;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 fn parse_command(line: &str) -> IResult<&str, Command> {
     nom::branch::alt((
@@ -12,7 +12,8 @@ fn parse_command(line: &str) -> IResult<&str, Command> {
             ),
             Command::Addx,
         ),
-    ))(line)
+    ))
+    .parse(line)
 }
 
 pub fn parse_commands(input: &str) -> impl Iterator<Item = Command> + '_ {

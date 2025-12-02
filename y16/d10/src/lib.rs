@@ -4,7 +4,7 @@ use advent_utils::nom::{
     bytes::complete::tag,
     character::complete,
     parse_usize,
-    sequence::{preceded, separated_pair, tuple},
+    sequence::{preceded, separated_pair},
     Parser,
 };
 use itertools::Either;
@@ -241,23 +241,24 @@ fn parse_entity(input: &str) -> nom::IResult<&str, Entity> {
     alt((
         parse_bot.map(Entity::from),
         preceded(tag("output "), parse_usize.map(Entity::Output)),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_bot_instruction(input: &str) -> nom::IResult<&str, Instruction> {
-    tuple((
+    (
         parse_bot,
         tag(" gives low to "),
         parse_entity,
         tag(" and high to "),
         parse_entity,
-    ))
-    .map(|(bot, _, low, _, high)| BotInstruction {
-        id: bot.id,
-        low,
-        high,
-    })
-    .map(Either::Left)
-    .parse(input)
+    )
+        .map(|(bot, _, low, _, high)| BotInstruction {
+            id: bot.id,
+            low,
+            high,
+        })
+        .map(Either::Left)
+        .parse(input)
 }
 fn parse_value_instruction(input: &str) -> nom::IResult<&str, Instruction> {
     separated_pair(
@@ -270,7 +271,7 @@ fn parse_value_instruction(input: &str) -> nom::IResult<&str, Instruction> {
     .parse(input)
 }
 fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
-    alt((parse_bot_instruction, parse_value_instruction))(input)
+    alt((parse_bot_instruction, parse_value_instruction)).parse(input)
 }
 
 #[cfg(test)]

@@ -99,7 +99,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
 fn parse_boss(input: &str) -> nom::IResult<&str, Player> {
     use nom::{bytes::complete::tag, character::complete};
 
-    nom::sequence::tuple((
+    (
         nom::sequence::delimited(
             tag("Hit Points: "),
             complete::u64.map(|x| x as usize),
@@ -115,9 +115,9 @@ fn parse_boss(input: &str) -> nom::IResult<&str, Player> {
             complete::u64.map(|x| x as usize),
             nom::character::complete::newline,
         ),
-    ))
-    .map(|(hp, damage, armor)| Player { hp, damage, armor })
-    .parse(input)
+    )
+        .map(|(hp, damage, armor)| Player { hp, damage, armor })
+        .parse(input)
 }
 
 #[derive(Debug, Clone)]

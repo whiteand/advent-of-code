@@ -2,7 +2,7 @@ use itertools::Itertools;
 use std::{cell::RefCell, collections::BTreeMap, ops::RangeInclusive};
 
 use advent_utils::nom;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 #[derive(Debug)]
 enum Unit {
@@ -121,7 +121,8 @@ fn parse_path(line: &str) -> IResult<&str, Vec<(i32, i32)>> {
             nom::bytes::complete::tag(","),
             nom::character::complete::i32,
         ),
-    )(line)
+    )
+    .parse(line)
 }
 
 #[cfg(test)]

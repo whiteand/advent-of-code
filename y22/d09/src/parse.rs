@@ -1,4 +1,4 @@
-use advent_utils::nom::{self, IResult};
+use advent_utils::nom::{self, IResult, Parser};
 
 use super::moves::{Direction, Move};
 
@@ -28,7 +28,8 @@ fn try_parse_move(line: &str) -> IResult<&str, Move> {
             },
             _ => unreachable!(),
         },
-    )(line)
+    )
+    .parse(line)
 }
 
 pub fn parse_moves(input: &str) -> impl Iterator<Item = Move> + '_ {

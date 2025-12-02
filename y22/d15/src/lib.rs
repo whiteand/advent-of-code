@@ -6,7 +6,7 @@ use advent_utils::nom::{
     character,
     combinator::map,
     sequence::{preceded, separated_pair},
-    IResult,
+    IResult, Parser,
 };
 
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -167,21 +167,20 @@ fn parse_measurements(file_content: &str) -> impl Iterator<Item = Measurement> +
         .map(|line| parse_measurement(line).unwrap().1)
 }
 fn parse_measurement(input: &str) -> IResult<&str, Measurement> {
-    let mut parse_measurement = map(
+    map(
         separated_pair(
             preceded(tag("Sensor at "), parse_point),
             tag(": closest beacon is at "),
             parse_point,
         ),
         |(sensor, beacon)| Measurement { sensor, beacon },
-    );
-    parse_measurement(input)
+    )
+    .parse(input)
 }
 fn parse_point(input: &str) -> IResult<&str, (i32, i32)> {
     let x = preceded(tag("x="), character::complete::i32);
     let y = preceded(tag("y="), character::complete::i32);
-    let mut parse_point = separated_pair(x, tag(", "), y);
-    parse_point(input)
+    separated_pair(x, tag(", "), y).parse(input)
 }
 
 trait RangeOperations: Sized {

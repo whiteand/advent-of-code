@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use advent_utils::nom::{
     self, branch, bytes,
     character::{self, complete::space1},
-    sequence, IResult,
+    sequence, IResult, Parser,
 };
 
 use super::io::{ChangeDirArgument, File, Node, IO};
@@ -74,16 +74,18 @@ fn parse_change_dir_query(line: &str) -> IResult<&str, Query<'_>> {
             )),
         ),
         Query::ChangeDir,
-    )(line)
+    )
+    .parse(line)
 }
 fn parse_list_query(line: &str) -> IResult<&str, Query<'_>> {
-    nom::combinator::map(bytes::complete::tag("ls"), |_| Query::List)(line)
+    nom::combinator::map(bytes::complete::tag("ls"), |_| Query::List).parse(line)
 }
 fn parse_query(line: &str) -> IResult<&str, Query<'_>> {
     sequence::preceded(
         bytes::complete::tag("$ "),
         branch::alt((parse_change_dir_query, parse_list_query)),
-    )(line)
+    )
+    .parse(line)
 }
 
 fn parse_file(line: &str) -> IResult<&str, Node<'_>> {
@@ -99,7 +101,8 @@ fn parse_file(line: &str) -> IResult<&str, Node<'_>> {
                 size: size as usize,
             })
         },
-    )(line)
+    )
+    .parse(line)
 }
 fn parse_directory(line: &str) -> IResult<&str, Node<'_>> {
     nom::combinator::map(
@@ -108,11 +111,12 @@ fn parse_directory(line: &str) -> IResult<&str, Node<'_>> {
             nom::character::complete::not_line_ending,
         ),
         Node::Directory,
-    )(line)
+    )
+    .parse(line)
 }
 
 fn parse_node(line: &str) -> IResult<&str, Node<'_>> {
-    nom::branch::alt((parse_file, parse_directory))(line)
+    nom::branch::alt((parse_file, parse_directory)).parse(line)
 }
 
 #[cfg(test)]

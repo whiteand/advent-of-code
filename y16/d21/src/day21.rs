@@ -6,7 +6,7 @@ use advent_utils::nom::{
     combinator::{all_consuming, value},
     multi::separated_list1,
     parse_usize,
-    sequence::{preceded, terminated, tuple},
+    sequence::{preceded, terminated},
     Parser,
 };
 use itertools::{Either, Itertools};
@@ -239,42 +239,42 @@ enum Instruction {
 }
 
 fn parse_instructions(input: &str) -> nom::IResult<&str, Vec<Instruction>> {
-    all_consuming(separated_list1(line_ending, parse_instruction))(input.trim())
+    all_consuming(separated_list1(line_ending, parse_instruction)).parse(input.trim())
 }
 fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
     alt((
         // swap letter f with letter a
-        tuple((
+        (
             tag("swap letter "),
             nom::character::complete::anychar.map(|x| x as u8),
             tag(" with letter "),
             nom::character::complete::anychar.map(|x| x as u8),
-        ))
-        .map(|(_, from, _, to)| Instruction::SwapLetter(from, to)),
+        )
+            .map(|(_, from, _, to)| Instruction::SwapLetter(from, to)),
         // swap position 2 with position 7
-        tuple((
+        (
             tag("swap position "),
             parse_usize,
             tag(" with position "),
             parse_usize,
-        ))
-        .map(|(_, from, _, to)| Instruction::SwapPosition(from, to)),
+        )
+            .map(|(_, from, _, to)| Instruction::SwapPosition(from, to)),
         // reverse positions 4 through 7
-        tuple((
+        (
             tag("reverse positions "),
             parse_usize,
             tag(" through "),
             parse_usize,
-        ))
-        .map(|(_, from, _, to)| Instruction::ReversePositions(from, to)),
+        )
+            .map(|(_, from, _, to)| Instruction::ReversePositions(from, to)),
         // move position 0 to position 6
-        tuple((
+        (
             tag("move position "),
             parse_usize,
             tag(" to position "),
             parse_usize,
-        ))
-        .map(|(_, from, _, to)| Instruction::MovePosition(from, to)),
+        )
+            .map(|(_, from, _, to)| Instruction::MovePosition(from, to)),
         // rotate left 1 step
         // rotate left 4 steps
         preceded(tag("rotate left "), parse_steps).map(|steps| Instruction::RotateLeft(steps)),
@@ -285,14 +285,16 @@ fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
             nom::character::complete::anychar.map(|x| x as u8),
         )
         .map(|c| Instruction::RotateBasedOnPositionOfLetter(c)),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 fn parse_steps(input: &str) -> nom::IResult<&str, usize> {
     alt((
         value(1, tag("1 step")),
         terminated(parse_usize, tag(" steps")),
-    ))(input)
+    ))
+    .parse(input)
 }
 #[cfg(test)]
 mod tests {

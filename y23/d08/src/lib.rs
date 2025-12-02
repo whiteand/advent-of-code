@@ -101,7 +101,8 @@ fn parse_input(file_content: &str) -> (Vec<Direction>, Vec<(Position, Position, 
         ))),
         nom::bytes::complete::tag("\n\n"),
         network,
-    )(file_content)
+    )
+    .parse(file_content)
     .unwrap();
 
     (directions, nodes)

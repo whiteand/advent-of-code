@@ -79,7 +79,8 @@ fn parse_operation(input: &str) -> nom::IResult<&str, Operation> {
         nom::combinator::value(Operation::Minus, nom::character::complete::char('-')),
         nom::combinator::value(Operation::Multiply, nom::character::complete::char('*')),
         nom::combinator::value(Operation::Divide, nom::character::complete::char('/')),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_binary_node_value(input: &str) -> nom::IResult<&str, NodeValue<'_>> {
     let operator_with_spaces = nom::sequence::delimited(
@@ -87,7 +88,7 @@ fn parse_binary_node_value(input: &str) -> nom::IResult<&str, NodeValue<'_>> {
         parse_operation,
         nom::character::complete::space1,
     );
-    nom::sequence::tuple((parse_operand, operator_with_spaces, parse_operand))
+    (parse_operand, operator_with_spaces, parse_operand)
         .map(|(a, b, c)| NodeValue::Binary {
             op: b,
             first: a,
@@ -101,24 +102,24 @@ fn parse_int_node_value(input: &str) -> nom::IResult<&str, NodeValue<'_>> {
 fn parse_node(input: &str) -> nom::IResult<&str, Node<'_>> {
     nom::sequence::separated_pair(
         nom::character::complete::alpha1,
-        nom::sequence::tuple((
+        (
             nom::bytes::complete::tag(":"),
             nom::character::complete::space0,
-        )),
+        ),
         parse_node_value,
     )
     .map(|(a, b)| Node { name: a, value: b })
     .parse(input)
 }
 fn parse_node_value(input: &str) -> nom::IResult<&str, NodeValue<'_>> {
-    nom::branch::alt((parse_binary_node_value, parse_int_node_value))(input)
+    nom::branch::alt((parse_binary_node_value, parse_int_node_value)).parse(input)
 }
 fn parse_operand(input: &str) -> nom::IResult<&str, &str> {
     nom::character::complete::alpha1(input)
 }
 
 fn parse_nodes(input: &str) -> nom::IResult<&str, Vec<Node<'_>>> {
-    nom::multi::separated_list1(nom::character::complete::newline, parse_node)(input)
+    nom::multi::separated_list1(nom::character::complete::newline, parse_node).parse(input)
 }
 
 #[derive(Clone)]

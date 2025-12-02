@@ -105,13 +105,13 @@ fn parse_sue(line: &str) -> nom::IResult<&str, Sue<'_>> {
     let properties_parser =
         nom::multi::separated_list1(nom::bytes::complete::tag(", "), entry_parser)
             .map(|pairs| pairs.into_iter().collect::<BTreeMap<_, _>>());
-    let mut sue_parser = nom::sequence::tuple((
+    let mut sue_parser = (
         nom::bytes::complete::tag("Sue "),
         usize_parser(),
         nom::bytes::complete::tag(": "),
         properties_parser,
-    ))
-    .map(|(_, id, _, properties)| Sue { id, properties });
+    )
+        .map(|(_, id, _, properties)| Sue { id, properties });
 
     sue_parser.parse(line)
 }

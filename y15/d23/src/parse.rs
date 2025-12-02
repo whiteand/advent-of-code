@@ -15,13 +15,15 @@ fn parse_register(input: &str) -> nom::IResult<&str, Register> {
     alt((
         combinator::value(Register::A, tag("a")),
         combinator::value(Register::B, tag("b")),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_offset(input: &str) -> nom::IResult<&str, Offset> {
     alt((
         preceded(tag("+"), complete::u64.map(|x| x as usize)).map(Offset::Forward),
         preceded(tag("-"), complete::u64.map(|x| x as usize)).map(Offset::Backward),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_inc(input: &str) -> nom::IResult<&str, Instruction> {
     separated_pair(tag("inc"), multispace1, parse_register)
@@ -79,8 +81,9 @@ fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
         parse_jump,
         parse_jump_if_even,
         parse_half,
-    ))(input)
+    ))
+    .parse(input)
 }
 pub(super) fn parse_instructions(input: &str) -> nom::IResult<&str, Vec<Instruction>> {
-    separated_list1(line_ending, parse_instruction)(input)
+    separated_list1(line_ending, parse_instruction).parse(input)
 }

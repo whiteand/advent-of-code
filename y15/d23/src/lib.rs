@@ -80,7 +80,7 @@ impl Cpu {
             }
             Instruction::JumpIfEven(reg, offset) => {
                 let value = *self.register(*reg);
-                if value % 2 == 0 {
+                if value.is_multiple_of(2) {
                     self.jump(*offset)?;
                 } else {
                     self.ip += 1;

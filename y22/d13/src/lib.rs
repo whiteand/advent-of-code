@@ -1,6 +1,6 @@
 use advent_utils::nom::{
     self, bytes::complete::tag, character::complete, multi::separated_list0, sequence::delimited,
-    IResult,
+    IResult, Parser,
 };
 
 use advent_utils::reduces::Reduces;
@@ -115,7 +115,7 @@ fn parse_packet_data(line: &str) -> IResult<&str, PacketData> {
 
     let parse_integer = nom::combinator::map(complete::u32, PacketData::Integer);
 
-    nom::branch::alt((parse_integer, parse_list))(line)
+    nom::branch::alt((parse_integer, parse_list)).parse(line)
 }
 
 #[cfg(test)]

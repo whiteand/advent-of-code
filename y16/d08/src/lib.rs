@@ -97,7 +97,7 @@ enum Instruction {
 }
 
 fn parse_instructions(input: &str) -> nom::IResult<&str, Vec<Instruction>> {
-    separated_list1(line_ending, parse_instruction)(input)
+    separated_list1(line_ending, parse_instruction).parse(input)
 }
 fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
     alt((
@@ -130,7 +130,8 @@ fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
             row: x.0,
             step: x.1,
         }),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use advent_utils::nom::{self, IResult};
+use advent_utils::nom::{self, IResult, Parser};
 
 type Board = Vec<Vec<char>>;
 
@@ -58,9 +58,9 @@ fn parse_map(map_lines: Vec<&str>) -> Vec<Vec<char>> {
 fn parse_move(line: &str) -> IResult<&str, Move> {
     let (input, _) = nom::bytes::complete::tag("move ")(line)?;
     let (input, amount) = nom::character::complete::u32(input)?;
-    let (input, _) = nom::bytes::complete::tag(" from ")(input)?;
+    let (input, _) = nom::bytes::complete::tag(" from ").parse(input)?;
     let (input, from) = nom::character::complete::u32(input)?;
-    let (input, _) = nom::bytes::complete::tag(" to ")(input)?;
+    let (input, _) = nom::bytes::complete::tag(" to ").parse(input)?;
     let (input, to) = nom::character::complete::u32(input)?;
 
     Ok((

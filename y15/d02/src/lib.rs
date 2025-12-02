@@ -1,4 +1,4 @@
-use advent_utils::nom::{bytes::complete, character, multi::separated_list1, IResult};
+use advent_utils::nom::{bytes::complete, character, multi::separated_list1, IResult, Parser};
 
 pub fn solve<F>(file_content: &str, f: F) -> u32
 where
@@ -23,8 +23,7 @@ pub fn solve_part_2(file_content: &str) -> u32 {
 fn parse_dimensions(line: &str) -> IResult<&str, (u32, u32, u32)> {
     let sep = complete::tag("x");
     let dimension = character::complete::u32;
-    let mut parse = separated_list1(sep, dimension);
-    let (input, mut v) = parse(line)?;
+    let (input, mut v) = separated_list1(sep, dimension).parse(line)?;
     v.sort();
     Ok((input, (v[0], v[1], v[2])))
 }

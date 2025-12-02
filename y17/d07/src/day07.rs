@@ -8,6 +8,7 @@ use advent_utils::nom::{
     multi::separated_list1,
     parse_usize,
     sequence::{delimited, preceded},
+    Parser,
 };
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -119,12 +120,12 @@ struct NodeSpec<'t> {
 }
 
 fn parse_input(input: &str) -> nom::IResult<&str, Vec<NodeSpec<'_>>> {
-    all_consuming(separated_list1(line_ending, parse_node_spec))(input.trim())
+    all_consuming(separated_list1(line_ending, parse_node_spec)).parse(input.trim())
 }
 fn parse_node_spec(input: &str) -> nom::IResult<&str, NodeSpec<'_>> {
     let (input, name) = alpha1(input)?;
     let (input, _) = multispace1(input)?;
-    let (input, weight) = delimited(tag("("), parse_usize, tag(")"))(input)?;
+    let (input, weight) = delimited(tag("("), parse_usize, tag(")")).parse(input)?;
     if input.is_empty() || input.starts_with('\n') {
         return Ok((
             input,
@@ -135,7 +136,8 @@ fn parse_node_spec(input: &str) -> nom::IResult<&str, NodeSpec<'_>> {
             },
         ));
     }
-    let (input, children) = preceded(tag(" -> "), separated_list1(tag(", "), alpha1))(input)?;
+    let (input, children) =
+        preceded(tag(" -> "), separated_list1(tag(", "), alpha1)).parse(input)?;
 
     Ok((
         input,

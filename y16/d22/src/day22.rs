@@ -8,7 +8,8 @@ use advent_utils::{
         combinator::all_consuming,
         multi::separated_list1,
         parse_usize,
-        sequence::{preceded, tuple},
+        sequence::preceded,
+        Parser,
     },
 };
 use itertools::iproduct;
@@ -118,20 +119,21 @@ pub fn part2(file_content: &str) -> usize {
 
 fn parse_nodes(input: &str) -> nom::IResult<&str, Vec<(IVec2, Node)>> {
     all_consuming(preceded(
-        tuple((not_line_ending, line_ending, not_line_ending, line_ending)),
+        (not_line_ending, line_ending, not_line_ending, line_ending),
         separated_list1(line_ending, parse_pos_and_node),
-    ))(input.trim())
+    ))
+    .parse(input.trim())
 }
 fn parse_pos_and_node(input: &str) -> nom::IResult<&str, (IVec2, Node)> {
     // /dev/grid/node-x0-y0     87T   71T    16T   81%
-    let (input, _) = tag("/dev/grid/node-x")(input)?;
+    let (input, _) = tag("/dev/grid/node-x").parse(input)?;
     let (input, x) = complete::i32(input)?;
-    let (input, _) = tag("-y")(input)?;
+    let (input, _) = tag("-y").parse(input)?;
     let (input, y) = complete::i32(input)?;
     let pos = IVec2::new(x, y);
     let (input, _) = multispace1(input)?;
     let (input, size) = parse_usize(input)?;
-    let (input, _) = tuple((complete::char('T'), multispace1))(input)?;
+    let (input, _) = (complete::char('T'), multispace1).parse(input)?;
     let (input, used) = parse_usize(input)?;
     let (input, _) = not_line_ending(input)?;
     Ok((input, (pos, Node { size, used })))

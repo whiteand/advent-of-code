@@ -50,7 +50,7 @@ fn parse_pleasure(file_content: &str) -> BTreeMap<&str, BTreeMap<&str, i64>> {
             continue;
         }
         // Alice would gain 54 happiness units by sitting next to Bob.
-        let (_, (person, _, sign, _, abs, _, neighbour, _)) = nom::sequence::tuple((
+        let (_, (person, _, sign, _, abs, _, neighbour, _)) = (
             nom::character::complete::alpha1::<&str, nom::error::Error<&str>>,
             nom::bytes::complete::tag(" would "),
             nom::branch::alt((
@@ -62,9 +62,9 @@ fn parse_pleasure(file_content: &str) -> BTreeMap<&str, BTreeMap<&str, i64>> {
             nom::bytes::complete::tag(" happiness units by sitting next to "),
             nom::character::complete::alpha1,
             nom::bytes::complete::tag("."),
-        ))
-        .parse(line)
-        .unwrap();
+        )
+            .parse(line)
+            .unwrap();
 
         pleasure
             .entry(person)

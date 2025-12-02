@@ -8,7 +8,7 @@ use advent_utils::nom::{
     combinator::{all_consuming, value},
     multi::separated_list1,
     parse_usize,
-    sequence::{preceded, separated_pair, tuple},
+    sequence::{preceded, separated_pair},
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
@@ -365,21 +365,22 @@ type InitialsAndRules<'t> = (Vec<(&'t str, usize)>, Vec<Rule<'t>>);
 fn parse_initials_and_rules(input: &str) -> nom::IResult<&str, InitialsAndRules<'_>> {
     all_consuming(separated_pair(
         parse_initials,
-        tuple((line_ending, line_ending)),
+        (line_ending, line_ending),
         parse_rules,
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_initials(input: &str) -> nom::IResult<&str, Vec<(&str, usize)>> {
-    separated_list1(line_ending, parse_initial)(input)
+    separated_list1(line_ending, parse_initial).parse(input)
 }
 fn parse_initial(input: &str) -> nom::IResult<&str, (&str, usize)> {
-    separated_pair(alphanumeric1, tag(": "), parse_usize)(input)
+    separated_pair(alphanumeric1, tag(": "), parse_usize).parse(input)
 }
 fn parse_rules(input: &str) -> nom::IResult<&str, Vec<Rule<'_>>> {
-    separated_list1(line_ending, parse_rule)(input)
+    separated_list1(line_ending, parse_rule).parse(input)
 }
 fn parse_rule(input: &str) -> nom::IResult<&str, Rule<'_>> {
-    tuple((
+    (
         alphanumeric1,
         alt((
             value(Operation::Or, tag(" OR ")),
@@ -388,9 +389,9 @@ fn parse_rule(input: &str) -> nom::IResult<&str, Rule<'_>> {
         )),
         alphanumeric1,
         preceded(tag(" -> "), alphanumeric1),
-    ))
-    .map(|(a, op, b, dst)| Rule { op, a, b, dst })
-    .parse(input)
+    )
+        .map(|(a, op, b, dst)| Rule { op, a, b, dst })
+        .parse(input)
 }
 
 #[cfg(test)]

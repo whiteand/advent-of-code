@@ -55,9 +55,8 @@ fn parse_command(input: &str) -> nom::IResult<&str, Command> {
             .map(Command::Off);
     let parse_toggle = nom::sequence::preceded(nom::bytes::complete::tag("toggle "), parse_coords)
         .map(Command::Toggle);
-    let mut command_parser = nom::branch::alt((parse_toggle, parse_turn_off, parse_turn_on));
 
-    command_parser(input)
+    nom::branch::alt((parse_toggle, parse_turn_off, parse_turn_on)).parse(input)
 }
 
 #[derive(Debug, Default, Clone, Copy)]

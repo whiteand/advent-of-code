@@ -6,7 +6,7 @@ use advent_utils::nom::{
     combinator::{all_consuming, value},
     multi::separated_list1,
     parse_usize,
-    sequence::{preceded, separated_pair, tuple},
+    sequence::{preceded, separated_pair},
     Parser,
 };
 
@@ -144,10 +144,10 @@ pub fn solve_part_2(file_content: &str) -> Int {
 }
 
 fn parse_instructions(input: &str) -> nom::IResult<&str, Vec<Instruction>> {
-    separated_list1(line_ending, parse_instruction)(input)
+    separated_list1(line_ending, parse_instruction).parse(input)
 }
 fn parse_instruction(input: &str) -> nom::IResult<&str, Instruction> {
-    alt((parse_cpy, parse_inc, parse_dec, parse_jnz))(input)
+    alt((parse_cpy, parse_inc, parse_dec, parse_jnz)).parse(input)
 }
 fn parse_cpy(input: &str) -> nom::IResult<&str, Instruction> {
     preceded(
@@ -163,27 +163,29 @@ fn parse_register(input: &str) -> nom::IResult<&str, Register> {
         value(Register::B, tag("b")),
         value(Register::C, tag("c")),
         value(Register::D, tag("d")),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_operand(input: &str) -> nom::IResult<&str, Operand> {
     alt((
         parse_register.map(Operand::Register),
         parse_usize.map(Operand::Integer),
-    ))(input)
+    ))
+    .parse(input)
 }
 fn parse_dec(input: &str) -> nom::IResult<&str, Instruction> {
-    preceded(tuple((tag("dec"), multispace1)), parse_register)
+    preceded((tag("dec"), multispace1), parse_register)
         .map(Instruction::Dec)
         .parse(input)
 }
 fn parse_inc(input: &str) -> nom::IResult<&str, Instruction> {
-    preceded(tuple((tag("inc"), multispace1)), parse_register)
+    preceded((tag("inc"), multispace1), parse_register)
         .map(Instruction::Inc)
         .parse(input)
 }
 fn parse_jnz(input: &str) -> nom::IResult<&str, Instruction> {
     preceded(
-        tuple((tag("jnz"), multispace1)),
+        (tag("jnz"), multispace1),
         separated_pair(parse_operand, multispace1, parse_jump)
             .map(|(operand, jump)| Instruction::Jnz(operand, jump)),
     )
@@ -193,7 +195,8 @@ fn parse_jump(input: &str) -> nom::IResult<&str, Jump> {
     alt((
         preceded(tag("-"), parse_usize).map(Jump::Backward),
         parse_usize.map(Jump::Forward),
-    ))(input)
+    ))
+    .parse(input)
 }
 
 #[cfg(test)]

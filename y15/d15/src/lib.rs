@@ -108,20 +108,19 @@ struct Ingredient {
 
 // \w+: capacity -?\d+, durability \d+, flavor -?\d+, texture -?\d+, calories \d+
 fn parse_ingredient(input: &str) -> nom::IResult<&str, Ingredient> {
-    let (input, (_, _, capacity, _, durability, _, flavor, _, texture, _, calories)) =
-        nom::sequence::tuple((
-            nom::character::complete::alpha1,
-            nom::bytes::complete::tag(": capacity "),
-            nom::character::complete::i64,
-            nom::bytes::complete::tag(", durability "),
-            nom::character::complete::i64,
-            nom::bytes::complete::tag(", flavor "),
-            nom::character::complete::i64,
-            nom::bytes::complete::tag(", texture "),
-            nom::character::complete::i64,
-            nom::bytes::complete::tag(", calories "),
-            nom::character::complete::i64,
-        ))
+    let (input, (_, _, capacity, _, durability, _, flavor, _, texture, _, calories)) = (
+        nom::character::complete::alpha1,
+        nom::bytes::complete::tag(": capacity "),
+        nom::character::complete::i64,
+        nom::bytes::complete::tag(", durability "),
+        nom::character::complete::i64,
+        nom::bytes::complete::tag(", flavor "),
+        nom::character::complete::i64,
+        nom::bytes::complete::tag(", texture "),
+        nom::character::complete::i64,
+        nom::bytes::complete::tag(", calories "),
+        nom::character::complete::i64,
+    )
         .parse(input)?;
 
     Ok((
