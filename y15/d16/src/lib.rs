@@ -87,7 +87,7 @@ struct Sue<'i> {
 
 //  Sue \d+: ((vizslas|pomeranians|perfumes|cats|trees|samoyeds|children|akitas|cars|goldfish): \d+(, )?)+
 
-fn parse_sues(file_content: &str) -> Result<Vec<Sue>, nom::Err<nom::error::Error<&str>>> {
+fn parse_sues(file_content: &str) -> Result<Vec<Sue<'_>>, nom::Err<nom::error::Error<&str>>> {
     file_content
         .lines()
         .map(parse_sue)
@@ -95,7 +95,7 @@ fn parse_sues(file_content: &str) -> Result<Vec<Sue>, nom::Err<nom::error::Error
         .collect()
 }
 
-fn parse_sue(line: &str) -> nom::IResult<&str, Sue> {
+fn parse_sue(line: &str) -> nom::IResult<&str, Sue<'_>> {
     let usize_parser = || nom::character::complete::u64.map(|x| x as usize);
     let entry_parser = nom::sequence::separated_pair(
         nom::character::complete::alpha1,

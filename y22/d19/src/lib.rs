@@ -126,47 +126,20 @@ impl State {
         self.obsidian += self.obsidian_robots * n;
         self.remaining_minutes -= n;
     }
-    fn cmp_by_obsidian_robot(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
-        match (
-            self.minutes_until_obsidian_robot_available(blueprint),
-            other.minutes_until_obsidian_robot_available(blueprint),
-        ) {
-            (Some(_), None) => std::cmp::Ordering::Greater,
-            (None, Some(_)) => std::cmp::Ordering::Less,
-            (Some(a), Some(b)) => b.cmp(&a),
-            _ => std::cmp::Ordering::Equal,
-        }
-    }
-    fn cmp_by_geode_robot(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
-        match (
-            self.minutes_until_geode_robot_available(blueprint),
-            other.minutes_until_geode_robot_available(blueprint),
-        ) {
-            (Some(_), None) => std::cmp::Ordering::Greater,
-            (None, Some(_)) => std::cmp::Ordering::Less,
-            (Some(a), Some(b)) => b.cmp(&a),
-            _ => std::cmp::Ordering::Equal,
-        }
-    }
 
-    fn cmp_with_blueprint(&self, other: &Self, blueprint: &Blueprint) -> std::cmp::Ordering {
-        self.geode
-            .cmp(&other.geode)
-            // .then_with(|| self.cmp_by_geode_robot(other, blueprint))
-            // .then_with(|| self.cmp_by_obsidian_robot(other, blueprint))
-            .then_with(|| {
-                let total_ore = self.ore + self.remaining_minutes * self.ore_robots;
-                let total_clay = self.clay + self.remaining_minutes * self.clay_robots;
-                let total_obsidian = self.obsidian + self.remaining_minutes * self.obsidian_robots;
-                let other_ore = other.ore + other.remaining_minutes * other.ore_robots;
-                let other_clay = other.clay + other.remaining_minutes * other.clay_robots;
-                let other_obsidian =
-                    other.obsidian + other.remaining_minutes * other.obsidian_robots;
-                total_obsidian
-                    .cmp(&other_obsidian)
-                    .then_with(|| total_clay.cmp(&other_clay))
-                    .then_with(|| total_ore.cmp(&other_ore))
-            })
+    fn cmp_with_blueprint(&self, other: &Self) -> std::cmp::Ordering {
+        self.geode.cmp(&other.geode).then_with(|| {
+            let total_ore = self.ore + self.remaining_minutes * self.ore_robots;
+            let total_clay = self.clay + self.remaining_minutes * self.clay_robots;
+            let total_obsidian = self.obsidian + self.remaining_minutes * self.obsidian_robots;
+            let other_ore = other.ore + other.remaining_minutes * other.ore_robots;
+            let other_clay = other.clay + other.remaining_minutes * other.clay_robots;
+            let other_obsidian = other.obsidian + other.remaining_minutes * other.obsidian_robots;
+            total_obsidian
+                .cmp(&other_obsidian)
+                .then_with(|| total_clay.cmp(&other_clay))
+                .then_with(|| total_ore.cmp(&other_ore))
+        })
     }
     fn minutes_until_ore_robot_available(&self, blueprint: &Blueprint) -> Option<usize> {
         steps_to_yt(self.ore_robots, self.ore, blueprint.ore_per_ore_robot)
@@ -313,11 +286,11 @@ impl State {
     }
 }
 
-fn get_best(elements: &mut Vec<State>, blueprint: &Blueprint) -> Option<State> {
+fn get_best(elements: &mut Vec<State>) -> Option<State> {
     let position = elements
         .iter()
         .enumerate()
-        .max_by(|(_, e), (_, e2)| e.cmp_with_blueprint(e2, blueprint))
+        .max_by(|(_, e), (_, e2)| e.cmp_with_blueprint(e2))
         .map(|(i, _)| i)?;
     let res = elements.swap_remove(position);
     Some(res)
@@ -329,7 +302,7 @@ fn get_max_geodes(blueprint: &Blueprint, init: State) -> usize {
     let mut max_geodes = 0;
 
     let mut buffer = Vec::new();
-    while let Some(state) = get_best(&mut states, blueprint) {
+    while let Some(state) = get_best(&mut states) {
         if state.remaining_minutes == 0 {
             max_geodes = max_geodes.max(state.geode);
             continue;

@@ -61,7 +61,7 @@ pub fn parse_io(file_content: &str) -> impl Iterator<Item = IO<'_>> {
     }
 }
 
-fn parse_change_dir_query(line: &str) -> IResult<&str, Query> {
+fn parse_change_dir_query(line: &str) -> IResult<&str, Query<'_>> {
     nom::combinator::map(
         sequence::preceded(
             bytes::complete::tag("cd "),
@@ -76,17 +76,17 @@ fn parse_change_dir_query(line: &str) -> IResult<&str, Query> {
         Query::ChangeDir,
     )(line)
 }
-fn parse_list_query(line: &str) -> IResult<&str, Query> {
+fn parse_list_query(line: &str) -> IResult<&str, Query<'_>> {
     nom::combinator::map(bytes::complete::tag("ls"), |_| Query::List)(line)
 }
-fn parse_query(line: &str) -> IResult<&str, Query> {
+fn parse_query(line: &str) -> IResult<&str, Query<'_>> {
     sequence::preceded(
         bytes::complete::tag("$ "),
         branch::alt((parse_change_dir_query, parse_list_query)),
     )(line)
 }
 
-fn parse_file(line: &str) -> IResult<&str, Node> {
+fn parse_file(line: &str) -> IResult<&str, Node<'_>> {
     nom::combinator::map(
         nom::sequence::separated_pair(
             nom::character::complete::u32,
@@ -101,7 +101,7 @@ fn parse_file(line: &str) -> IResult<&str, Node> {
         },
     )(line)
 }
-fn parse_directory(line: &str) -> IResult<&str, Node> {
+fn parse_directory(line: &str) -> IResult<&str, Node<'_>> {
     nom::combinator::map(
         nom::sequence::preceded(
             nom::bytes::complete::tag("dir "),
@@ -111,7 +111,7 @@ fn parse_directory(line: &str) -> IResult<&str, Node> {
     )(line)
 }
 
-fn parse_node(line: &str) -> IResult<&str, Node> {
+fn parse_node(line: &str) -> IResult<&str, Node<'_>> {
     nom::branch::alt((parse_file, parse_directory))(line)
 }
 

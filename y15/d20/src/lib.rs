@@ -1,7 +1,7 @@
 pub fn solve_part_1(file_content: &str) -> usize {
     let value = file_content.trim().parse::<u64>().unwrap() as usize;
     (1..)
-        .find(|&x| (divisors(x).sum::<usize>() * 10 >= value))
+        .find(|&x| divisors(x).sum::<usize>() * 10 >= value)
         .unwrap_or_default()
 }
 pub fn solve_part_2(file_content: &str) -> usize {

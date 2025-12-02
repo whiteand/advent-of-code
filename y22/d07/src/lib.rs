@@ -4,7 +4,7 @@ mod tree;
 
 use self::{parse::parse_io, tree::Tree};
 
-fn file_content_to_tree(file_content: &str) -> Tree {
+fn file_content_to_tree(file_content: &str) -> Tree<'_> {
     parse_io(file_content).collect()
 }
 

@@ -1,7 +1,7 @@
 use std::{fmt::Write, fs};
 
 use advent_utils::nom::{
-    self,
+    self, Parser,
     branch::alt,
     bytes::complete::tag,
     character::complete::{alphanumeric1, line_ending},
@@ -9,7 +9,6 @@ use advent_utils::nom::{
     multi::separated_list1,
     parse_usize,
     sequence::{preceded, separated_pair, tuple},
-    Parser,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
@@ -316,7 +315,7 @@ struct Input<'t> {
     schema: Schema<'t>,
 }
 
-fn parse_input(input: &str) -> Input {
+fn parse_input(input: &str) -> Input<'_> {
     let (_, (initials, rules)) = parse_initials_and_rules(input.trim()).expect("valid");
     let mut xs = vec![];
     let mut ys = vec![];
@@ -379,7 +378,7 @@ fn parse_initial(input: &str) -> nom::IResult<&str, (&str, usize)> {
 fn parse_rules(input: &str) -> nom::IResult<&str, Vec<Rule<'_>>> {
     separated_list1(line_ending, parse_rule)(input)
 }
-fn parse_rule(input: &str) -> nom::IResult<&str, Rule> {
+fn parse_rule(input: &str) -> nom::IResult<&str, Rule<'_>> {
     tuple((
         alphanumeric1,
         alt((
