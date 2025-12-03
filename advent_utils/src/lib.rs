@@ -1,3 +1,4 @@
+pub mod array_2d;
 mod binary_search;
 pub mod bitfield;
 pub mod doubly_linked_list;
@@ -9,6 +10,7 @@ pub mod math;
 pub mod parse;
 pub mod reduces;
 
+pub use array_2d::Array2d;
 pub use binary_search::binary_search;
 pub use glam;
 pub use immutable_lists::*;

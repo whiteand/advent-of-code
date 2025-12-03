@@ -31,6 +31,12 @@ impl<T> Grid<T> {
             row_start_indexes: (0..rows).map(|i| i * cols).collect_vec(),
         }
     }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            arr: Vec::with_capacity(capacity),
+            row_start_indexes: Vec::with_capacity(capacity.isqrt()),
+        }
+    }
 
     pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
         (0..self.rows_len()).flat_map(|r| {
@@ -160,7 +166,7 @@ impl<T> Grid<T> {
     pub fn set(&mut self, pos: IVec2, value: T) -> Option<T> {
         match self.get_mut(pos) {
             Some(prev) => Some(std::mem::replace(prev, value)),
-            None => unreachable!("You cannot set value at {pos}"),
+            None => unreachable!("You cannot set value at {pos}. Grid size={}", self.size()),
         }
     }
     #[inline(always)]

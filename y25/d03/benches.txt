@@ -1,0 +1,61 @@
+Hashmap
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  1.781 ms      │ 2.632 ms      │ 1.979 ms      │ 2.014 ms      │ 100     │ 100
+╰─ part2  15.73 ms      │ 34.61 ms      │ 20.78 ms      │ 19.83 ms      │ 100     │ 100
+
+
+Grid 1
+
+Timer precision: 41 ns
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  447.6 µs      │ 1.13 ms       │ 535.1 µs      │ 576.1 µs      │ 100     │ 100
+╰─ part2  1.947 ms      │ 2.955 ms      │ 2.257 ms      │ 2.268 ms      │ 100     │ 100
+
+Grid 2
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  454.4 µs      │ 824.2 µs      │ 590.3 µs      │ 604.1 µs      │ 100     │ 100
+╰─ part2  1.806 ms      │ 2.82 ms       │ 2.251 ms      │ 2.252 ms      │ 100     │ 100
+
+Calculator
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  463.4 µs      │ 1.35 ms       │ 477.9 µs      │ 529.1 µs      │ 100     │ 100
+╰─ part2  1.744 ms      │ 3.643 ms      │ 2.192 ms      │ 2.198 ms      │ 100     │ 100
+
+Vec instead of Grid
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  320.4 µs      │ 406.3 µs      │ 322.9 µs      │ 330 µs        │ 100     │ 100
+╰─ part2  996.7 µs      │ 1.325 ms      │ 1.035 ms      │ 1.044 ms      │ 100     │ 100
+
+stack instead recursion
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  262 µs        │ 342.2 µs      │ 262.4 µs      │ 264.8 µs      │ 100     │ 100
+╰─ part2  1.192 ms      │ 1.294 ms      │ 1.232 ms      │ 1.238 ms      │ 100     │ 100
+
+DP
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  153.7 µs      │ 234.6 µs      │ 153.9 µs      │ 155.8 µs      │ 100     │ 100
+╰─ part2  533.3 µs      │ 629 µs        │ 550.7 µs      │ 552.8 µs      │ 100     │ 100
+
+removed Grid
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  149.8 µs      │ 174.9 µs      │ 151.9 µs      │ 152.3 µs      │ 100     │ 100
+╰─ part2  535.8 µs      │ 634.9 µs      │ 543.3 µs      │ 544.9 µs      │ 100     │ 100
+
+With bytes:
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  149.8 µs      │ 174.9 µs      │ 151.9 µs      │ 152.3 µs      │ 100     │ 100
+╰─ part2  535.8 µs      │ 634.9 µs      │ 543.3 µs      │ 544.9 µs      │ 100     │ 100
+
+Array2d
+
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  119.8 µs      │ 140.5 µs      │ 120.3 µs      │ 121.2 µs      │ 100     │ 100
+╰─ part2  324.9 µs      │ 358.9 µs      │ 328.3 µs      │ 330.7 µs      │ 100     │ 100

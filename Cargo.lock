@@ -3130,3 +3130,16 @@ dependencies = [
  "tracing-chrome",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "y25d03"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "divan",
+ "itertools 0.14.0",
+ "rstest 0.26.1",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
