@@ -59,3 +59,8 @@ Array2d
 y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  119.8 µs      │ 140.5 µs      │ 120.3 µs      │ 121.2 µs      │ 100     │ 100
 ╰─ part2  324.9 µs      │ 358.9 µs      │ 328.3 µs      │ 330.7 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y25d03    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  87.66 µs      │ 130.7 µs      │ 89.14 µs      │ 91.27 µs      │ 100     │ 100
+╰─ part2  328.8 µs      │ 370.8 µs      │ 332 µs        │ 335.8 µs      │ 100     │ 100

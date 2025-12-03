@@ -47,33 +47,8 @@ impl MaxJoltageCalculator {
         // we will get `0` as a result
         dp.get_row_mut(0).fill(0);
 
-        // If we have only one digit
-        // the digit itself is the maximum number.
-        dp.get_row_mut(1).fill((row[0] - b'0') as usize);
-
-        // If we want to select only one digit
-        // the maximum possible result -
-        // is the maximum digit in row[0..r]
-        for prefix_len in 2..=row.len() {
-            let last_digit_in_prefix = (row[prefix_len - 1] - b'0') as usize;
-            let previous_max = dp.get_copy(prefix_len - 1, 1);
-            dp.set(prefix_len, 1, previous_max.max(last_digit_in_prefix));
-        }
-
-        // If we want select more digits than we have
-        // we will select all digits.
-        for r in 2..=row.len().min(initial_digits_to_select) {
-            for c in r..=initial_digits_to_select {
-                let last_digit_in_prefix = (row[r - 1] - b'0') as usize;
-                let all_previous_digits = dp.get_copy(r - 1, c - 1);
-                let res = all_previous_digits * 10 + last_digit_in_prefix;
-                dp.set(r, c, res);
-            }
-        }
-        // if we have more digits
-        // then we want to select
-        for r in 3..=row.len() {
-            for c in 2..(r.min(initial_digits_to_select + 1)) {
+        for r in 1..=row.len() {
+            for c in 1..=initial_digits_to_select {
                 // We get the max result excluding the last digit
                 let max_result_without = dp.get_copy(r - 1, c);
 
