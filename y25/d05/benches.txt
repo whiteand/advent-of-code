@@ -2,3 +2,45 @@ Timer precision: 41 ns
 y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  97.91 µs      │ 179.7 µs      │ 100.9 µs      │ 102.3 µs      │ 100     │ 100
 ╰─ part2  121.4 µs      │ 210 µs        │ 122.1 µs      │ 126 µs        │ 100     │ 100
+
+
+New algo:
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  113.1 µs      │ 203.3 µs      │ 116.2 µs      │ 119 µs        │ 100     │ 100
+╰─ part2  54.45 µs      │ 75.33 µs      │ 54.66 µs      │ 56.32 µs      │ 100     │ 100
+
+with truncate 
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  113.3 µs      │ 186.1 µs      │ 116.9 µs      │ 120.2 µs      │ 100     │ 100
+╰─ part2  53.91 µs      │ 70.41 µs      │ 54.12 µs      │ 54.46 µs      │ 100     │ 100
+
+with break;
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  117.4 µs      │ 178.1 µs      │ 119.1 µs      │ 120.4 µs      │ 100     │ 100
+╰─ part2  48.24 µs      │ 57.12 µs      │ 50.16 µs      │ 50.16 µs      │ 100     │ 100
+
+for loop instead of fold
+
+Timer precision: 41 ns
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  114.4 µs      │ 178.5 µs      │ 117.7 µs      │ 121.8 µs      │ 100     │ 100
+╰─ part2  47.7 µs       │ 68.99 µs      │ 47.87 µs      │ 49.39 µs      │ 100     │ 100
+
+with max used in filter
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  115 µs        │ 189.9 µs      │ 117 µs        │ 120.5 µs      │ 100     │ 100
+╰─ part2  47.7 µs       │ 67.95 µs      │ 47.83 µs      │ 48.53 µs      │ 100     │ 100
+
+with last merged index 
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  110.8 µs      │ 183.9 µs      │ 114 µs        │ 117.6 µs      │ 100     │ 100
+╰─ part2  44.99 µs      │ 62.45 µs      │ 45.16 µs      │ 45.69 µs      │ 100     │ 100
+
+with proper sort 
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  113.4 µs      │ 176.9 µs      │ 117.9 µs      │ 119.2 µs      │ 100     │ 100
+╰─ part2  44.79 µs      │ 56.7 µs       │ 45.47 µs      │ 45.74 µs      │ 100     │ 100

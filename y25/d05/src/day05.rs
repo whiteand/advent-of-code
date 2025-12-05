@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::ops::{ControlFlow, RangeInclusive};
 
 use advent_utils::nom::{
     self, Parser, character::complete::line_ending, combinator::all_consuming,
@@ -49,18 +49,24 @@ pub fn part2(file_content: &str) -> usize {
 
 fn merge_ranges(mut ranges: Vec<RangeInclusive<usize>>) -> Vec<RangeInclusive<usize>> {
     let mut merged: Vec<RangeInclusive<usize>> = Vec::with_capacity(ranges.len());
-    ranges.sort_by(|a, b| a.start().cmp(b.start()).then_with(|| a.end().cmp(b.end())));
-    while !ranges.is_empty() {
-        let min = *ranges[0].start();
-        let max = ranges.iter().fold(min, |max, r| {
-            if r.start().le(&(max + 1)) {
-                max.max(*r.end())
-            } else {
-                max
+    // sorting all ranges in order
+    // - smaller start last
+    // - smaller end last
+    ranges.sort_by(|a, b| b.start().cmp(a.start()).then_with(|| b.end().cmp(a.end())));
+    while let Some(first_range) = ranges.pop() {
+        let min = *first_range.start();
+        let mut max = *first_range.end();
+        let mut last_merged_index = None;
+        for (i, r) in ranges.iter().enumerate().rev() {
+            let range_start = *r.start();
+            if range_start > max + 1 {
+                break;
             }
-        });
+            max = max.max(*r.end());
+            last_merged_index = Some(i);
+        }
         let new_range = min..=max;
-        ranges.retain(|r| new_range.end() < r.start());
+        ranges.truncate(last_merged_index.unwrap_or(ranges.len()));
         merged.push(new_range);
     }
     merged
@@ -89,7 +95,7 @@ mod tests {
     }
     #[rstest]
     #[case::example(EXAMPLE, "14")]
-    #[case::new_example(NEW_EXAMPLE, "14")]
+    #[case::new_example(NEW_EXAMPLE, "17")]
     #[case::actual(ACTUAL, "366181852921027")]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
