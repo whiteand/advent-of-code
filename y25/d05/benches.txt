@@ -1,0 +1,4 @@
+Timer precision: 41 ns
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  97.91 µs      │ 179.7 µs      │ 100.9 µs      │ 102.3 µs      │ 100     │ 100
+╰─ part2  121.4 µs      │ 210 µs        │ 122.1 µs      │ 126 µs        │ 100     │ 100
