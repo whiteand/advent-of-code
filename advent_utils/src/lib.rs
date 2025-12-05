@@ -1,3 +1,4 @@
+pub mod algo;
 pub mod array_2d;
 mod binary_search;
 pub mod bitfield;
