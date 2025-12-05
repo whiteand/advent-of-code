@@ -44,3 +44,16 @@ with proper sort
 y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  113.4 µs      │ 176.9 µs      │ 117.9 µs      │ 119.2 µs      │ 100     │ 100
 ╰─ part2  44.79 µs      │ 56.7 µs       │ 45.47 µs      │ 45.74 µs      │ 100     │ 100
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  112.5 µs      │ 183.3 µs      │ 116.6 µs      │ 119.2 µs      │ 100     │ 100
+╰─ part2  44.91 µs      │ 58.33 µs      │ 45.04 µs      │ 45.6 µs       │ 100     │ 100
+
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  114.2 µs      │ 185.2 µs      │ 117.6 µs      │ 120.5 µs      │ 100     │ 100
+╰─ part2  44.79 µs      │ 56.2 µs       │ 44.91 µs      │ 45.15 µs      │ 100     │ 100
+
+Timer precision: 41 ns
+y25d05    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  111.8 µs      │ 229 µs        │ 112.1 µs      │ 116.6 µs      │ 100     │ 100
+╰─ part2  44.83 µs      │ 101.1 µs      │ 44.95 µs      │ 46.08 µs      │ 100     │ 100

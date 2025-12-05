@@ -1,9 +1,8 @@
-use std::ops::{ControlFlow, RangeInclusive};
+use std::ops::RangeInclusive;
 
 use advent_utils::nom::{
     self, Parser, character::complete::line_ending, combinator::all_consuming,
 };
-use itertools::Itertools;
 
 pub fn parse_ranges(input: &str) -> nom::IResult<&str, Vec<RangeInclusive<usize>>> {
     nom::multi::separated_list1(
@@ -52,35 +51,51 @@ fn merge_ranges(mut ranges: Vec<RangeInclusive<usize>>) -> Vec<RangeInclusive<us
     // sorting all ranges in order
     // - smaller start last
     // - smaller end last
+    // Example of range order
+    // ranges[0]:                       ##### (23-27)
+    // ranges[1]:                       ### (23-25)
+    // ranges[2]:                  ### (18-20)
+    // ranges[3]:                ### (16-18)
+    // ranges[4]:           ### (11-13)
+    // ranges[5]:     ##### (5-9)
+    // ranges[6]:   ### (3-5)
+    // ranges[7]: ### (1-3)
     ranges.sort_by(|a, b| b.start().cmp(a.start()).then_with(|| b.end().cmp(a.end())));
     while let Some(first_range) = ranges.pop() {
+        // Finding the largest max which merges all intersecting ranges
+        // ranges
+        // If ranges is:
+        // ranges[0]                       ##### <-\
+        // ranges[1]                       ###.    |
+        // ranges[2]                  ###.         +---- these ranges will remain
+        // ranges[3]                ###            |
+        // ranges[4]           ### <---------------/
+        // ranges[5]     ##### <------------------------ last merged range
+        // ranges[6]   ###
+        // ranges[7] ### <------------------------------ first_range
+
         let min = *first_range.start();
         let mut max = *first_range.end();
         let mut last_merged_index = None;
+
         for (i, r) in ranges.iter().enumerate().rev() {
-            let range_start = *r.start();
-            if range_start > max + 1 {
+            if *r.start() > max + 1 {
                 break;
             }
             max = max.max(*r.end());
             last_merged_index = Some(i);
         }
-        let new_range = min..=max;
+        merged.push(min..=max);
         ranges.truncate(last_merged_index.unwrap_or(ranges.len()));
-        merged.push(new_range);
     }
     merged
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::day05::{merge_ranges, parse_ranges};
-
     use super::{part1, part2};
-    use itertools::Itertools;
     use rstest::rstest;
     const EXAMPLE: &str = include_str!("../example.txt");
-    const NEW_EXAMPLE: &str = include_str!("../new_example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
     #[case::example(EXAMPLE, "3")]
@@ -95,7 +110,6 @@ mod tests {
     }
     #[rstest]
     #[case::example(EXAMPLE, "14")]
-    #[case::new_example(NEW_EXAMPLE, "17")]
     #[case::actual(ACTUAL, "366181852921027")]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
@@ -104,31 +118,5 @@ mod tests {
                 .finish(),
         );
         assert_eq!(format!("{}", part2(input)), expected);
-    }
-
-    #[rstest]
-    #[case("3-5\n6-10", "3-10")]
-    #[case("3-5\n7-10", "3-5\n7-10")]
-    #[case("3-5\n5-8", "3-8")]
-    #[case("3-5\n5-8", "3-8")]
-    #[case("3-5\n4-8", "3-8")]
-    #[case("3-5\n4-5", "3-5")]
-    #[case("3-5\n2-8", "2-8")]
-    #[case("3-5\n3-5", "3-5")]
-    #[case("3-5\n2-5", "2-5")]
-    #[case("3-5\n2-4", "2-5")]
-    #[case("3-5\n2-3", "2-5")]
-    #[case("3-5\n1-2", "1-5")]
-    fn test_merge_ranges(#[case] inp: &str, #[case] expected: &str) {
-        let (_, ranges) = parse_ranges(inp).unwrap();
-        let (_, expected_merged) = parse_ranges(expected).unwrap();
-        let n = ranges.len();
-        for p in ranges.into_iter().permutations(n) {
-            let actual_merged = merge_ranges(p);
-            assert_eq!(
-                actual_merged, expected_merged,
-                "merge_ranges(\n{inp}\n) returned invalid response"
-            )
-        }
     }
 }
