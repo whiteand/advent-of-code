@@ -15,3 +15,14 @@ Timer precision: 41 ns
 y25d06    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  45.16 µs      │ 101.3 µs      │ 45.7 µs       │ 49.49 µs      │ 100     │ 100
 ╰─ part2  44.74 µs      │ 64.49 µs      │ 46.79 µs      │ 47.62 µs      │ 100     │ 100
+
+After simplification
+
+Timer precision: 41 ns
+y25d06    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  46.37 µs      │ 83.7 µs       │ 47.85 µs      │ 48.68 µs      │ 100     │ 100
+╰─ part2  53.16 µs      │ 68.37 µs      │ 54.45 µs      │ 54.6 µs       │ 100     │ 100
+
+y25d06    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  33.12 µs      │ 95.62 µs      │ 34.33 µs      │ 37.39 µs      │ 100     │ 100
+╰─ part2  36.54 µs      │ 49.87 µs      │ 37.04 µs      │ 37.34 µs      │ 100     │ 100

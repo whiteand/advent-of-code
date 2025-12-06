@@ -19,6 +19,201 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Grid<T> {
     }
 }
 
+#[derive(Clone)]
+struct RowsRangesIter<'t> {
+    row_start_indexes: &'t [usize],
+    arr_len: usize,
+}
+
+impl<'t> Iterator for RowsRangesIter<'t> {
+    type Item = Range<usize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (a, b) = self.row_start_indexes.split_first()?;
+        self.row_start_indexes = b;
+        Some(*a..b.first().copied().unwrap_or(self.arr_len))
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let (_, suffix) = self.row_start_indexes.split_at_checked(n)?;
+        self.row_start_indexes = suffix;
+        self.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+}
+
+impl<'t> DoubleEndedIterator for RowsRangesIter<'t> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let (last, init) = self.row_start_indexes.split_last()?;
+        self.row_start_indexes = init;
+        let len = self.arr_len;
+        self.arr_len = *last;
+        Some(*last..len)
+    }
+}
+
+impl<'t> ExactSizeIterator for RowsRangesIter<'t> {
+    fn len(&self) -> usize {
+        self.row_start_indexes.len()
+    }
+}
+
+struct RowsMutIter<'t, T> {
+    remaining: &'t mut [T],
+    rows_ranges: RowsRangesIter<'t>,
+}
+
+impl<'t, T> RowsMutIter<'t, T> {
+    pub fn new(row_start_indexes: &'t [usize], remaining: &'t mut [T]) -> Self {
+        Self {
+            rows_ranges: RowsRangesIter {
+                row_start_indexes,
+                arr_len: remaining.len(),
+            },
+            remaining,
+        }
+    }
+
+    fn take_prefix(&mut self, prefix_len: usize) -> &'t mut [T] {
+        let (prefix, suffix) = self.remaining.split_at_mut(prefix_len);
+
+        self.remaining = unsafe { std::mem::transmute(suffix) };
+
+        unsafe { std::mem::transmute(prefix) }
+    }
+    fn take_suffix(&mut self, suffix_len: usize) -> &'t mut [T] {
+        let (prefix, suffix) = self
+            .remaining
+            .split_at_mut(self.remaining.len() - suffix_len);
+
+        self.remaining = unsafe { std::mem::transmute(prefix) };
+
+        unsafe { std::mem::transmute(suffix) }
+    }
+}
+
+impl<'t, T> Iterator for RowsMutIter<'t, T> {
+    type Item = &'t mut [T];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let row_range = self.rows_ranges.next()?;
+
+        let prefix = self.take_prefix(row_range.len());
+
+        Some(prefix)
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.rows_ranges.size_hint()
+    }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        if n == 0 {
+            self.next()
+        } else if n == 1 {
+            let first = self.rows_ranges.next()?;
+            self.take_prefix(first.len());
+            self.next()
+        } else {
+            let first = self.rows_ranges.next()?;
+            let last_skipped = self.rows_ranges.nth(n - 2)?;
+            let skipped_len = last_skipped.end - first.start;
+            self.take_prefix(skipped_len);
+            self.next()
+        }
+    }
+}
+
+impl<'t, T> ExactSizeIterator for RowsMutIter<'t, T> {
+    fn len(&self) -> usize {
+        self.rows_ranges.len()
+    }
+}
+
+impl<'t, T> DoubleEndedIterator for RowsMutIter<'t, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let last_range = self.rows_ranges.next_back()?;
+        let suffix = self.take_suffix(last_range.len());
+        Some(suffix)
+    }
+}
+
+#[derive(Clone)]
+struct RowsLengthsIter<'t> {
+    rows_range_it: RowsRangesIter<'t>,
+}
+impl Iterator for RowsLengthsIter<'_> {
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.rows_range_it.next().map(|x| x.len())
+    }
+    fn nth(&mut self, index: usize) -> Option<Self::Item> {
+        self.rows_range_it.nth(index).map(|x| x.len())
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
+}
+impl DoubleEndedIterator for RowsLengthsIter<'_> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.rows_range_it.next_back().map(|x| x.len())
+    }
+}
+
+impl ExactSizeIterator for RowsLengthsIter<'_> {
+    fn len(&self) -> usize {
+        self.rows_range_it.len()
+    }
+}
+
+#[derive(Clone)]
+struct CoordsIter<'t> {
+    row: i32,
+    current_row_columns: Range<i32>,
+    len_iter: RowsLengthsIter<'t>,
+}
+
+impl<'t> CoordsIter<'t> {
+    fn new(row_start_indexes: &'t [usize], arr_len: usize) -> Self {
+        Self {
+            row: -1,
+            current_row_columns: 0..0,
+            len_iter: RowsLengthsIter {
+                rows_range_it: RowsRangesIter {
+                    row_start_indexes,
+                    arr_len,
+                },
+            },
+        }
+    }
+}
+
+impl Iterator for CoordsIter<'_> {
+    type Item = IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.current_row_columns.next() {
+            Some(c) => Some(IVec2::new(c, self.row as i32)),
+            None => {
+                let new_len = self.len_iter.next()?;
+                self.current_row_columns = 0..new_len as i32;
+                self.row += 1;
+                self.next()
+            }
+        }
+    }
+}
+
+impl<'t> ExactSizeIterator for CoordsIter<'t> {
+    fn len(&self) -> usize {
+        self.current_row_columns.len() + self.len_iter.clone().sum::<usize>()
+    }
+}
+
 impl<T> Grid<T> {
     pub fn new(size: IVec2, value: T) -> Self
     where
@@ -38,10 +233,8 @@ impl<T> Grid<T> {
         }
     }
 
-    pub fn coords(&self) -> impl Iterator<Item = IVec2> + '_ {
-        (0..self.rows_len()).flat_map(|r| {
-            (0..self.row(r).map_or(0, |r| r.len())).map(move |c| IVec2::new(c as i32, r as i32))
-        })
+    pub fn coords(&self) -> impl ExactSizeIterator<Item = IVec2> + '_ {
+        CoordsIter::new(&self.row_start_indexes, self.arr.len())
     }
     pub fn elements_len(&self) -> usize {
         self.arr.len()
@@ -73,6 +266,20 @@ impl<T> Grid<T> {
     {
         self.arr.fill(value);
     }
+
+    pub fn max_column(&self) -> usize {
+        self.rows_ranges()
+            .map(|r| r.len())
+            .max()
+            .unwrap_or_default()
+    }
+    pub fn min_column(&self) -> usize {
+        self.rows_ranges()
+            .map(|r| r.len())
+            .min()
+            .unwrap_or_default()
+    }
+
     #[inline(always)]
     pub fn cols(&self, row: usize) -> usize {
         let Some(start) = self.row_start_indexes.get(row) else {
@@ -90,13 +297,13 @@ impl<T> Grid<T> {
         self.row_start_indexes.len()
     }
     #[inline(always)]
-    fn rows_ranges(&self) -> impl Iterator<Item = Range<usize>> + '_ {
-        self.row_start_indexes
-            .iter()
-            .copied()
-            .chain(std::iter::once(self.arr.len()))
-            .tuple_windows()
-            .map(|(start, end)| start..end)
+    fn rows_ranges(
+        &self,
+    ) -> impl ExactSizeIterator<Item = Range<usize>> + DoubleEndedIterator + '_ {
+        RowsRangesIter {
+            row_start_indexes: &self.row_start_indexes,
+            arr_len: self.arr.len(),
+        }
     }
     fn row_range(&self, row: usize) -> Option<Range<usize>> {
         let start = self.row_start_indexes.get(row).copied()?;
@@ -108,12 +315,46 @@ impl<T> Grid<T> {
         Some(start..end)
     }
     #[inline(always)]
-    pub fn rows(&self) -> impl Iterator<Item = &[T]> + '_ {
+    pub fn rows(&self) -> impl ExactSizeIterator<Item = &[T]> + DoubleEndedIterator + '_ {
         self.rows_ranges().map(|range| &self.arr[range])
     }
 
-    pub fn col(&self, col: usize) -> impl Iterator<Item = Option<&T>> + '_ {
+    /// Iterates over all "places" in the column.
+    /// Place can be empty (if corresponding row does not have this column)
+    pub fn safe_iter_col(
+        &self,
+        col: usize,
+    ) -> impl ExactSizeIterator<Item = Option<&T>> + DoubleEndedIterator + '_ {
         self.rows().map(move |r| r.get(col))
+    }
+
+    /// Iterates over all "places" in the column.
+    /// Place can be empty
+    pub fn checked_iter_col_copied(
+        &self,
+        col: usize,
+    ) -> impl ExactSizeIterator<Item = Option<T>> + DoubleEndedIterator + '_
+    where
+        T: Copy,
+    {
+        self.safe_iter_col(col).map(|x| x.copied())
+    }
+
+    pub fn iter_col(
+        &self,
+        col: usize,
+    ) -> impl ExactSizeIterator<Item = &T> + DoubleEndedIterator + '_ {
+        self.rows().map(move |r| r.get(col).unwrap())
+    }
+
+    pub fn iter_col_copied(
+        &self,
+        col: usize,
+    ) -> impl ExactSizeIterator<Item = T> + DoubleEndedIterator + '_
+    where
+        T: Copy,
+    {
+        self.checked_iter_col_copied(col).map(|x| x.unwrap())
     }
 
     pub fn neighbours<'t, D>(
@@ -128,28 +369,25 @@ impl<T> Grid<T> {
             .map(move |d| d + pos)
             .filter_map(|p| self.get(p).map(|x| (p, x)))
     }
+    pub fn neighbours_copy<'t, D>(
+        &'t self,
+        pos: IVec2,
+        dirs: D,
+    ) -> impl Iterator<Item = (IVec2, T)> + 't
+    where
+        D: IntoIterator<Item = IVec2> + 't,
+        T: Copy,
+    {
+        dirs.into_iter()
+            .map(move |d| d + pos)
+            .filter_map(|p| self.get_copy(p).map(|x| (p, x)))
+    }
 
     #[inline(always)]
-    pub fn rows_mut(&mut self) -> impl Iterator<Item = &mut [T]> + '_ {
-        let mut row_lengths = self
-            .row_start_indexes
-            .iter()
-            .copied()
-            .chain(std::iter::once(self.arr.len()))
-            .tuple_windows()
-            .map(|(start, end)| end - start);
-
-        let mut remaining = self.arr.as_mut_slice();
-        std::iter::from_fn(move || {
-            let row_len = row_lengths.next()?;
-
-            let temp = std::mem::take(&mut remaining);
-            let (row, rest) = temp.split_at_mut(row_len);
-
-            remaining = rest;
-
-            Some(row)
-        })
+    pub fn rows_mut(
+        &mut self,
+    ) -> impl ExactSizeIterator<Item = &mut [T]> + DoubleEndedIterator + '_ {
+        RowsMutIter::new(&self.row_start_indexes, self.arr.as_mut_slice())
     }
     pub fn iter_line(&self, pos: IVec2, v: IVec2) -> impl Iterator<Item = &T> {
         let mut p = pos;
@@ -158,6 +396,12 @@ impl<T> Grid<T> {
             p += v;
             Some(value)
         })
+    }
+    pub fn iter_line_copy(&self, pos: IVec2, v: IVec2) -> impl Iterator<Item = T> + '_
+    where
+        T: Copy,
+    {
+        self.iter_line(pos, v).copied()
     }
     pub fn row(&self, row: usize) -> Option<&[T]> {
         let range = self.row_range(row)?;
@@ -175,18 +419,28 @@ impl<T> Grid<T> {
     }
     #[inline(always)]
     pub fn get(&self, pos: IVec2) -> Option<&T> {
-        let row = pos.y;
-        if row < 0 {
-            return None;
-        }
-        self.row(row as usize).and_then(|r| {
-            let col = pos.x;
-            if col < 0 {
-                return None;
-            }
-            r.get(col as usize)
-        })
+        (pos.y >= 0 && pos.x >= 0)
+            .then(|| self.get_at(pos.y as usize, pos.x as usize))
+            .flatten()
     }
+    pub fn get_copy(&self, pos: IVec2) -> Option<T>
+    where
+        T: Copy,
+    {
+        self.get(pos).copied()
+    }
+
+    pub fn get_at(&self, row: usize, col: usize) -> Option<&T> {
+        self.row(row).and_then(|r| r.get(col))
+    }
+
+    pub fn get_copy_at(&self, row: usize, col: usize) -> Option<T>
+    where
+        T: Copy,
+    {
+        self.get_at(row, col).copied()
+    }
+
     #[inline(always)]
     pub fn get_mut(&mut self, pos: IVec2) -> Option<&mut T> {
         let row = pos.y;
@@ -475,6 +729,109 @@ impl IntoIterator for N8 {
 mod tests {
     use glam::IVec2;
     use itertools::Itertools;
+
+    #[test]
+    fn test_rows_mut() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789");
+        grid.rows_mut().enumerate().for_each(|(i, r)| {
+            r.iter_mut().for_each(|x| *x = b'0' + i as u8);
+        });
+
+        assert_eq!(grid.render_ascii(), "000\n111\n222\n");
+    }
+    #[test]
+    fn test_rows_mut_len() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789");
+        let x = grid.rows_mut().len();
+        assert_eq!(x, 3);
+    }
+    #[test]
+    fn test_rows_mut_nth_1() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let mut it = grid.rows_mut();
+        let xs = it.nth(1).unwrap();
+        for x in xs {
+            *x = b'x';
+        }
+        let ys = it.next().unwrap();
+        for y in ys {
+            *y = b'y'
+        }
+        drop(it);
+        assert_eq!(grid.render_ascii(), "123\nxxx\nyyy\nabc\n");
+    }
+    #[test]
+    fn test_rows_mut_nth_0() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let mut it = grid.rows_mut();
+        let xs = it.nth(0).unwrap();
+        for x in xs {
+            *x = b'x';
+        }
+        drop(it);
+        assert_eq!(grid.render_ascii(), "xxx\n456\n789\nabc\n");
+    }
+    #[test]
+    fn test_coords_iter_len() {
+        let grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let it = grid.coords();
+        assert_eq!(it.len(), 12);
+        let grid = crate::parse::ascii_grid("123\n45\n789\nabc");
+        let it = grid.coords();
+        assert_eq!(it.len(), 11);
+    }
+    #[test]
+    fn test_coords_iter() {
+        let grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let it = grid.coords().collect_vec();
+        assert_eq!(
+            it,
+            vec![
+                IVec2::new(0, 0),
+                IVec2::new(1, 0),
+                IVec2::new(2, 0),
+                IVec2::new(0, 1),
+                IVec2::new(1, 1),
+                IVec2::new(2, 1),
+                IVec2::new(0, 2),
+                IVec2::new(1, 2),
+                IVec2::new(2, 2),
+                IVec2::new(0, 3),
+                IVec2::new(1, 3),
+                IVec2::new(2, 3),
+            ]
+        )
+    }
+    #[test]
+    fn test_rows_mut_nth_2() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let mut it = grid.rows_mut();
+        let xs = it.nth(2).unwrap();
+        for x in xs {
+            *x = b'x';
+        }
+        let xs = it.next().unwrap();
+        for x in xs {
+            *x = b'y';
+        }
+        drop(it);
+        assert_eq!(grid.render_ascii(), "123\n456\nxxx\nyyy\n");
+    }
+    #[test]
+    fn test_rows_mut_next_back() {
+        let mut grid = crate::parse::ascii_grid("123\n456\n789\nabc");
+        let mut it = grid.rows_mut();
+        let xs = it.next_back().unwrap();
+        for x in xs {
+            *x = b'x';
+        }
+        let xs = it.next_back().unwrap();
+        for x in xs {
+            *x = b'y';
+        }
+        drop(it);
+        assert_eq!(grid.render_ascii(), "123\n456\nyyy\nxxx\n");
+    }
 
     #[test]
     fn test_get() {

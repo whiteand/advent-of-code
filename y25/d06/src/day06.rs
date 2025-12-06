@@ -1,4 +1,4 @@
-use advent_utils::{glam::IVec2, grid::Grid, nom::AsChar};
+use advent_utils::{algo::CollectDecDigits, grid::Grid, parse};
 
 #[derive(Debug, Copy, Clone)]
 enum Operation {
@@ -63,8 +63,8 @@ pub fn part1(input: &str) -> usize {
         .filter_map(|b| Operation::try_from(b).ok())
         .collect::<Vec<_>>();
 
-    std::iter::zip(0..grid.cols(0), operations.into_iter())
-        .map(|(c, op)| op.execute(grid.col(c).filter_map(|c| c).copied()))
+    std::iter::zip(0..grid.max_column(), operations.into_iter())
+        .map(|(c, op)| op.execute(grid.iter_col_copied(c)))
         .sum()
 }
 
@@ -75,32 +75,22 @@ pub fn part2(input: &str) -> usize {
     let mut current_section = 0usize;
     let mut total = 0usize;
     let rows = grid.rows_len();
-    for c in 0..grid.cols(0) {
+    for c in 0..grid.max_column() {
         if let Some(new_op) = grid
-            .get(IVec2::new(c as i32, (rows - 1) as i32))
-            .copied()
+            .get_copy_at(rows - 1, c)
             .and_then(|x| Operation::try_from(x).ok())
         {
             current_op = new_op;
             total += current_section;
             current_section = new_op.default();
         }
-        let Some(number) = grid
-            .iter_line(IVec2::new(c as i32, 0), IVec2::Y)
-            .take(rows - 1)
-            .copied()
-            .filter_map(|x| {
-                if x.is_dec_digit() {
-                    Some((x - b'0') as usize)
-                } else {
-                    None
-                }
-            })
-            .reduce(|r, x| r * 10 + x)
+
+        let Some(number) = parse::digits(grid.iter_col_copied(c)).collect_dec_digits::<usize>()
         else {
             // empty line
             continue;
         };
+
         current_section = current_op.binary(current_section, number);
     }
     total += current_section;
