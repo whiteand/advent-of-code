@@ -112,6 +112,10 @@ impl<T> Grid<T> {
         self.rows_ranges().map(|range| &self.arr[range])
     }
 
+    pub fn col(&self, col: usize) -> impl Iterator<Item = Option<&T>> + '_ {
+        self.rows().map(move |r| r.get(col))
+    }
+
     pub fn neighbours<'t, D>(
         &'t self,
         pos: IVec2,

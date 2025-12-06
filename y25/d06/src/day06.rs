@@ -1,14 +1,4 @@
-use advent_utils::{
-    glam::IVec2,
-    grid::Grid,
-    nom::{
-        self, AsChar, Parser,
-        branch::alt,
-        character::{self, complete::multispace1},
-        multi::separated_list1,
-    },
-};
-use itertools::Itertools;
+use advent_utils::{glam::IVec2, grid::Grid, nom::AsChar};
 
 #[derive(Debug, Copy, Clone)]
 enum Operation {
@@ -16,8 +6,32 @@ enum Operation {
     Add,
 }
 
+impl TryFrom<u8> for Operation {
+    type Error = &'static str;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            b'+' => Ok(Operation::Add),
+            b'*' => Ok(Operation::Multiply),
+            _ => Err("Unexpected operation"),
+        }
+    }
+}
+
 impl Operation {
-    pub fn execute(&self, values: impl Iterator<Item = u128>) -> u128 {
+    fn binary(&self, a: usize, b: usize) -> usize {
+        match self {
+            Operation::Multiply => a * b,
+            Operation::Add => a + b,
+        }
+    }
+    fn default(&self) -> usize {
+        match self {
+            Operation::Multiply => 1,
+            Operation::Add => 0,
+        }
+    }
+    fn execute(&self, values: impl Iterator<Item = usize>) -> usize {
         match self {
             Operation::Multiply => values
                 .reduce(|acc, element| acc * element)
@@ -29,73 +43,68 @@ impl Operation {
     }
 }
 
-fn parse_operation(input: &str) -> nom::IResult<&str, Operation> {
-    alt((
-        character::char('+').map(|_| Operation::Add),
-        character::char('*').map(|_| Operation::Multiply),
-    ))
-    .parse(input)
-}
-fn parse_operations(input: &str) -> nom::IResult<&str, Vec<Operation>> {
-    separated_list1(multispace1, parse_operation).parse(input)
-}
-
 #[tracing::instrument(skip(input))]
-pub fn part1(input: &str) -> u128 {
+pub fn part1(input: &str) -> usize {
     let lines = input.trim().lines().collect::<Vec<_>>();
 
-    let grid: Grid<u128> = lines
+    let grid = lines
         .iter()
         .copied()
         .take(lines.len() - 1)
-        .map(|line| advent_utils::parse::nums::<u128>(line))
-        .collect();
+        .map(|line| advent_utils::parse::nums::<usize>(line))
+        .collect::<Grid<usize>>();
 
-    let operations = parse_operations(lines.last().unwrap())
-        .map(|(_, ops)| ops)
-        .unwrap();
+    let operations = lines
+        .last()
+        .unwrap()
+        .as_bytes()
+        .iter()
+        .copied()
+        .filter_map(|b| Operation::try_from(b).ok())
+        .collect::<Vec<_>>();
 
-    let grid = grid.transpose().expect("should be a rectangular grid");
-
-    std::iter::zip(grid.rows(), operations.into_iter())
-        .map(|(row, op)| op.execute(row.iter().copied()))
+    std::iter::zip(0..grid.cols(0), operations.into_iter())
+        .map(|(c, op)| op.execute(grid.col(c).filter_map(|c| c).copied()))
         .sum()
 }
+
 #[tracing::instrument(skip(input))]
-pub fn part2(input: &str) -> u128 {
+pub fn part2(input: &str) -> usize {
     let grid = advent_utils::parse::ascii_grid(input);
-    let operations: Vec<(usize, Operation)> = grid
-        .rows()
-        .last()
-        .into_iter()
-        .flat_map(|r| r.iter().copied().enumerate())
-        .filter_map(|(i, r)| match r {
-            b'*' => Some((i, Operation::Multiply)),
-            b'+' => Some((i, Operation::Add)),
-            _ => None,
-        })
-        .collect();
-
-    let max_col = grid.rows().map(|x| x.len()).max().unwrap_or_default();
-
-    let filled: Vec<(usize, usize)> = operations
-        .iter()
-        .map(|(a, _)| *a)
-        .chain(std::iter::once(max_col + 1))
-        .tuple_windows()
-        .map(|(a, b)| (a, b - 1))
-        .collect();
-
-    std::iter::zip(filled.into_iter(), operations.into_iter().map(|(_, op)| op))
-        .map(|((start_col, end_col), op)| {
-            op.execute((start_col..end_col).rev().map(|c| {
-                grid.iter_line(IVec2::new(c as i32, 0), IVec2::Y)
-                    .copied()
-                    .filter(|c| c.is_dec_digit())
-                    .fold(0, |acc, x| acc * 10 + (x - b'0') as u128)
-            }))
-        })
-        .sum()
+    let mut current_op = Operation::Add;
+    let mut current_section = 0usize;
+    let mut total = 0usize;
+    let rows = grid.rows_len();
+    for c in 0..grid.cols(0) {
+        if let Some(new_op) = grid
+            .get(IVec2::new(c as i32, (rows - 1) as i32))
+            .copied()
+            .and_then(|x| Operation::try_from(x).ok())
+        {
+            current_op = new_op;
+            total += current_section;
+            current_section = new_op.default();
+        }
+        let Some(number) = grid
+            .iter_line(IVec2::new(c as i32, 0), IVec2::Y)
+            .take(rows - 1)
+            .copied()
+            .filter_map(|x| {
+                if x.is_dec_digit() {
+                    Some((x - b'0') as usize)
+                } else {
+                    None
+                }
+            })
+            .reduce(|r, x| r * 10 + x)
+        else {
+            // empty line
+            continue;
+        };
+        current_section = current_op.binary(current_section, number);
+    }
+    total += current_section;
+    total
 }
 
 #[cfg(test)]
