@@ -81,18 +81,18 @@ impl<'t, T> RowsMutIter<'t, T> {
     fn take_prefix(&mut self, prefix_len: usize) -> &'t mut [T] {
         let (prefix, suffix) = self.remaining.split_at_mut(prefix_len);
 
-        self.remaining = unsafe { std::mem::transmute(suffix) };
+        self.remaining = unsafe { std::mem::transmute::<&mut [T], &mut [T]>(suffix) };
 
-        unsafe { std::mem::transmute(prefix) }
+        unsafe { std::mem::transmute::<&mut [T], &mut [T]>(prefix) }
     }
     fn take_suffix(&mut self, suffix_len: usize) -> &'t mut [T] {
         let (prefix, suffix) = self
             .remaining
             .split_at_mut(self.remaining.len() - suffix_len);
 
-        self.remaining = unsafe { std::mem::transmute(prefix) };
+        self.remaining = unsafe { std::mem::transmute::<&mut [T], &mut [T]>(prefix) };
 
-        unsafe { std::mem::transmute(suffix) }
+        unsafe { std::mem::transmute::<&mut [T], &mut [T]>(suffix) }
     }
 }
 
@@ -197,7 +197,7 @@ impl Iterator for CoordsIter<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.current_row_columns.next() {
-            Some(c) => Some(IVec2::new(c, self.row as i32)),
+            Some(c) => Some(IVec2::new(c, self.row)),
             None => {
                 let new_len = self.len_iter.next()?;
                 self.current_row_columns = 0..new_len as i32;
@@ -761,9 +761,11 @@ mod tests {
         assert_eq!(grid.render_ascii(), "123\nxxx\nyyy\nabc\n");
     }
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn test_rows_mut_nth_0() {
         let mut grid = crate::parse::ascii_grid("123\n456\n789\nabc");
         let mut it = grid.rows_mut();
+
         let xs = it.nth(0).unwrap();
         for x in xs {
             *x = b'x';

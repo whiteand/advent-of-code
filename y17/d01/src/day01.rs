@@ -1,9 +1,15 @@
-use advent_utils::parse;
+use advent_utils::parse::OnlyDecDigits;
 use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
-    let digits = parse::digits(file_content.as_bytes().iter().copied()).collect_vec();
+    let digits = file_content
+        .as_bytes()
+        .iter()
+        .copied()
+        .only_dec_digits()
+        .collect_vec();
+
     digits
         .into_iter()
         .circular_tuple_windows()
@@ -12,7 +18,12 @@ pub fn part1(file_content: &str) -> usize {
 }
 #[tracing::instrument(skip(file_content))]
 pub fn part2(file_content: &str) -> usize {
-    let digits = parse::digits(file_content.as_bytes().iter().copied()).collect_vec();
+    let digits = file_content
+        .as_bytes()
+        .iter()
+        .copied()
+        .only_dec_digits()
+        .collect_vec();
 
     digits
         .iter()

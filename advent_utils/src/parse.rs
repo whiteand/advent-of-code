@@ -14,8 +14,14 @@ pub fn ascii_grid(file_content: &str) -> Grid<u8> {
         .collect()
 }
 
-pub fn digits(line: impl Iterator<Item = u8>) -> impl Iterator<Item = u8> {
-    line.filter(|x| x.is_ascii_digit()).map(|x| x - b'0')
+pub trait OnlyDecDigits {
+    fn only_dec_digits(self) -> impl Iterator<Item = u8>;
+}
+
+impl<T: Iterator<Item = u8>> OnlyDecDigits for T {
+    fn only_dec_digits(self) -> impl Iterator<Item = u8> {
+        self.filter(|x| x.is_ascii_digit()).map(|x| x - b'0')
+    }
 }
 
 pub fn nums<T>(line: &str) -> ParseNumsIter<'_, T> {

@@ -1,4 +1,4 @@
-use advent_utils::{algo::CollectDecDigits, grid::Grid, parse};
+use advent_utils::{algo::CollectDecDigits, grid::Grid, parse::OnlyDecDigits};
 
 #[derive(Debug, Copy, Clone)]
 enum Operation {
@@ -85,7 +85,10 @@ pub fn part2(input: &str) -> usize {
             current_section = new_op.default();
         }
 
-        let Some(number) = parse::digits(grid.iter_col_copied(c)).collect_dec_digits::<usize>()
+        let Some(number) = grid
+            .iter_col_copied(c)
+            .only_dec_digits()
+            .collect_dec_digits::<usize>()
         else {
             // empty line
             continue;

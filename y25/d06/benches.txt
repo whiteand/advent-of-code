@@ -26,3 +26,7 @@ y25d06    fastest       │ slowest       │ median        │ mean          �
 y25d06    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  33.12 µs      │ 95.62 µs      │ 34.33 µs      │ 37.39 µs      │ 100     │ 100
 ╰─ part2  36.54 µs      │ 49.87 µs      │ 37.04 µs      │ 37.34 µs      │ 100     │ 100
+
+y25d06    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  36.33 µs      │ 89.04 µs      │ 36.83 µs      │ 38.04 µs      │ 100     │ 100
+╰─ part2  35.66 µs      │ 67.29 µs      │ 35.91 µs      │ 37 µs         │ 100     │ 100
