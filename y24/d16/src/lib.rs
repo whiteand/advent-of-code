@@ -45,7 +45,7 @@ fn heuristic(end: IVec2, x: &IVec2) -> i32 {
 }
 
 fn parse(file_content: &str) -> (Grid<u8>, IVec2, IVec2) {
-    let grid = parse::ascii_grid(file_content);
+    let grid = parse::ascii_grid(file_content.trim());
     let start = IVec2::new(1, (grid.rows_len() - 2) as i32);
     let end = IVec2::new((grid.cols(1) - 2) as i32, 1);
     (grid, start, end)

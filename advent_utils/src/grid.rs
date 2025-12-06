@@ -293,6 +293,33 @@ impl<T> Grid<T> {
 
         self.arr.truncate(dst);
     }
+
+    ///
+    /// Returns `None` if the grid itself cannot be tranposed.
+    /// Example of impossible transpose:
+    /// ```ignore
+    /// abcdef
+    /// ghi
+    /// asdk
+    /// ```
+    ///
+    pub fn transpose(&self) -> Option<Grid<T>>
+    where
+        T: Clone,
+    {
+        if self.size() == IVec2::ZERO {
+            return Some(self.clone());
+        }
+        let cols_len = self.cols(0);
+        if (1..self.rows_len()).any(|r| self.cols(r) != cols_len) {
+            return None;
+        }
+        Some(
+            (0..cols_len)
+                .map(|c| self.rows().map(move |row| row.get(c).unwrap().clone()))
+                .collect::<Grid<T>>(),
+        )
+    }
 }
 
 impl<T> IntoIterator for Grid<T> {

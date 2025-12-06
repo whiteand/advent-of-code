@@ -32,7 +32,7 @@ pub fn solve_part_1(file_content: &str) -> usize {
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let grid = parse::ascii_grid(file_content);
+    let grid = parse::ascii_grid(file_content.trim());
 
     let mut total = 0;
     for pos in grid.coords() {

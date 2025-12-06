@@ -5,7 +5,7 @@ use itertools::{iproduct, Itertools};
 pub fn part1(file_content: &str) -> usize {
     let grids = file_content
         .split("\n\n")
-        .map(parse::ascii_grid)
+        .map(|line| parse::ascii_grid(line.trim()))
         .collect_vec();
     let (locks, keys): (Vec<_>, Vec<_>) = grids.into_iter().partition(is_lock);
     iproduct!(locks.iter(), keys.iter())

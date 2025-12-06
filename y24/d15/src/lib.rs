@@ -211,7 +211,7 @@ impl From<Grid<u8>> for LargeGrid {
 
 fn parse_grid(file_content: &str) -> (Grid<u8>, IVec2, Vec<IVec2>) {
     let (first, second) = file_content.split_once("\n\n").unwrap();
-    let mut grid = parse::ascii_grid(first);
+    let mut grid = parse::ascii_grid(first.trim());
     let robot_pos = grid
         .coords()
         .find(|x| grid.get(*x).copied() == Some(b'@'))

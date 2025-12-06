@@ -55,7 +55,7 @@ fn dist(a: IVec2, b: IVec2) -> usize {
 }
 
 fn parse_input(file_content: &str) -> (Grid<u8>, IVec2, IVec2) {
-    let mut grid = parse::ascii_grid(file_content);
+    let mut grid = parse::ascii_grid(file_content.trim());
     let s = grid
         .entries()
         .find_map(|(c, b)| (*b == b'S').then_some(c))

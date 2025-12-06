@@ -6,12 +6,12 @@ use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
-    let grid = advent_utils::parse::ascii_grid(file_content);
+    let grid = advent_utils::parse::ascii_grid(file_content.trim());
     can_be_removed(&grid).count()
 }
 #[tracing::instrument(skip(file_content))]
 pub fn part2(file_content: &str) -> usize {
-    let mut grid = advent_utils::parse::ascii_grid(file_content);
+    let mut grid = advent_utils::parse::ascii_grid(file_content.trim());
     let mut removed = 0;
     loop {
         let to_remove = can_be_removed(&grid).collect_vec();

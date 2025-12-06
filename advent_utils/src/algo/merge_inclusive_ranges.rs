@@ -8,9 +8,9 @@ pub struct MergeInclusiveRangesIter<'t, T> {
 impl<'t, T> MergeInclusiveRangesIter<'t, T> {
     fn new(src: &'t mut [RangeInclusive<T>]) -> Self
     where
-        T: TempStep,
+        T: TempStep + Ord,
     {
-        // After sorting src has this order (large-start-first, larger-end-first)
+        // After sorting src has this order (smaller-start-last)
         // src[0]:                       ##### (23-27)
         // src[1]:                       ### (23-25)
         // src[2]:                  ### (18-20)
@@ -20,16 +20,7 @@ impl<'t, T> MergeInclusiveRangesIter<'t, T> {
         // src[6]:   ### (3-5)
         // src[7]: ### (1-3)
 
-        src.sort_by(|a, b| {
-            b.start()
-                .partial_cmp(a.start())
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| {
-                    b.end()
-                        .partial_cmp(a.end())
-                        .unwrap_or(std::cmp::Ordering::Equal)
-                })
-        });
+        src.sort_by(|a, b| b.start().cmp(a.start()));
 
         Self {
             len: src.len(),
@@ -124,7 +115,7 @@ impl_via_abs_diff! {
  * Rearranges the ranges in the src.
  * Then iterates over all "merged" ranges
  */
-pub fn merge_inclusive_ranges<'t, T: TempStep>(
+pub fn merge_inclusive_ranges<'t, T: TempStep + Ord>(
     src: &'t mut [RangeInclusive<T>],
 ) -> MergeInclusiveRangesIter<'t, T> {
     MergeInclusiveRangesIter::new(src)

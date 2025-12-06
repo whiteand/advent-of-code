@@ -6,7 +6,7 @@ use advent_utils::{
 
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_1(file_content: &str) -> usize {
-    let grid = parse::ascii_grid(file_content);
+    let grid = parse::ascii_grid(file_content.trim());
     let mut visited = grid.map(|_, _| false);
 
     grid.coords()
@@ -36,7 +36,7 @@ fn load_finish_positions(grid: &Grid<u8>, pos: IVec2, visited: &mut Grid<bool>) 
 }
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
-    let grid = parse::ascii_grid(file_content);
+    let grid = parse::ascii_grid(file_content.trim());
     let mut dp = grid.map(|x, _| (*x == b'9').then_some(1));
     grid.coords()
         .filter(|pos| grid.get(*pos).copied() == Some(b'0'))
