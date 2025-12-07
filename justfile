@@ -43,10 +43,13 @@ test-watch year day:
 test-all:
     cargo nextest run --no-fail-fast
 
-lint-all:
+fmt:
     cargo fmt --all
-    cargo clippy --workspace --profile ci --locked --benches --tests --all-features --no-deps
-    cargo nextest run --no-fail-fast
+
+lint-all:
+    just fmt
+    just clippy
+    just test-all
 
 bench year day:
     cargo bench --package y{{year}}d{{day}}

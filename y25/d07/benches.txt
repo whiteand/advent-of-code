@@ -1,0 +1,39 @@
+Timer precision: 41 ns
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  173.6 µs      │ 235.4 µs      │ 174.5 µs      │ 178.3 µs      │ 100     │ 100
+╰─ part2  168.2 µs      │ 268.2 µs      │ 169.5 µs      │ 174.8 µs      │ 100     │ 100
+
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  136.7 µs      │ 214.9 µs      │ 146.1 µs      │ 146.2 µs      │ 100     │ 100
+╰─ part2  136.7 µs      │ 162.6 µs      │ 138.9 µs      │ 141.9 µs      │ 100     │ 100
+
+After hashmap
+
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  105.4 µs      │ 179.6 µs      │ 107.9 µs      │ 114.5 µs      │ 100     │ 100
+╰─ part2  104.7 µs      │ 168.4 µs      │ 110 µs        │ 114.6 µs      │ 100     │ 100
+
+After array
+
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  51.33 µs      │ 121.9 µs      │ 51.54 µs      │ 54.27 µs      │ 100     │ 100
+╰─ part2  51.24 µs      │ 53.04 µs      │ 51.41 µs      │ 51.47 µs      │ 100     │ 100
+
+After strategy
+
+Timer precision: 41 ns
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  61.45 µs      │ 93.04 µs      │ 63.39 µs      │ 64.64 µs      │ 100     │ 100
+╰─ part2  61.87 µs      │ 74.24 µs      │ 62.04 µs      │ 62.68 µs      │ 100     │ 100
+
+With "present" in Multiverse
+
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  52.79 µs      │ 87.95 µs      │ 55.04 µs      │ 56.65 µs      │ 100     │ 100
+╰─ part2  55.45 µs      │ 82.62 µs      │ 58.14 µs      │ 59.84 µs      │ 100     │ 100
+
+After grid collect rewrite
+
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  46.08 µs      │ 98.79 µs      │ 47.56 µs      │ 48.06 µs      │ 100     │ 100
+╰─ part2  50.74 µs      │ 80.29 µs      │ 50.95 µs      │ 53.09 µs      │ 100     │ 100

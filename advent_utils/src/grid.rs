@@ -260,6 +260,16 @@ impl<T> Grid<T> {
         }
     }
 
+    /// # Safety
+    /// - all row_start_indexes are sorted in non-decreasing order (smaller first)
+    /// - all row_start_indexes are valid indexes of the arr
+    pub unsafe fn from_raw_parts(arr: Vec<T>, row_start_indexes: Vec<usize>) -> Self {
+        Self {
+            arr,
+            row_start_indexes,
+        }
+    }
+
     pub fn fill(&mut self, value: T)
     where
         T: Copy,
@@ -483,6 +493,26 @@ impl<T> Grid<T> {
                 (start..end).map(move |ind| (IVec2::new((ind - start) as i32, i as i32), &arr[ind]))
             })
     }
+    /// Iterates all cells in order of (0..rows).flatMap(|r| (0..cols))
+    #[inline(always)]
+    pub fn entries_copy(&self) -> impl Iterator<Item = (IVec2, T)> + '_
+    where
+        T: Copy,
+    {
+        let arr = &self.arr;
+        self.row_start_indexes
+            .iter()
+            .copied()
+            .enumerate()
+            .flat_map(move |(i, start)| {
+                let end = self
+                    .row_start_indexes
+                    .get(i + 1)
+                    .copied()
+                    .unwrap_or(arr.len());
+                (start..end).map(move |ind| (IVec2::new((ind - start) as i32, i as i32), arr[ind]))
+            })
+    }
 
     pub fn size(&self) -> IVec2 {
         IVec2::new(self.cols(0) as i32, self.rows_len() as i32)
@@ -638,11 +668,12 @@ where
     fn from_iter<T: IntoIterator<Item = Inner>>(iter: T) -> Self {
         let mut arr = Vec::new();
         let mut rows = Vec::new();
+        let iter = iter.into_iter();
+        let (lo, _) = iter.size_hint();
+        rows.reserve(lo);
         for it in iter {
             let row = arr.len();
-            for x in it {
-                arr.push(x);
-            }
+            arr.extend(it);
             rows.push(row)
         }
         Self {
