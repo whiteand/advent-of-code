@@ -1,0 +1,37 @@
+Initial solution:
+
+Timer precision: 41 ns
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  14.37 ms      │ 15.9 ms       │ 14.77 ms      │ 14.89 ms      │ 100     │ 100
+╰─ part2  14.47 ms      │ 15.73 ms      │ 14.88 ms      │ 15.01 ms      │ 100     │ 100
+
+After usage of heap:
+
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  3.756 ms      │ 5.157 ms      │ 3.962 ms      │ 3.96 ms       │ 100     │ 100
+╰─ part2  4.236 ms      │ 4.986 ms      │ 4.333 ms      │ 4.358 ms      │ 100     │ 100
+
+Timer precision: 41 ns
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  3.749 ms      │ 5.165 ms      │ 3.948 ms      │ 3.942 ms      │ 100     │ 100
+╰─ part2  4.037 ms      │ 4.641 ms      │ 4.151 ms      │ 4.177 ms      │ 100     │ 100
+
+At the end:
+
+Timer precision: 41 ns
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  5.115 ms      │ 6.288 ms      │ 5.374 ms      │ 5.394 ms      │ 100     │ 100
+╰─ part2  5.681 ms      │ 6.695 ms      │ 6.03 ms       │ 6.046 ms      │ 100     │ 100
+
+Inlining trait:
+
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  3.743 ms      │ 4.972 ms      │ 3.877 ms      │ 3.901 ms      │ 100     │ 100
+╰─ part2  4.238 ms      │ 4.95 ms       │ 4.379 ms      │ 4.425 ms      │ 100     │ 100
+
+Get Top 3
+
+Timer precision: 41 ns
+y25d08    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  3.75 ms       │ 4.981 ms      │ 3.981 ms      │ 3.993 ms      │ 100     │ 100
+╰─ part2  4.216 ms      │ 5.175 ms      │ 4.296 ms      │ 4.309 ms      │ 100     │ 100

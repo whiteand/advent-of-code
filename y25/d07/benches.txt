@@ -37,3 +37,10 @@ After grid collect rewrite
 y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  46.08 µs      │ 98.79 µs      │ 47.56 µs      │ 48.06 µs      │ 100     │ 100
 ╰─ part2  50.74 µs      │ 80.29 µs      │ 50.95 µs      │ 53.09 µs      │ 100     │ 100
+
+After using binary search
+
+Timer precision: 41 ns
+y25d07    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  44.79 µs      │ 122.7 µs      │ 44.99 µs      │ 47.23 µs      │ 100     │ 100
+╰─ part2  46.24 µs      │ 72.33 µs      │ 46.45 µs      │ 47.77 µs      │ 100     │ 100

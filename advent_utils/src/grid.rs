@@ -427,6 +427,28 @@ impl<T> Grid<T> {
             None => unreachable!("You cannot set value at {pos}. Grid size={}", self.size()),
         }
     }
+    pub fn set_at(&mut self, row: usize, col: usize, value: T) -> Option<T> {
+        match self.get_mut_at(row, col) {
+            Some(prev) => Some(std::mem::replace(prev, value)),
+            None => unreachable!(
+                "You cannot set value at [{row},${col}]. Grid size={}",
+                self.size()
+            ),
+        }
+    }
+
+    pub fn set_symmetrically_at(
+        &mut self,
+        row: usize,
+        col: usize,
+        value: T,
+    ) -> (Option<T>, Option<T>)
+    where
+        T: Clone,
+    {
+        let clone = value.clone();
+        (self.set_at(row, col, value), self.set_at(col, row, clone))
+    }
     #[inline(always)]
     pub fn get(&self, pos: IVec2) -> Option<&T> {
         (pos.y >= 0 && pos.x >= 0)
@@ -464,6 +486,21 @@ impl<T> Grid<T> {
             }
             r.get_mut(col as usize)
         })
+    }
+    #[inline(always)]
+    pub fn get_mut_at(&mut self, row: usize, col: usize) -> Option<&mut T> {
+        let row_start = self.row_start_indexes.get(row)?;
+        let next_row_start = self
+            .row_start_indexes
+            .get(row + 1)
+            .copied()
+            .unwrap_or(self.arr.len());
+        let ptr = row_start + col;
+        if ptr < next_row_start {
+            self.arr.get_mut(ptr)
+        } else {
+            None
+        }
     }
 
     #[inline(always)]

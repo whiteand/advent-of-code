@@ -2,6 +2,7 @@ pub mod algo;
 pub mod array_2d;
 mod binary_search;
 pub mod bitfield;
+pub mod disjoint_set;
 pub mod doubly_linked_list;
 pub mod fixed_slice_vec;
 pub mod genetic;
@@ -10,6 +11,7 @@ pub mod immutable_lists;
 pub mod math;
 pub mod parse;
 pub mod reduces;
+pub mod svg;
 
 pub use array_2d::Array2d;
 pub use binary_search::binary_search;

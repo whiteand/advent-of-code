@@ -1,0 +1,23 @@
+[package]
+name = "y25d09"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+advent_utils.workspace = true
+itertools.workspace = true
+rstest.workspace = true
+tracing-chrome.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+fxhash = "0.1.2"
+
+[dev-dependencies]
+divan.workspace = true
+
+[[bench]]
+name = "y25d09"
+path = "benches/y25d09.rs"
+harness = false

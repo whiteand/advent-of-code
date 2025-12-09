@@ -1,15 +1,18 @@
+pub mod area;
 mod per_non_diagonal;
 mod rat;
 mod rat_vec2;
 mod rat_vec3;
 mod systems;
+mod turn;
 
-use glam::IVec2;
+use glam::{I64Vec2, IVec2};
 pub use per_non_diagonal::PerNonDiagonalDirection;
 pub use rat::Rat;
 pub use rat_vec2::Vec2;
 pub use rat_vec3::Vec3;
 pub use systems::{solve_system, Equations, SolveError};
+pub use turn::*;
 
 pub fn get_gcd(mut a: u128, mut b: u128) -> u128 {
     if b == 1 {
@@ -69,14 +72,25 @@ macro_rules! impl_linear_progression_for_nums {
 
 impl_linear_progression_for_nums! {u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, usize, isize}
 
-impl LinearProgressionElement for IVec2 {
-    fn linear_progression_add(self, other: Self) -> Self {
-        self + other
-    }
+macro_rules! impl_for_vecs {
+    ($(($t:ty, $item:ty)),*) => {
+        $(
+            impl LinearProgressionElement for $t {
+                fn linear_progression_add(self, other: Self) -> Self {
+                    self + other
+                }
 
-    fn linear_progression_mul(self, times: usize) -> Self {
-        self.wrapping_mul(IVec2::splat(times as i32))
-    }
+                fn linear_progression_mul(self, times: usize) -> Self {
+                    self.wrapping_mul(<$t>::splat(times as $item))
+                }
+            }
+    )*
+    };
+}
+
+impl_for_vecs! {
+    (IVec2, i32),
+    (I64Vec2, i64)
 }
 
 #[derive(Clone)]
