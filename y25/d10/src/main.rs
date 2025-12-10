@@ -1,6 +1,6 @@
 use std::io::Read;
 use tracing_subscriber::layer::SubscriberExt;
-use y25d08::{part1, part2};
+use y25d10::{part1, part2};
 
 fn main() {
     // let (chrome_layer, _guard) = tracing_chrome::ChromeLayerBuilder::new().build();

@@ -1,5 +1,5 @@
 [package]
-name = "y25d07"
+name = "y25d10"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,18 +11,18 @@ itertools.workspace = true
 rstest.workspace = true
 tracing-chrome.workspace = true
 tracing-subscriber.workspace = true
-derive_more = { version = "2.1.0", features = [
-    "try_from",
-    "is_variant",
-    "as_ref",
-], default-features = false }
-fxhash = "0.1.2"
 tracing.workspace = true
+log = "0.4.27"
+derive_more = { version = "2.1.0", default-features = false, features = [
+    "from",
+    "constructor",
+] }
+good_lp = { version = "1.14.2", default-features = false, features = ["highs"] }
 
 [dev-dependencies]
 divan.workspace = true
 
 [[bench]]
-name = "y25d07"
-path = "benches/y25d07.rs"
+name = "y25d10"
+path = "benches/y25d10.rs"
 harness = false

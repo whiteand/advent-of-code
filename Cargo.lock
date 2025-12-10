@@ -7,12 +7,12 @@ name = "advent_utils"
 version = "0.1.0"
 dependencies = [
  "array-init",
- "derive_more 1.0.0",
+ "derive_more",
  "fixed-slice-vec",
  "glam 0.30.9",
  "itertools 0.14.0",
  "mockalloc",
- "nom",
+ "nom 8.0.0",
  "rand",
  "rstest 0.26.1",
  "thiserror",
@@ -76,6 +76,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
+name = "bindgen"
+version = "0.71.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f58bf3d7db68cfbac37cfc485a8d711e87e064c3d0fe0435b92f7a407f9d6b3"
+dependencies = [
+ "bitflags",
+ "cexpr",
+ "clang-sys",
+ "itertools 0.10.5",
+ "log",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn 2.0.87",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -120,6 +140,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cexpr"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fac387a98bb7c37292057cffc56d62ecb629900026402633ae9160df93a8766"
+dependencies = [
+ "nom 7.1.3",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -153,6 +182,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "clang-sys"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b023947811758c97c59bf9d1c188fd619ad4718dcaa767947df1cadb14f39f4"
+dependencies = [
+ "glob",
+ "libc",
+ "libloading",
+]
+
+[[package]]
 name = "clap"
 version = "4.5.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -179,6 +219,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "afb84c814227b90d6895e01398aee0d8033c00e7466aca416fb6a8e0eb19d8a7"
 
 [[package]]
+name = "cmake"
+version = "0.1.54"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e7caa3f9de89ddbe2c607f4101924c5abec803763ae9534e4f4d7d8f84aa81f0"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "condtype"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -186,18 +235,9 @@ checksum = "baf0a07a401f374238ab8e2f11a104d2851bf9ce711ec69804834de8af45c7af"
 
 [[package]]
 name = "convert_case"
-version = "0.6.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
-name = "convert_case"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb402b8d4c85569410425650ce3eddc7d698ed96d39a73f941b08fb63082f1e7"
+checksum = "633458d4ef8c78b72454de2d54fd6ab2e60f9e02be22f3c6104cdc8a4e0fceb9"
 dependencies = [
  "unicode-segmentation",
 ]
@@ -295,43 +335,23 @@ dependencies = [
 
 [[package]]
 name = "derive_more"
-version = "1.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
+checksum = "10b768e943bed7bf2cab53df09f4bc34bfd217cdb57d971e769874c9a6710618"
 dependencies = [
- "derive_more-impl 1.0.0",
-]
-
-[[package]]
-name = "derive_more"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71158d5e914dec8a242751a3fc516b03ed3e6772ce9de79e1aeea6420663cad4"
-dependencies = [
- "derive_more-impl 2.0.0",
+ "derive_more-impl",
 ]
 
 [[package]]
 name = "derive_more-impl"
-version = "1.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
+checksum = "6d286bfdaf75e988b4a78e013ecd79c581e06399ab53fbacd2d916c2f904f30b"
 dependencies = [
- "convert_case 0.6.0",
+ "convert_case",
  "proc-macro2",
  "quote",
- "syn 2.0.87",
-]
-
-[[package]]
-name = "derive_more-impl"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e04e066e440d7973a852a3acdc25b0ae712bb6d311755fbf773d6a4518b2226"
-dependencies = [
- "convert_case 0.7.1",
- "proc-macro2",
- "quote",
+ "rustc_version",
  "syn 2.0.87",
 ]
 
@@ -421,6 +441,12 @@ name = "fixedbitset"
 version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
+
+[[package]]
+name = "fnv"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "foldhash"
@@ -581,6 +607,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
+name = "good_lp"
+version = "1.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "776aa1ba88ac058e78408c17f4dbff826a51ae08ed6642f71ca0edd7fe9383f3"
+dependencies = [
+ "fnv",
+ "highs",
+]
+
+[[package]]
 name = "graphalgs"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -618,6 +654,26 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "highs"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9f739d4b9d063219b2dfa00705d8f2127fcead4d053867a5557c953dc3a4b99"
+dependencies = [
+ "highs-sys",
+ "log",
+]
+
+[[package]]
+name = "highs-sys"
+version = "1.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c51d1e4e682c01dd882d2d0cd89b6725cd5805dd307d290aac0a37be6fe0c58"
+dependencies = [
+ "bindgen",
+ "cmake",
+]
 
 [[package]]
 name = "indexmap"
@@ -714,6 +770,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libloading"
+version = "0.8.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
+dependencies = [
+ "cfg-if",
+ "windows-link",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,12 +787,9 @@ checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
 
 [[package]]
 name = "log"
-version = "0.4.17"
+version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
-dependencies = [
- "cfg-if",
-]
+checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
 
 [[package]]
 name = "matchers"
@@ -779,6 +842,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "minimal-lexical"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+
+[[package]]
 name = "mockalloc"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -813,6 +882,16 @@ dependencies = [
  "serde",
  "simba",
  "typenum",
+]
+
+[[package]]
+name = "nom"
+version = "7.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
+dependencies = [
+ "memchr",
+ "minimal-lexical",
 ]
 
 [[package]]
@@ -971,6 +1050,16 @@ name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
+
+[[package]]
+name = "prettyplease"
+version = "0.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64d1ec885c64d0457d564db4ec299b2dae3f9c02808b8ad9c3a089c591b18033"
+dependencies = [
+ "proc-macro2",
+ "syn 2.0.87",
+]
 
 [[package]]
 name = "proc-macro-crate"
@@ -1587,6 +1676,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+
+[[package]]
 name = "windows-sys"
 version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1740,7 +1835,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1749,7 +1844,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
  "rstest 0.26.1",
 ]
 
@@ -1767,7 +1862,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1792,7 +1887,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1801,7 +1896,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1810,7 +1905,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1819,7 +1914,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -1862,7 +1957,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
 ]
 
 [[package]]
@@ -2276,7 +2371,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
  "petgraph 0.6.5",
  "tracing",
  "tracing-subscriber",
@@ -2791,7 +2886,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
  "rstest 0.26.1",
 ]
 
@@ -2894,7 +2989,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.14.0",
- "nom",
+ "nom 8.0.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3234,7 +3329,7 @@ name = "y25d07"
 version = "0.1.0"
 dependencies = [
  "advent_utils",
- "derive_more 2.0.0",
+ "derive_more",
  "divan",
  "fxhash 0.1.2",
  "itertools 0.14.0",
@@ -3249,7 +3344,7 @@ name = "y25d08"
 version = "0.1.0"
 dependencies = [
  "advent_utils",
- "derive_more 2.0.0",
+ "derive_more",
  "divan",
  "fxhash 0.1.2",
  "itertools 0.14.0",
@@ -3268,6 +3363,22 @@ dependencies = [
  "divan",
  "fxhash 0.1.2",
  "itertools 0.14.0",
+ "rstest 0.26.1",
+ "tracing",
+ "tracing-chrome",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "y25d10"
+version = "0.1.0"
+dependencies = [
+ "advent_utils",
+ "derive_more",
+ "divan",
+ "good_lp",
+ "itertools 0.14.0",
+ "log",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
