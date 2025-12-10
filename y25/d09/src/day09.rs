@@ -40,11 +40,7 @@ pub fn part2(input: &str) -> usize {
             cut_rect_with(&xs, &ys, corner1.min(*corner2), corner1.max(*corner2))
                 .all(|r| contains_fully(&rects, &r))
         })
-        .map(|(a, b)| {
-            let w = a.x.abs_diff(b.x) as usize + 1;
-            let h = a.y.abs_diff(b.y) as usize + 1;
-            w * h
-        })
+        .map(|(a, b)| rect_area(a, b))
         .max()
         .unwrap_or_default()
 }
@@ -269,6 +265,7 @@ mod tests {
     #[rstest]
     #[case::example(EXAMPLE, "50")]
     #[case::actual(ACTUAL, "4754955192")]
+
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -279,6 +276,21 @@ mod tests {
     }
     #[rstest]
     #[case::example(EXAMPLE, "24")]
+    #[case::actual(
+        "1,0
+3,0
+3,6
+16,6
+16,0
+18,0
+18,9
+13,9
+13,7
+6,7
+6,9
+1,9",
+        "30"
+    )]
     // #[case::actual(ACTUAL, "1568849600")] // 22s
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
