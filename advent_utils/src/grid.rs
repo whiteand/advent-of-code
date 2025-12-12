@@ -508,6 +508,16 @@ impl<T> Grid<T> {
         self.arr.iter()
     }
 
+    /**
+     * Returns slice of all elements in row.flat_map(col) order
+     */
+    pub fn all(&self) -> &[T] {
+        self.arr.as_slice()
+    }
+    pub fn all_mut(&mut self) -> &mut [T] {
+        self.arr.as_mut()
+    }
+
     #[inline(always)]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.arr.iter_mut()

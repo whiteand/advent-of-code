@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use advent_utils::{
     glam::IVec2,
     grid::Grid,
@@ -13,12 +11,13 @@ use advent_utils::{
         parse_usize,
     },
 };
-use itertools::Itertools;
+use itertools::{Itertools, iproduct};
 use rustsat::{
     instances::SatInstance,
     solvers::{Solve, SolverResult},
-    types::{Lit, TernaryVal, Var, constraints::CardConstraint},
+    types::{Lit, TernaryVal, constraints::CardConstraint},
 };
+use smallvec::SmallVec;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
@@ -28,54 +27,135 @@ pub fn part1(file_content: &str) -> usize {
         .into_iter()
         .filter(|t| {
             let area = t.area();
-            let all_shapes_area = t
-                .shapes_number
-                .iter()
-                .enumerate()
-                .map(|(shape_index, n)| shapes[shape_index][0].area() * n)
-                .sum();
+            let all_shapes_area = get_all_shapes_area(&t, &shapes);
             area >= all_shapes_area
         })
-        .filter(|t| can_pack2(&shapes, &t))
+        .filter(|t| can_pack(&shapes, &t))
         .count()
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-struct VarDescription {
-    shape: Shape,
-    shape_index: usize,
-    instance_index: usize,
-    row: usize,
-    col: usize,
+fn get_all_shapes_area(task: &Task, shapes: &Grid<Shape>) -> usize {
+    task.shapes_number
+        .iter()
+        .enumerate()
+        .map(|(shape_index, n)| shapes.row(shape_index).unwrap()[0].area() * n)
+        .sum()
 }
 
-impl VarDescription {
-    fn instance_id(self) -> usize {
-        (self.instance_index << 9) | self.shape.normalize().bitmask
+struct VarsHolder<'t> {
+    // 0..width * height = cell
+    cells: Vec<Lit>,
+    shapes: &'t Grid<Shape>,
+    shape_at_position: Vec<Lit>,
+    task: &'t Task,
+}
+impl<'t> VarsHolder<'t> {
+    fn new(shapes: &'t Grid<Shape>, task: &'t Task) -> Self {
+        Self {
+            cells: Vec::with_capacity(task.width * task.height),
+            shape_at_position: Vec::with_capacity(
+                shapes.iter().count() * (task.width - 2) * (task.height - 2),
+            ),
+            task,
+            shapes,
+        }
     }
-    fn coords(self) -> impl Iterator<Item = (usize, usize)> {
-        let Self { row, col, .. } = self;
-        self.shape.iter().map(move |(r, c)| (row + r, col + c))
+    fn build_cell_vars(&mut self, instance: &mut SatInstance) {
+        for _ in 0..self.task.width * self.task.height {
+            self.cells.push(instance.new_lit());
+        }
+        instance.add_card_constr(CardConstraint::new_eq(
+            self.cells.iter().copied(),
+            get_all_shapes_area(self.task, self.shapes),
+        ));
+    }
+
+    fn build_shape_at_position(&mut self, instance: &mut SatInstance) {
+        let mut lits = [Lit::new(0, false); 2000];
+        let mut lits_len = 0;
+        for row in 0..(self.task.height - 2) {
+            for col in 0..(self.task.width - 2) {
+                let pos_start = self.shape_at_position.len();
+                for shape in self.shapes.iter() {
+                    let lit = instance.new_lit();
+                    self.shape_at_position.push(lit);
+                    for (r, c) in shape.iter() {
+                        let pos_lit = self.cell_var(r + row, c + col);
+                        lits[lits_len] = pos_lit;
+                        lits_len += 1;
+                    }
+                    instance.add_lit_impl_cube(lit, &lits[..lits_len]);
+                    lits_len = 0;
+                }
+                let pos_end = self.shape_at_position.len();
+                // only a single shape can be placed at the same position
+                instance.add_card_constr(CardConstraint::new_ub(
+                    self.shape_at_position[pos_start..pos_end].iter().copied(),
+                    1,
+                ));
+            }
+        }
+
+        // Only a specified number of shapes are allowed
+        for (shape_index, n) in self.task.shapes_number.iter().copied().enumerate() {
+            let variations = self.shapes.row(shape_index).unwrap();
+            for (r, c, s) in iproduct!(
+                0..(self.task.height - 2),
+                0..(self.task.width - 2),
+                variations.iter()
+            ) {
+                let lit = self.shape_at_position_var(*s, r, c);
+                lits[lits_len] = lit;
+                lits_len += 1;
+            }
+            instance.add_card_constr(CardConstraint::new_eq(lits[..lits_len].iter().copied(), n));
+            lits_len = 0;
+        }
+
+        // 0 ......
+        // 1 ......
+        // 2 ......
+        // 3 ......
+
+        // If a cell is full it means that some shape is present
+
+        for r in 0..self.task.height {
+            for c in 0..self.task.width {
+                let cell_lit = self.cell_var(r, c);
+                let shape_rows = r.saturating_sub(2)..=r.min(self.task.height - 3);
+                let shape_cols = c.saturating_sub(2)..=c.min(self.task.width - 3);
+                for (sr, sc, shape) in
+                    iproduct!(shape_rows, shape_cols, self.shapes.all().iter().copied())
+                {
+                    if shape
+                        .iter()
+                        .map(|(r, c)| (r + sr, c + sc))
+                        .any(|(r2, c2)| r2 == r && c2 == c)
+                    {
+                        let lit = self.shape_at_position_var(shape, sr, sc);
+                        lits[lits_len] = lit;
+                        lits_len += 1;
+                    }
+                }
+                instance.add_lit_impl_clause(cell_lit, &lits[..lits_len]);
+                lits_len = 0;
+            }
+        }
+    }
+
+    fn shape_at_position_var(&self, shape: Shape, row: usize, col: usize) -> Lit {
+        let ind =
+            (row * (self.task.width - 2) + col) * self.shapes.all().len() + shape.global_index();
+        self.shape_at_position[ind]
+    }
+
+    fn cell_var(&self, row: usize, col: usize) -> Lit {
+        let ind = row * self.task.width + col;
+        self.cells[ind]
     }
 }
 
-impl PartialOrd for VarDescription {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for VarDescription {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.instance_id()
-            .cmp(&other.instance_id())
-            .then_with(|| self.row.cmp(&other.row))
-            .then_with(|| self.col.cmp(&other.col))
-            .then_with(|| self.shape.bitmask.cmp(&other.shape.bitmask))
-    }
-}
-
-fn can_pack2(shapes: &[Vec<Shape>], task: &Task) -> bool {
+fn can_pack(shapes: &Grid<Shape>, task: &Task) -> bool {
     tracing::info!(
         "{}x{}: {}",
         task.width,
@@ -85,46 +165,18 @@ fn can_pack2(shapes: &[Vec<Shape>], task: &Task) -> bool {
 
     let mut instance: SatInstance = SatInstance::new();
 
-    let mut position_literals = rustc_hash::FxHashMap::<VarDescription, Lit>::default();
+    let mut vars_holder = VarsHolder::new(&shapes, task);
 
-    for d in build_var_descriptions(shapes, task) {
-        // tracing::info!(
-        //     "\nShape:\n{:?}\nat [{}, {}]",
-        //     description.shape,
-        //     description.row,
-        //     description.col
-        // );
-        let v = instance.new_lit();
-        // tracing::info!(shape_index = ?d.shape_index, instance_index = ?d.instance_index, dinstance_id = ?d.instance_id());
-        position_literals.insert(d, v);
-    }
+    tracing::info!("building cell vars");
+    vars_holder.build_cell_vars(&mut instance);
 
-    for (_, single_instance_placements) in &position_literals
-        .iter()
-        .sorted_unstable_by_key(|(k, _)| k.instance_id())
-        .chunk_by(|(k, _)| k.instance_id())
-    {
-        // tracing::info!(?k, "Ensuring that only one is present");
-        let vars = single_instance_placements.map(|(_, l)| *l).collect_vec();
-        instance.add_card_constr(CardConstraint::new_eq(vars, 1));
-    }
+    tracing::info!("build_shape_at_position");
+    vars_holder.build_shape_at_position(&mut instance);
 
-    for ((a_def, a_lit), (b_def, b_lit)) in position_literals
-        .iter()
-        .map(|(k, v)| (*k, *v))
-        .cartesian_product(position_literals.iter().map(|(k, v)| (*k, *v)))
-        .filter(|((a, _), (b, _))| a.instance_id() != b.instance_id())
-    {
-        if a_def.coords().any(|c| b_def.coords().contains(&c)) {
-            instance.add_card_constr(CardConstraint::new_ub([a_lit, b_lit], 1));
-        }
-    }
-
-    // tracing::info!(?instance, "instance");
-
+    tracing::info!("init solver");
     let mut solver = rustsat_kissat::Kissat::default();
-
     solver.add_cnf(instance.into_cnf().0).unwrap();
+    tracing::info!("solving");
     match solver.solve() {
         Ok(SolverResult::Sat) => {}
         res => {
@@ -132,6 +184,7 @@ fn can_pack2(shapes: &[Vec<Shape>], task: &Task) -> bool {
             return false;
         }
     };
+    tracing::info!("solved");
 
     let sol = match solver.full_solution() {
         Ok(res) => res,
@@ -140,112 +193,32 @@ fn can_pack2(shapes: &[Vec<Shape>], task: &Task) -> bool {
             return false;
         }
     };
+    tracing::info!("full solution");
 
     let mut grid = Grid::new(IVec2::new(task.width as i32, task.height as i32), b'.');
 
-    let mut i = 0;
-    for (d, lit) in position_literals.into_iter() {
-        let val = sol[lit.var()];
-        // tracing::info!(shape_index = ?d.shape_index, instance_id = ?d.instance_index, ?lit, ?val, "var");
-
-        if val == TernaryVal::True {
-            let char = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i];
-            i += 1;
-            set_shape_at(d.shape, &mut grid, d.row, d.col, char, b'.');
-        } else if val == TernaryVal::DontCare {
-            println!("dont care about {:?} at [{}, {}]", d.shape, d.row, d.col);
-        }
-    }
-
-    println!("Grid:\n{}", grid.render_ascii());
-
-    true
-}
-
-fn build_var_descriptions(
-    shapes: &[Vec<Shape>],
-    task: &Task,
-) -> impl Iterator<Item = VarDescription> {
-    let Task { height, width, .. } = task;
-    let height = *height;
-    let width = *width;
-    task.shapes_number
-        .iter()
-        .copied()
-        .enumerate()
-        .flat_map(|(shape_index, n)| {
-            (0..n).map(move |instance_index| (shape_index, instance_index))
-        })
-        .flat_map(move |(shape_index, instance_index)| {
-            (0..height)
-                .cartesian_product(0..width)
-                .flat_map(move |(r, c)| {
-                    shapes[shape_index]
-                        .iter()
-                        .copied()
-                        .filter(move |shape| can_place_in_bounds(*shape, width, height, r, c))
-                        .map(move |shape| VarDescription {
-                            shape,
-                            shape_index,
-                            instance_index,
-                            row: r,
-                            col: c,
-                        })
-                })
-        })
-}
-fn can_pack(shapes: &[Vec<Shape>], task: &Task) -> bool {
-    tracing::info!(
-        "{}x{}: {}",
-        task.width,
-        task.height,
-        task.shapes_number.iter().join(" ")
-    );
-    let mut grid = Grid::new(IVec2::new(task.width as i32, task.height as i32), false);
-    let mut shapes_number = task.shapes_number.to_vec();
-    can_pack_into_grid(&shapes, &mut shapes_number, &mut grid)
-}
-
-fn can_pack_into_grid(
-    shapes: &[Vec<Shape>],
-    shapes_numbers: &mut [usize],
-    grid: &mut Grid<bool>,
-) -> bool {
-    // println!("Grid:\n{}", grid.render_ascii());
-    // tracing::info!(?shapes_numbers);
-    if shapes_numbers.is_empty() || shapes.is_empty() {
-        return true;
-    }
-    let last_shape_index = shapes_numbers.len() - 1;
-    let last_shape_number = shapes_numbers[last_shape_index];
-
-    if last_shape_number == 0 {
-        return can_pack_into_grid(
-            &shapes[0..last_shape_index],
-            &mut shapes_numbers[0..last_shape_index],
-            grid,
-        );
-    }
-
-    let last_shape_variations = &shapes[last_shape_index];
-
-    for r in 0..grid.rows_len() {
-        for c in 0..grid.cols(r) {
-            for shape in last_shape_variations.into_iter().copied() {
-                if can_place_at(shape, grid, r, c) {
-                    set_shape_at(shape, grid, r, c, true, false);
-                    shapes_numbers[last_shape_index] -= 1;
-                    if can_pack_into_grid(shapes, shapes_numbers, grid) {
-                        return true;
-                    }
-                    shapes_numbers[last_shape_index] += 1;
-                    set_shape_at(shape, grid, r, c, false, true);
-                }
+    for r in 0..task.height {
+        for c in 0..task.width {
+            let lit = vars_holder.cell_var(r, c);
+            let val = sol[lit.var()];
+            if val == TernaryVal::True {
+                grid.set_at(r, c, b'#');
+            } else if val == TernaryVal::DontCare {
+                println!("dont care about [{}, {}]", r, c);
             }
         }
     }
 
-    false
+    // let mut i = 0;
+    // for (d, lit) in position_literals.into_iter() {
+    //     let val = sol[lit.var()];
+    //     // tracing::info!(shape_index = ?d.shape_index, instance_id = ?d.instance_index, ?lit, ?val, "var");
+
+    // }
+
+    println!("Grid:\n{}", grid.render_ascii());
+
+    true
 }
 
 fn set_shape_at<T: Copy + Eq + std::fmt::Debug>(
@@ -288,13 +261,17 @@ struct Shape {
 }
 
 impl Shape {
-    fn empty() -> Self {
-        Self { bitmask: 0 }
+    fn new(shape_index: usize) -> Self {
+        Self {
+            bitmask: shape_index << 9,
+        }
     }
     fn area(self) -> usize {
-        self.bitmask.count_ones() as usize
+        (self.bitmask & 0b111111111).count_ones() as usize
     }
     fn has(&self, row: usize, col: usize) -> bool {
+        assert!(row < 3);
+        assert!(col < 3);
         (self.bitmask & (1 << (row * 3 + col))) != 0
     }
     fn set(&self, row: usize, col: usize, present: bool) -> Self {
@@ -307,21 +284,48 @@ impl Shape {
         Self { bitmask }
     }
 
-    fn normalize(self) -> Self {
-        self.variations().min_by_key(|f| f.bitmask).unwrap()
+    fn shape_index(self) -> usize {
+        (self.bitmask >> 9) & 0b111
     }
 
     fn flip(self) -> Self {
         (0..3)
             .flat_map(|r| (0..3).map(move |c| (r, c)))
-            .fold(Shape::empty(), |s, (r, c)| s.set(r, c, self.has(c, r)))
+            .fold(Shape::new(self.shape_index()), |s, (r, c)| {
+                s.set(r, c, self.has(c, r))
+            })
     }
 
     fn rotate(self) -> Self {
-        let [a, b, c] = [self.has(0, 0), self.has(0, 1), self.has(0, 2)];
-        let [d, e, f] = [self.has(1, 0), self.has(1, 1), self.has(1, 2)];
-        let [g, h, i] = [self.has(2, 0), self.has(2, 1), self.has(2, 2)];
-        Shape::from_iter([[g, d, a], [h, e, b], [i, f, c]].into_iter().flatten())
+        Self::new(self.shape_index())
+            .set(0, 0, self.has(2, 0))
+            .set(0, 1, self.has(1, 0))
+            .set(0, 2, self.has(0, 0))
+            .set(1, 0, self.has(2, 1))
+            .set(1, 1, self.has(1, 1))
+            .set(1, 2, self.has(0, 1))
+            .set(2, 0, self.has(2, 2))
+            .set(2, 1, self.has(1, 2))
+            .set(2, 2, self.has(0, 2))
+    }
+
+    fn set_variation_index(self, variation_index: usize) -> Self {
+        Self {
+            bitmask: (self.bitmask & 0b111111111111) | (variation_index << 12),
+        }
+    }
+
+    fn variation_index(self) -> usize {
+        (self.bitmask >> 12) & 0b111
+    }
+
+    fn set_global_index(self, global_index: usize) -> Self {
+        Self {
+            bitmask: (self.bitmask & 0b111111111111111) | (global_index << 15),
+        }
+    }
+    fn global_index(self) -> usize {
+        (self.bitmask >> 15) & 0b11111
     }
 
     fn variations(self) -> impl Iterator<Item = Self> {
@@ -329,6 +333,8 @@ impl Shape {
             .into_iter()
             .flat_map(|s| std::iter::successors(Some(s), |s| Some(s.rotate())).take(4))
             .unique()
+            .enumerate()
+            .map(|(i, f)| f.set_variation_index(i))
     }
 
     // Iterates over (row, col) of the shape
@@ -336,13 +342,6 @@ impl Shape {
         (0..3)
             .flat_map(|r| (0..3).map(move |c| (r, c)))
             .filter(move |(r, c)| self.has(*r, *c))
-    }
-}
-
-impl FromIterator<bool> for Shape {
-    fn from_iter<T: IntoIterator<Item = bool>>(iter: T) -> Self {
-        std::iter::zip((0..3).flat_map(|r| (0..3).map(move |c| (r, c))), iter)
-            .fold(Shape::empty(), |s, ((r, c), v)| s.set(r, c, v))
     }
 }
 
@@ -378,16 +377,20 @@ impl Task {
     }
 }
 
-fn parse_input(input: &str) -> IResult<&str, (Vec<Vec<Shape>>, Vec<Task>)> {
+fn parse_input(input: &str) -> IResult<&str, (Grid<Shape>, Vec<Task>)> {
     let (input, shapes) = parse_shapes(input)?;
     let (input, _) = line_ending(input)?;
     let (input, _) = line_ending(input)?;
     let (input, tasks) = parse_tasks(input)?;
-    let all_ways_shapes = shapes
+    let mut all_ways_shapes = shapes
         .iter()
         .copied()
-        .map(|s| s.variations().collect_vec())
-        .collect_vec();
+        .map(|s| s.variations())
+        .collect::<Grid<_>>();
+
+    for (i, x) in all_ways_shapes.all_mut().iter_mut().enumerate() {
+        *x = x.set_global_index(i)
+    }
 
     Ok((input, (all_ways_shapes, tasks)))
 }
@@ -395,13 +398,14 @@ fn parse_shapes(input: &str) -> IResult<&str, Vec<Shape>> {
     separated_list1((line_ending, line_ending), parse_shape).parse(input)
 }
 fn parse_shape(input: &str) -> IResult<&str, Shape> {
-    let (input, _) = parse_usize(input)?;
+    let (input, index) = parse_usize(input)?;
     let (input, _) = (char(':'), line_ending).parse(input)?;
     let (input, lines) = separated_list1(line_ending, parse_bits).parse(input)?;
     let shape = lines
         .into_iter()
         .flat_map(|bits| bits.into_iter().map(|b| b == 1))
-        .collect::<Shape>();
+        .enumerate()
+        .fold(Shape::new(index), |a, (i, b)| a.set(i / 3, i % 3, b));
 
     Ok((input, shape))
 }
