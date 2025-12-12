@@ -153,7 +153,7 @@ impl<'t> VarsHolder<'t> {
                 variations.iter()
             ) {
                 let shape_lit = self.shape_at_position_var(*s, r, c);
-                for (r0, c0) in iproduct!(0..r, 0..c) {
+                for (r0, c0) in iproduct!(r.saturating_sub(1)..r, c.saturating_sub(1)..c) {
                     for (sr, sc) in s.iter() {
                         let cell_r = r0 + sr;
                         let cell_c = c0 + sc;
