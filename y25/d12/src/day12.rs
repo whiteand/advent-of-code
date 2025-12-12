@@ -17,12 +17,11 @@ use rustsat::{
     solvers::{Solve, SolverResult},
     types::{Lit, TernaryVal, constraints::CardConstraint},
 };
-use smallvec::SmallVec;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
     let (_, (shapes, tasks)) = all_consuming(parse_input).parse(file_content).unwrap();
-    tracing::info!(tasks = ?tasks.len(), "parsed");
+
     tasks
         .into_iter()
         .filter(|t| {
@@ -30,7 +29,11 @@ pub fn part1(file_content: &str) -> usize {
             let all_shapes_area = get_all_shapes_area(&t, &shapes);
             area >= all_shapes_area
         })
-        .filter(|t| can_pack(&shapes, &t))
+        .filter(|t| {
+            let places = (t.width / 3) * (t.height / 3);
+            let total_shapes_to_place = t.shapes_number.iter().copied().sum::<usize>();
+            places >= total_shapes_to_place || can_pack(&shapes, &t)
+        })
         .count()
 }
 
@@ -71,8 +74,7 @@ impl<'t> VarsHolder<'t> {
     }
 
     fn build_shape_at_position(&mut self, instance: &mut SatInstance) {
-        let mut lits = [Lit::new(0, false); 1750000];
-        let mut lits_len = 0;
+        let mut lits = Vec::with_capacity(2000);
         for row in 0..(self.task.height - 2) {
             for col in 0..(self.task.width - 2) {
                 let pos_start = self.shape_at_position.len();
@@ -81,11 +83,10 @@ impl<'t> VarsHolder<'t> {
                     self.shape_at_position.push(lit);
                     for (r, c) in shape.iter() {
                         let pos_lit = self.cell_var(r + row, c + col);
-                        lits[lits_len] = pos_lit;
-                        lits_len += 1;
+                        lits.push(pos_lit)
                     }
-                    instance.add_lit_impl_cube(lit, &lits[..lits_len]);
-                    lits_len = 0;
+                    instance.add_lit_impl_cube(lit, lits.as_slice());
+                    lits.clear();
                 }
                 let pos_end = self.shape_at_position.len();
                 // only a single shape can be placed at the same position
@@ -105,11 +106,10 @@ impl<'t> VarsHolder<'t> {
                 variations.iter()
             ) {
                 let lit = self.shape_at_position_var(*s, r, c);
-                lits[lits_len] = lit;
-                lits_len += 1;
+                lits.push(lit)
             }
-            instance.add_card_constr(CardConstraint::new_eq(lits[..lits_len].iter().copied(), n));
-            lits_len = 0;
+            instance.add_card_constr(CardConstraint::new_eq(lits.as_slice().iter().copied(), n));
+            lits.clear();
         }
 
         // 0 ......
@@ -132,12 +132,12 @@ impl<'t> VarsHolder<'t> {
                         .any(|(r2, c2)| r2 == r && c2 == c)
                     {
                         let lit = self.shape_at_position_var(shape, sr, sc);
-                        lits[lits_len] = lit;
-                        lits_len += 1;
+                        lits.push(lit)
                     }
                 }
-                instance.add_lit_impl_clause(cell_lit, &lits[..lits_len]);
-                lits_len = 0;
+                instance.add_lit_impl_clause(cell_lit, lits.as_slice());
+                instance.add_clause_impl_lit(lits.as_slice(), cell_lit);
+                lits.clear();
             }
         }
 
@@ -158,11 +158,10 @@ impl<'t> VarsHolder<'t> {
                         let cell_r = r0 + sr;
                         let cell_c = c0 + sc;
                         let cell_lit = self.cell_var(cell_r, cell_c);
-                        lits[lits_len] = cell_lit;
-                        lits_len += 1;
+                        lits.push(cell_lit);
                     }
-                    instance.add_lit_impl_clause(shape_lit, &lits[..lits_len]);
-                    lits_len = 0;
+                    instance.add_lit_impl_clause(shape_lit, lits.as_slice());
+                    lits.clear();
                 }
             }
         }
@@ -200,6 +199,13 @@ fn can_pack(shapes: &Grid<Shape>, task: &Task) -> bool {
 
     tracing::info!("init solver");
     let mut solver = rustsat_kissat::Kissat::default();
+
+    solver
+        .set_configuration(rustsat_kissat::Config::Unsat)
+        .unwrap();
+
+    // let mut solver = rustsat_minisat::core::Minisat::default();
+    // let mut solver = rustsat_glucose::core::Glucose::default();
     solver.add_cnf(instance.into_cnf().0).unwrap();
     tracing::info!("solving");
     match solver.solve() {
@@ -244,40 +250,6 @@ fn can_pack(shapes: &Grid<Shape>, task: &Task) -> bool {
     println!("Grid:\n{}", grid.render_ascii());
 
     true
-}
-
-fn set_shape_at<T: Copy + Eq + std::fmt::Debug>(
-    shape: Shape,
-    grid: &mut Grid<T>,
-    row: usize,
-    col: usize,
-    value: T,
-    empty_value: T,
-) {
-    for (r, c) in shape.iter() {
-        let row = row + r;
-        let col = col + c;
-        assert_eq!(grid.get_copy_at(row, col), Some(empty_value));
-        grid.set_at(row, col, value);
-    }
-}
-
-fn can_place_in_bounds(shape: Shape, width: usize, height: usize, row: usize, col: usize) -> bool {
-    shape.iter().all(|(r, c)| {
-        let row = row + r;
-        let col = col + c;
-        (0..width).contains(&col) && (0..height).contains(&row)
-    })
-}
-fn can_place_at(shape: Shape, grid: &Grid<bool>, row: usize, col: usize) -> bool {
-    shape
-        .iter()
-        .all(|(r, c)| grid.get_copy_at(r + row, c + col) == Some(false))
-}
-
-#[tracing::instrument(skip(file_content))]
-pub fn part2(file_content: &str) -> usize {
-    file_content.len()
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -334,16 +306,6 @@ impl Shape {
             .set(2, 2, self.has(0, 2))
     }
 
-    fn set_variation_index(self, variation_index: usize) -> Self {
-        Self {
-            bitmask: (self.bitmask & 0b111111111111) | (variation_index << 12),
-        }
-    }
-
-    fn variation_index(self) -> usize {
-        (self.bitmask >> 12) & 0b111
-    }
-
     fn set_global_index(self, global_index: usize) -> Self {
         Self {
             bitmask: (self.bitmask & 0b111111111111111) | (global_index << 15),
@@ -358,8 +320,6 @@ impl Shape {
             .into_iter()
             .flat_map(|s| std::iter::successors(Some(s), |s| Some(s.rotate())).take(4))
             .unique()
-            .enumerate()
-            .map(|(i, f)| f.set_variation_index(i))
     }
 
     // Iterates over (row, col) of the shape
@@ -459,13 +419,13 @@ fn parse_task(input: &str) -> IResult<&str, Task> {
 
 #[cfg(test)]
 mod tests {
-    use super::{part1, part2};
+    use super::part1;
     use rstest::rstest;
-    const EXAMPLE: &str = include_str!("../example.txt");
+    // const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
-    #[case::example(EXAMPLE, "2")] // too long for now
-    // #[case::actual(ACTUAL, "0")]
+    // #[case::example(EXAMPLE, "2")] // too long
+    #[case::actual(ACTUAL, "433")]
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -473,17 +433,5 @@ mod tests {
                 .finish(),
         );
         assert_eq!(format!("{}", part1(input)), expected);
-    }
-    #[rstest]
-    #[case::example(EXAMPLE, "0")]
-    // #[case::actual(ACTUAL, "0")]
-    #[ignore]
-    fn test_part2(#[case] input: &str, #[case] expected: &str) {
-        let _guard = tracing::subscriber::set_default(
-            tracing_subscriber::FmtSubscriber::builder()
-                .without_time()
-                .finish(),
-        );
-        assert_eq!(format!("{}", part2(input)), expected);
     }
 }
