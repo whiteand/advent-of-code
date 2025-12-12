@@ -1,0 +1,11 @@
+Timer precision: 41 ns
+y25d11    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  244.4 µs      │ 382.4 µs      │ 278.6 µs      │ 276.2 µs      │ 100     │ 100
+╰─ part2  567.3 µs      │ 2.8 ms        │ 607.4 µs      │ 698.7 µs      │ 100     │ 100
+
+FxHashMap
+
+Timer precision: 41 ns
+y25d11    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  177.9 µs      │ 279.7 µs      │ 186.4 µs      │ 191.1 µs      │ 100     │ 100
+╰─ part2  272.7 µs      │ 394.3 µs      │ 287.9 µs      │ 292.5 µs      │ 100     │ 100
