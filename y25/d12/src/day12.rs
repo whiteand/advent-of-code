@@ -71,7 +71,7 @@ impl<'t> VarsHolder<'t> {
     }
 
     fn build_shape_at_position(&mut self, instance: &mut SatInstance) {
-        let mut lits = [Lit::new(0, false); 2000];
+        let mut lits = [Lit::new(0, false); 1750000];
         let mut lits_len = 0;
         for row in 0..(self.task.height - 2) {
             for col in 0..(self.task.width - 2) {
@@ -118,7 +118,6 @@ impl<'t> VarsHolder<'t> {
         // 3 ......
 
         // If a cell is full it means that some shape is present
-
         for r in 0..self.task.height {
             for c in 0..self.task.width {
                 let cell_lit = self.cell_var(r, c);
@@ -139,6 +138,32 @@ impl<'t> VarsHolder<'t> {
                 }
                 instance.add_lit_impl_clause(cell_lit, &lits[..lits_len]);
                 lits_len = 0;
+            }
+        }
+
+        // shape cannot "not touch" something on the left or on the right
+        for (shape_index, n) in self.task.shapes_number.iter().copied().enumerate() {
+            if n == 0 {
+                continue;
+            }
+            let variations = self.shapes.row(shape_index).unwrap();
+            for (r, c, s) in iproduct!(
+                0..(self.task.height - 2),
+                0..(self.task.width - 2),
+                variations.iter()
+            ) {
+                let shape_lit = self.shape_at_position_var(*s, r, c);
+                for (r0, c0) in iproduct!(0..r, 0..c) {
+                    for (sr, sc) in s.iter() {
+                        let cell_r = r0 + sr;
+                        let cell_c = c0 + sc;
+                        let cell_lit = self.cell_var(cell_r, cell_c);
+                        lits[lits_len] = cell_lit;
+                        lits_len += 1;
+                    }
+                    instance.add_lit_impl_clause(shape_lit, &lits[..lits_len]);
+                    lits_len = 0;
+                }
             }
         }
     }
