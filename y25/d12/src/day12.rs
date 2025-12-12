@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use advent_utils::{
     glam::IVec2,
     grid::Grid,
@@ -12,6 +14,11 @@ use advent_utils::{
     },
 };
 use itertools::Itertools;
+use rustsat::{
+    instances::SatInstance,
+    solvers::{Solve, SolverResult},
+    types::{Lit, TernaryVal, Var, constraints::CardConstraint},
+};
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
@@ -29,10 +36,164 @@ pub fn part1(file_content: &str) -> usize {
                 .sum();
             area >= all_shapes_area
         })
-        .filter(|t| can_pack(&shapes, &t))
+        .filter(|t| can_pack2(&shapes, &t))
         .count()
 }
 
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+struct VarDescription {
+    shape: Shape,
+    shape_index: usize,
+    instance_index: usize,
+    row: usize,
+    col: usize,
+}
+
+impl VarDescription {
+    fn instance_id(self) -> usize {
+        (self.instance_index << 9) | self.shape.normalize().bitmask
+    }
+    fn coords(self) -> impl Iterator<Item = (usize, usize)> {
+        let Self { row, col, .. } = self;
+        self.shape.iter().map(move |(r, c)| (row + r, col + c))
+    }
+}
+
+impl PartialOrd for VarDescription {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for VarDescription {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.instance_id()
+            .cmp(&other.instance_id())
+            .then_with(|| self.row.cmp(&other.row))
+            .then_with(|| self.col.cmp(&other.col))
+            .then_with(|| self.shape.bitmask.cmp(&other.shape.bitmask))
+    }
+}
+
+fn can_pack2(shapes: &[Vec<Shape>], task: &Task) -> bool {
+    tracing::info!(
+        "{}x{}: {}",
+        task.width,
+        task.height,
+        task.shapes_number.iter().join(" ")
+    );
+
+    let mut instance: SatInstance = SatInstance::new();
+
+    let mut position_literals = rustc_hash::FxHashMap::<VarDescription, Lit>::default();
+
+    for d in build_var_descriptions(shapes, task) {
+        // tracing::info!(
+        //     "\nShape:\n{:?}\nat [{}, {}]",
+        //     description.shape,
+        //     description.row,
+        //     description.col
+        // );
+        let v = instance.new_lit();
+        // tracing::info!(shape_index = ?d.shape_index, instance_index = ?d.instance_index, dinstance_id = ?d.instance_id());
+        position_literals.insert(d, v);
+    }
+
+    for (_, single_instance_placements) in &position_literals
+        .iter()
+        .sorted_unstable_by_key(|(k, _)| k.instance_id())
+        .chunk_by(|(k, _)| k.instance_id())
+    {
+        // tracing::info!(?k, "Ensuring that only one is present");
+        let vars = single_instance_placements.map(|(_, l)| *l).collect_vec();
+        instance.add_card_constr(CardConstraint::new_eq(vars, 1));
+    }
+
+    for ((a_def, a_lit), (b_def, b_lit)) in position_literals
+        .iter()
+        .map(|(k, v)| (*k, *v))
+        .cartesian_product(position_literals.iter().map(|(k, v)| (*k, *v)))
+        .filter(|((a, _), (b, _))| a.instance_id() != b.instance_id())
+    {
+        if a_def.coords().any(|c| b_def.coords().contains(&c)) {
+            instance.add_card_constr(CardConstraint::new_ub([a_lit, b_lit], 1));
+        }
+    }
+
+    // tracing::info!(?instance, "instance");
+
+    let mut solver = rustsat_kissat::Kissat::default();
+
+    solver.add_cnf(instance.into_cnf().0).unwrap();
+    match solver.solve() {
+        Ok(SolverResult::Sat) => {}
+        res => {
+            tracing::info!(?res, "solve");
+            return false;
+        }
+    };
+
+    let sol = match solver.full_solution() {
+        Ok(res) => res,
+        Err(err) => {
+            tracing::warn!(?err, ?task, "{err:?}");
+            return false;
+        }
+    };
+
+    let mut grid = Grid::new(IVec2::new(task.width as i32, task.height as i32), b'.');
+
+    let mut i = 0;
+    for (d, lit) in position_literals.into_iter() {
+        let val = sol[lit.var()];
+        // tracing::info!(shape_index = ?d.shape_index, instance_id = ?d.instance_index, ?lit, ?val, "var");
+
+        if val == TernaryVal::True {
+            let char = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i];
+            i += 1;
+            set_shape_at(d.shape, &mut grid, d.row, d.col, char, b'.');
+        } else if val == TernaryVal::DontCare {
+            println!("dont care about {:?} at [{}, {}]", d.shape, d.row, d.col);
+        }
+    }
+
+    println!("Grid:\n{}", grid.render_ascii());
+
+    true
+}
+
+fn build_var_descriptions(
+    shapes: &[Vec<Shape>],
+    task: &Task,
+) -> impl Iterator<Item = VarDescription> {
+    let Task { height, width, .. } = task;
+    let height = *height;
+    let width = *width;
+    task.shapes_number
+        .iter()
+        .copied()
+        .enumerate()
+        .flat_map(|(shape_index, n)| {
+            (0..n).map(move |instance_index| (shape_index, instance_index))
+        })
+        .flat_map(move |(shape_index, instance_index)| {
+            (0..height)
+                .cartesian_product(0..width)
+                .flat_map(move |(r, c)| {
+                    shapes[shape_index]
+                        .iter()
+                        .copied()
+                        .filter(move |shape| can_place_in_bounds(*shape, width, height, r, c))
+                        .map(move |shape| VarDescription {
+                            shape,
+                            shape_index,
+                            instance_index,
+                            row: r,
+                            col: c,
+                        })
+                })
+        })
+}
 fn can_pack(shapes: &[Vec<Shape>], task: &Task) -> bool {
     tracing::info!(
         "{}x{}: {}",
@@ -72,13 +233,13 @@ fn can_pack_into_grid(
         for c in 0..grid.cols(r) {
             for shape in last_shape_variations.into_iter().copied() {
                 if can_place_at(shape, grid, r, c) {
-                    set_shape_at(shape, grid, r, c, true);
+                    set_shape_at(shape, grid, r, c, true, false);
                     shapes_numbers[last_shape_index] -= 1;
                     if can_pack_into_grid(shapes, shapes_numbers, grid) {
                         return true;
                     }
                     shapes_numbers[last_shape_index] += 1;
-                    set_shape_at(shape, grid, r, c, false);
+                    set_shape_at(shape, grid, r, c, false, true);
                 }
             }
         }
@@ -87,12 +248,29 @@ fn can_pack_into_grid(
     false
 }
 
-fn set_shape_at(shape: Shape, grid: &mut Grid<bool>, row: usize, col: usize, value: bool) {
+fn set_shape_at<T: Copy + Eq + std::fmt::Debug>(
+    shape: Shape,
+    grid: &mut Grid<T>,
+    row: usize,
+    col: usize,
+    value: T,
+    empty_value: T,
+) {
     for (r, c) in shape.iter() {
-        grid.set_at(row + r, col + c, value);
+        let row = row + r;
+        let col = col + c;
+        assert_eq!(grid.get_copy_at(row, col), Some(empty_value));
+        grid.set_at(row, col, value);
     }
 }
 
+fn can_place_in_bounds(shape: Shape, width: usize, height: usize, row: usize, col: usize) -> bool {
+    shape.iter().all(|(r, c)| {
+        let row = row + r;
+        let col = col + c;
+        (0..width).contains(&col) && (0..height).contains(&row)
+    })
+}
 fn can_place_at(shape: Shape, grid: &Grid<bool>, row: usize, col: usize) -> bool {
     shape
         .iter()
@@ -129,6 +307,10 @@ impl Shape {
         Self { bitmask }
     }
 
+    fn normalize(self) -> Self {
+        self.variations().min_by_key(|f| f.bitmask).unwrap()
+    }
+
     fn flip(self) -> Self {
         (0..3)
             .flat_map(|r| (0..3).map(move |c| (r, c)))
@@ -149,6 +331,7 @@ impl Shape {
             .unique()
     }
 
+    // Iterates over (row, col) of the shape
     fn iter(self) -> impl Iterator<Item = (usize, usize)> {
         (0..3)
             .flat_map(|r| (0..3).map(move |c| (r, c)))

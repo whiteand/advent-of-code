@@ -30,6 +30,9 @@ solve year day:
 
 solve-log year day:
     cat ./y{{year}}/d{{day}}/input.txt | RUST_LOG=info cargo run --release --package y{{year}}d{{day}}
+    
+solve-example-log year day:
+    cat ./y{{year}}/d{{day}}/example.txt | RUST_LOG=info cargo run --release --package y{{year}}d{{day}}
 
 example year day:
     cat ./y{{year}}/d{{day}}/example.txt | cargo run --release --package y{{year}}d{{day}}
