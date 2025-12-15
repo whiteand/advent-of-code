@@ -204,8 +204,6 @@ fn can_pack(shapes: &Grid<Shape>, task: &Task) -> bool {
         .set_configuration(rustsat_kissat::Config::Unsat)
         .unwrap();
 
-    // let mut solver = rustsat_minisat::core::Minisat::default();
-    // let mut solver = rustsat_glucose::core::Glucose::default();
     solver.add_cnf(instance.into_cnf().0).unwrap();
     tracing::info!("solving");
     match solver.solve() {
