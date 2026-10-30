@@ -3,5 +3,6 @@
         "./Cargo.toml",
         "./fuzz/Cargo.toml"
     ],
+    "deno.enable": false,
     "rust-analyzer.check.workspace": false
 }

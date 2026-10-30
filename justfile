@@ -2,16 +2,13 @@
 default:
     just --list
 
-generate year day:
-    /Users/whiteand/.cargo/bin/cargo generate --init --path ./template -d year={{year}} -d day={{day}} --name y{{year}}d{{day}}
-    /opt/homebrew/bin/nu fetch.nu 20{{year}} {{day}};
-    /opt/homebrew/bin/deno --allow-read --allow-write ./scripts/add-member.ts {{year}} {{day}};
-    /usr/local/bin/code ./y{{year}}/d{{day}}/src/day{{day}}.rs
-    /usr/local/bin/code ./y{{year}}/d{{day}}/example.txt
+download-input year day:
+  node --env-file .env ./generator/bin/download-input.ts {{year}} {{day}}
 
-regenerate year day:
-    rm -rf ./y{{year}}/d{{day}}
-    just generate {{year}} {{day}}
+generate year day:
+  node --env-file .env ./generator/bin/generate.ts {{year}} {{day}}
+  /usr/local/bin/cursor ./y{{year}}/d{{day}}/src/day{{day}}.rs
+  /usr/local/bin/cursor ./y{{year}}/d{{day}}/example.txt
 
 amend:
     git add .; git commit --amend --no-edit; git push -f
