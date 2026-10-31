@@ -17,14 +17,14 @@ pub fn part1(file_content: &str) -> usize {
 
     for i in 0..10 {
         make_iteration(&mut elves_positions, i);
-        println!("After {} iteration: ", i + 1);
-        print_positions(&elves_positions);
+        // println!("After {} iteration: ", i + 1);
+        // print_positions(&elves_positions);
     }
 
     get_part1_score(&elves_positions)
 }
 
-fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) {
+fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) -> usize {
     let half_round_actions = elves_positions
         .iter()
         .copied()
@@ -53,7 +53,7 @@ fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) {
                 .take(dirs.len())
             {
                 if !has.contains(&true) {
-                    println!("{} proposes {} (to move into {})", p, dir, p + dir);
+                    // println!("{} proposes {} (to move into {})", p, dir, p + dir);
                     return Some((p, dir));
                 }
             }
@@ -76,10 +76,13 @@ fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) {
         }
     }
 
+    let moves = movements.len();
+
     for (new_p, prev_p) in movements {
         elves_positions.remove(&prev_p);
         elves_positions.insert(new_p);
     }
+    moves
 }
 
 fn get_bounding_box(positions: &HashSet<IVec2>) -> [IVec2; 2] {
@@ -102,18 +105,29 @@ fn get_part1_score(positions: &HashSet<IVec2>) -> usize {
 
 fn print_positions(positions: &HashSet<IVec2>) {
     let [left_top, bottom_right] = get_bounding_box(&positions);
-    print!("  ");
+    let digits_x_len = bottom_right
+        .x
+        .to_string()
+        .len()
+        .max(left_top.x.to_string().len());
+    let digits_y_len = bottom_right
+        .y
+        .to_string()
+        .len()
+        .max(left_top.y.to_string().len());
+
+    print!("{:>digits_y_len$} ", "");
     for x in left_top.x..=bottom_right.x {
-        print!("{}", x);
+        print!("{x:>digits_x_len$}", x = x);
     }
     println!();
     for y in left_top.y..=bottom_right.y {
-        print!("{y} ");
+        print!("{y:>digits_y_len$} ");
         for x in left_top.x..=bottom_right.x {
             if positions.contains(&IVec2 { x, y }) {
-                print!("#");
+                print!("{:>digits_x_len$}", '#');
             } else {
-                print!(".");
+                print!("{:>digits_x_len$}", '.');
             }
         }
         println!();
@@ -122,7 +136,23 @@ fn print_positions(positions: &HashSet<IVec2>) {
 
 #[tracing::instrument(skip(file_content))]
 pub fn part2(file_content: &str) -> usize {
-    file_content.len()
+    let grid = advent_utils::parse::ascii_grid(file_content);
+    let mut elves_positions = grid
+        .entries_copy()
+        .filter(|(_, v)| *v == b'#')
+        .map(|(p, _)| p)
+        .collect::<HashSet<_>>();
+
+    print_positions(&elves_positions);
+
+    for i in 0.. {
+        let moves = make_iteration(&mut elves_positions, i);
+        if moves == 0 {
+            return i + 1;
+        }
+    }
+
+    0
 }
 
 #[cfg(test)]
@@ -143,8 +173,8 @@ mod tests {
         assert_eq!(format!("{}", part1(input)), expected);
     }
     #[rstest]
-    #[case::example(EXAMPLE, "0")]
-    // #[case::actual(ACTUAL, "0")]
+    #[case::example(EXAMPLE, "20")]
+    #[case::actual(ACTUAL, "1021")]
     #[ignore]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
