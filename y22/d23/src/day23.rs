@@ -1,13 +1,12 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use advent_utils::{glam::IVec2, grid::N8};
-use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
     let mut elves_positions = parse_positions(file_content);
 
-    let mut step_maker = StepMaker::default();
+    let mut step_maker = StepMaker::with_capacity(file_content.len());
 
     for i in 0..10 {
         step_maker.make_iteration(&mut elves_positions, i);
@@ -21,7 +20,7 @@ pub fn part1(file_content: &str) -> usize {
 
 fn parse_positions(file_content: &str) -> FxHashSet<IVec2> {
     let mut pos = IVec2::ZERO;
-    let mut res = FxHashSet::default();
+    let mut res = FxHashSet::with_capacity_and_hasher(file_content.len(), Default::default());
     for b in file_content.bytes() {
         match b {
             b'\n' => {
@@ -54,6 +53,16 @@ struct StepMaker {
     half_round_actions: Vec<(IVec2, IVec2)>,
     movements: FxHashMap<IVec2, IVec2>,
     forbidden_positions: FxHashSet<IVec2>,
+}
+
+impl StepMaker {
+    fn with_capacity(cap: usize) -> Self {
+        Self {
+            half_round_actions: Vec::with_capacity(cap),
+            movements: FxHashMap::with_capacity_and_hasher(cap, Default::default()),
+            forbidden_positions: FxHashSet::with_capacity_and_hasher(cap, Default::default()),
+        }
+    }
 }
 
 impl StepMaker {
@@ -105,56 +114,6 @@ impl StepMaker {
     }
 }
 
-fn make_iteration(elves_positions: &mut FxHashSet<IVec2>, iteration: usize) -> usize {
-    let half_round_actions = elves_positions
-        .iter()
-        .copied()
-        .map(|p| {
-            if !N8::neighbours_of(p)
-                .iter()
-                .any(|x| elves_positions.contains(&x))
-            {
-                return None;
-            }
-
-            for side in DIRECTIONS
-                .iter()
-                .cycle()
-                .skip(iteration % DIRECTIONS.len())
-                .take(DIRECTIONS.len())
-            {
-                if side.iter().all(|x| !elves_positions.contains(&(x + p))) {
-                    return Some((p, side[0]));
-                }
-            }
-
-            None
-        })
-        .filter_map(|x| x)
-        .collect_vec();
-
-    let mut movements = FxHashMap::default();
-    let mut forbidden_positions = FxHashSet::default();
-
-    for (prev, dir) in half_round_actions {
-        let new_pos = prev + dir;
-        if movements.contains_key(&new_pos) || forbidden_positions.contains(&new_pos) {
-            movements.remove(&new_pos);
-            forbidden_positions.insert(new_pos);
-        } else {
-            movements.insert(new_pos, prev);
-        }
-    }
-
-    let moves = movements.len();
-
-    for (new_p, prev_p) in movements {
-        elves_positions.remove(&prev_p);
-        elves_positions.insert(new_p);
-    }
-    moves
-}
-
 fn get_bounding_box(positions: &FxHashSet<IVec2>) -> [IVec2; 2] {
     let first = positions.iter().next().copied().unwrap();
     let mut left_top = first;
@@ -171,7 +130,7 @@ fn get_bounding_box(positions: &FxHashSet<IVec2>) -> [IVec2; 2] {
 pub fn part2(file_content: &str) -> usize {
     let mut elves_positions = parse_positions(file_content);
 
-    let mut step_maker = StepMaker::default();
+    let mut step_maker = StepMaker::with_capacity(file_content.len());
 
     for i in 0.. {
         let moves = step_maker.make_iteration(&mut elves_positions, i);
