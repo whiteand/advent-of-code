@@ -791,6 +791,21 @@ impl N8 {
             IVec2::new(-1, 0),
         ]
     }
+
+    pub const fn neighbours_of(p: IVec2) -> [IVec2; 8] {
+        let dirs = Self::directions();
+
+        [
+            IVec2::new(dirs[0].x + p.x, dirs[0].y + p.y),
+            IVec2::new(dirs[1].x + p.x, dirs[1].y + p.y),
+            IVec2::new(dirs[2].x + p.x, dirs[2].y + p.y),
+            IVec2::new(dirs[3].x + p.x, dirs[3].y + p.y),
+            IVec2::new(dirs[4].x + p.x, dirs[4].y + p.y),
+            IVec2::new(dirs[5].x + p.x, dirs[5].y + p.y),
+            IVec2::new(dirs[6].x + p.x, dirs[6].y + p.y),
+            IVec2::new(dirs[7].x + p.x, dirs[7].y + p.y),
+        ]
+    }
 }
 
 impl IntoIterator for N8 {

@@ -1,5 +1,59 @@
+use std::collections::HashSet;
+
+use advent_utils::{glam::IVec2, grid::N8};
+use itertools::Itertools;
+
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
+    let grid = advent_utils::parse::ascii_grid(file_content);
+    println!("{}", grid.render_ascii());
+    let elves_positions = grid
+        .entries_copy()
+        .filter(|(_, v)| *v == b'#')
+        .map(|(p, _)| p)
+        .collect::<HashSet<_>>();
+
+    let iteration = 0;
+
+    let half_round_actions = elves_positions
+        .iter()
+        .copied()
+        .map(|p| {
+            let neighbours = N8::neighbours_of(p).map(|x| elves_positions.contains(&x));
+
+            // If no other Elves are in one of those eight positions,
+            // the Elf does not do anything during this round.
+            if !neighbours.contains(&true) {
+                return None;
+            }
+            let [nw, n, ne, w, e, sw, s, se] = neighbours;
+
+            let dirs = [
+                ([n, ne, nw], IVec2::NEG_Y),
+                ([s, se, sw], IVec2::Y),
+                ([w, nw, sw], IVec2::NEG_X),
+                ([e, ne, se], IVec2::X),
+            ];
+
+            for (has, dir) in dirs
+                .iter()
+                .cycle()
+                .copied()
+                .skip(iteration % dirs.len())
+                .take(dirs.len())
+            {
+                if !has.contains(&true) {
+                    return Some((p, dir));
+                }
+            }
+
+            None
+        })
+        .filter_map(|x| x)
+        .collect_vec();
+
+    println!("{half_round_actions:?}");
+
     file_content.len()
 }
 #[tracing::instrument(skip(file_content))]
