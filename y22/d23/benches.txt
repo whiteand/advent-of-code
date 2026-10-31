@@ -8,3 +8,17 @@ Timer precision: 41 ns
 y22d23    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  2.918 ms      │ 3.224 ms      │ 2.962 ms      │ 2.981 ms      │ 100     │ 100
 ╰─ part2  270 ms        │ 302.4 ms      │ 272 ms        │ 272.7 ms      │ 100     │ 100
+
+After parsing update:
+
+Timer precision: 41 ns
+y22d23    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  2.985 ms      │ 3.425 ms      │ 3.045 ms      │ 3.053 ms      │ 100     │ 100
+╰─ part2  301.3 ms      │ 311.8 ms      │ 302.6 ms      │ 303 ms        │ 100     │ 100
+
+After step maker:
+
+Timer precision: 41 ns
+y22d23    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  2.861 ms      │ 3.262 ms      │ 2.898 ms      │ 2.933 ms      │ 100     │ 100
+╰─ part2  302.1 ms      │ 332.1 ms      │ 303.3 ms      │ 305.3 ms      │ 100     │ 100
