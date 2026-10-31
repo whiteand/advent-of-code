@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use advent_utils::{glam::IVec2, grid::N8};
 use itertools::Itertools;
@@ -6,55 +6,45 @@ use itertools::Itertools;
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {
     let grid = advent_utils::parse::ascii_grid(file_content);
-    println!("{}", grid.render_ascii());
     let mut elves_positions = grid
         .entries_copy()
         .filter(|(_, v)| *v == b'#')
         .map(|(p, _)| p)
-        .collect::<HashSet<_>>();
-
-    print_positions(&elves_positions);
+        .collect::<FxHashSet<_>>();
 
     for i in 0..10 {
         make_iteration(&mut elves_positions, i);
-        // println!("After {} iteration: ", i + 1);
-        // print_positions(&elves_positions);
     }
 
     get_part1_score(&elves_positions)
 }
 
-fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) -> usize {
+const DIRECTIONS: [[IVec2; 3]; 4] = [
+    [IVec2::new(0, -1), IVec2::new(-1, -1), IVec2::new(1, -1)],
+    [IVec2::new(0, 1), IVec2::new(-1, 1), IVec2::new(1, 1)],
+    [IVec2::new(-1, 0), IVec2::new(-1, -1), IVec2::new(-1, 1)],
+    [IVec2::new(1, 0), IVec2::new(1, -1), IVec2::new(1, 1)],
+];
+fn make_iteration(elves_positions: &mut FxHashSet<IVec2>, iteration: usize) -> usize {
     let half_round_actions = elves_positions
         .iter()
         .copied()
         .map(|p| {
-            let neighbours = N8::neighbours_of(p).map(|x| elves_positions.contains(&x));
-
-            // If no other Elves are in one of those eight positions,
-            // the Elf does not do anything during this round.
-            if !neighbours.contains(&true) {
+            if !N8::neighbours_of(p)
+                .iter()
+                .any(|x| elves_positions.contains(&x))
+            {
                 return None;
             }
-            let [nw, n, ne, e, se, s, sw, w] = neighbours;
 
-            let dirs = [
-                ([n, ne, nw], IVec2::NEG_Y),
-                ([s, se, sw], IVec2::Y),
-                ([w, nw, sw], IVec2::NEG_X),
-                ([e, ne, se], IVec2::X),
-            ];
-
-            for (has, dir) in dirs
+            for side in DIRECTIONS
                 .iter()
                 .cycle()
-                .copied()
-                .skip(iteration % dirs.len())
-                .take(dirs.len())
+                .skip(iteration % DIRECTIONS.len())
+                .take(DIRECTIONS.len())
             {
-                if !has.contains(&true) {
-                    // println!("{} proposes {} (to move into {})", p, dir, p + dir);
-                    return Some((p, dir));
+                if side.iter().all(|x| !elves_positions.contains(&(x + p))) {
+                    return Some((p, side[0]));
                 }
             }
 
@@ -63,8 +53,8 @@ fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) -> usi
         .filter_map(|x| x)
         .collect_vec();
 
-    let mut movements = HashMap::new();
-    let mut forbidden_positions = HashSet::new();
+    let mut movements = FxHashMap::default();
+    let mut forbidden_positions = FxHashSet::default();
 
     for (prev, dir) in half_round_actions {
         let new_pos = prev + dir;
@@ -85,7 +75,7 @@ fn make_iteration(elves_positions: &mut HashSet<IVec2>, iteration: usize) -> usi
     moves
 }
 
-fn get_bounding_box(positions: &HashSet<IVec2>) -> [IVec2; 2] {
+fn get_bounding_box(positions: &FxHashSet<IVec2>) -> [IVec2; 2] {
     let first = positions.iter().next().copied().unwrap();
     let mut left_top = first;
     let mut bottom_right = first;
@@ -97,41 +87,10 @@ fn get_bounding_box(positions: &HashSet<IVec2>) -> [IVec2; 2] {
     [left_top, bottom_right]
 }
 
-fn get_part1_score(positions: &HashSet<IVec2>) -> usize {
+fn get_part1_score(positions: &FxHashSet<IVec2>) -> usize {
     let [left_top, bottom_right] = get_bounding_box(positions);
     let total_area = ((bottom_right - left_top) + IVec2::new(1, 1)).element_product() as usize;
     total_area - positions.len()
-}
-
-fn print_positions(positions: &HashSet<IVec2>) {
-    let [left_top, bottom_right] = get_bounding_box(&positions);
-    let digits_x_len = bottom_right
-        .x
-        .to_string()
-        .len()
-        .max(left_top.x.to_string().len());
-    let digits_y_len = bottom_right
-        .y
-        .to_string()
-        .len()
-        .max(left_top.y.to_string().len());
-
-    print!("{:>digits_y_len$} ", "");
-    for x in left_top.x..=bottom_right.x {
-        print!("{x:>digits_x_len$}", x = x);
-    }
-    println!();
-    for y in left_top.y..=bottom_right.y {
-        print!("{y:>digits_y_len$} ");
-        for x in left_top.x..=bottom_right.x {
-            if positions.contains(&IVec2 { x, y }) {
-                print!("{:>digits_x_len$}", '#');
-            } else {
-                print!("{:>digits_x_len$}", '.');
-            }
-        }
-        println!();
-    }
 }
 
 #[tracing::instrument(skip(file_content))]
@@ -141,9 +100,7 @@ pub fn part2(file_content: &str) -> usize {
         .entries_copy()
         .filter(|(_, v)| *v == b'#')
         .map(|(p, _)| p)
-        .collect::<HashSet<_>>();
-
-    print_positions(&elves_positions);
+        .collect::<FxHashSet<_>>();
 
     for i in 0.. {
         let moves = make_iteration(&mut elves_positions, i);
@@ -163,7 +120,7 @@ mod tests {
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
     #[case::example(EXAMPLE, "110")]
-    #[case::actual(ACTUAL, "0")]
+    #[case::actual(ACTUAL, "4049")]
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -175,7 +132,6 @@ mod tests {
     #[rstest]
     #[case::example(EXAMPLE, "20")]
     #[case::actual(ACTUAL, "1021")]
-    #[ignore]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

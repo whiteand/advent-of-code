@@ -1,0 +1,10 @@
+y22d23    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  5.734 ms      │ 6.235 ms      │ 5.899 ms      │ 5.91 ms       │ 100     │ 100
+╰─ part2  530.3 ms      │ 682.9 ms      │ 613.8 ms      │ 611 ms        │ 100     │ 100
+
+After replacing DIr with DIRECTIONS, and usageo of fxhash
+
+Timer precision: 41 ns
+y22d23    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  2.918 ms      │ 3.224 ms      │ 2.962 ms      │ 2.981 ms      │ 100     │ 100
+╰─ part2  270 ms        │ 302.4 ms      │ 272 ms        │ 272.7 ms      │ 100     │ 100
