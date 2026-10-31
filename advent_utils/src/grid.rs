@@ -542,6 +542,15 @@ impl<T> Grid<T> {
     }
     /// Iterates all cells in order of (0..rows).flatMap(|r| (0..cols))
     #[inline(always)]
+    pub fn entries_mut(&mut self) -> impl Iterator<Item = (IVec2, &mut T)> + '_ {
+        let row_start = &self.row_start_indexes;
+        let n = self.arr.len();
+        let coords_it = CoordsIter::new(row_start, n);
+
+        coords_it.zip(self.arr.iter_mut())
+    }
+    /// Iterates all cells in order of (0..rows).flatMap(|r| (0..cols))
+    #[inline(always)]
     pub fn entries_copy(&self) -> impl Iterator<Item = (IVec2, T)> + '_
     where
         T: Copy,
@@ -749,6 +758,17 @@ impl NonDiagonal {
             _ => "?",
         }
     }
+
+    pub fn try_from_ascii_char(char: u8) -> Option<IVec2> {
+        match char {
+            b'v' => Some(IVec2::new(0, 1)),
+            b'^' => Some(IVec2::new(0, -1)),
+            b'>' => Some(IVec2::new(1, 0)),
+            b'<' => Some(IVec2::new(-1, 0)),
+            _ => None,
+        }
+    }
+
     pub fn to_ascii_char(dir: IVec2) -> u8 {
         match (dir.x, dir.y) {
             (0, 1) => b'v',
