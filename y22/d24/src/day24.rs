@@ -1,13 +1,10 @@
-use std::{
-    collections::{HashSet, VecDeque},
-    ops::Deref,
-};
+use std::{collections::VecDeque, ops::Deref};
 
 use advent_utils::{
     glam::IVec2,
     grid::{Grid, NonDiagonal},
 };
-use itertools::Itertools;
+use rustc_hash::FxHashSet;
 
 #[derive(Clone, Default)]
 struct Map {
@@ -275,12 +272,22 @@ fn parse_map(file_content: &str) -> Map {
 pub fn part1(file_content: &str) -> usize {
     let map = parse_map(file_content);
     let initial_state = map.at(0).placed(IVec2 { x: 1, y: 0 });
-    let mut temp_pos = initial_state.alloc_pos();
+    let t_mod = ((map.size.x - 2) * (map.size.y - 2)) as usize;
+    let positions = (0usize..t_mod)
+        .map(|i| {
+            let mut positions = initial_state.alloc_pos();
+            initial_state
+                .map
+                .at(i as usize)
+                .get_wind_positions(&mut positions);
+            positions
+        })
+        .collect::<Vec<_>>();
     let mut opt_pos = Vec::new();
 
     let mut queue = VecDeque::new();
 
-    let mut visited: HashSet<(usize, IVec2)> = Default::default();
+    let mut visited: FxHashSet<(usize, IVec2)> = Default::default();
 
     queue.push_back(initial_state);
 
@@ -295,7 +302,7 @@ pub fn part1(file_content: &str) -> usize {
         // println!("{}", s);
         let next_tick_state = s.next_tick();
         // println!("Next:\n{}", next_tick_state);
-        next_tick_state.get_wind_positions(&mut temp_pos);
+        let temp_pos = &positions[next_tick_state.t % t_mod];
         opt_pos.extend(
             NonDiagonal::directions()
                 .map(|d| d + s.pos)
@@ -307,7 +314,11 @@ pub fn part1(file_content: &str) -> usize {
         opt_pos.retain(|x| !temp_pos.contains(x));
 
         for new_pos in opt_pos.drain(..) {
-            queue.push_back(next_tick_state.with_pos(new_pos));
+            let next_state = next_tick_state.with_pos(new_pos);
+            if visited.contains(&next_state.key()) {
+                continue;
+            }
+            queue.push_back(next_state);
         }
     }
 
@@ -318,12 +329,24 @@ pub fn part1(file_content: &str) -> usize {
 pub fn part2(file_content: &str) -> usize {
     let map = parse_map(file_content);
     let initial_state = map.at(0).placed(IVec2 { x: 1, y: 0 }).with_goal(0);
-    let mut temp_pos = initial_state.alloc_pos();
+    let t_mod = ((map.size.x - 2) * (map.size.y - 2)) as usize;
+
+    let positions = (0usize..t_mod)
+        .map(|i| {
+            let mut positions = initial_state.alloc_pos();
+            initial_state
+                .map
+                .at(i as usize)
+                .get_wind_positions(&mut positions);
+            positions
+        })
+        .collect::<Vec<_>>();
+
     let mut opt_pos = Vec::new();
 
     let mut queue = VecDeque::new();
 
-    let mut visited: HashSet<(usize, IVec2)> = Default::default();
+    let mut visited: FxHashSet<(usize, IVec2)> = Default::default();
 
     queue.push_back(initial_state);
 
@@ -345,7 +368,7 @@ pub fn part2(file_content: &str) -> usize {
         // println!("{}", s);
         let next_tick_state = s.next_tick();
         // println!("Next:\n{}", next_tick_state);
-        next_tick_state.get_wind_positions(&mut temp_pos);
+
         opt_pos.extend(
             NonDiagonal::directions()
                 .map(|d| d + s.pos)
@@ -353,6 +376,8 @@ pub fn part2(file_content: &str) -> usize {
                 .filter(|p| !next_tick_state.is_wall(*p))
                 .chain(std::iter::once(s.pos)),
         );
+
+        let temp_pos = &positions[next_tick_state.t % t_mod];
 
         opt_pos.retain(|x| !temp_pos.contains(x));
 
@@ -372,7 +397,7 @@ mod tests {
     const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
     #[case::example(EXAMPLE, "18")]
-    #[case::actual(ACTUAL, "0")]
+    // #[case::actual(ACTUAL, "277")]
     fn test_part1(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
@@ -382,9 +407,8 @@ mod tests {
         assert_eq!(format!("{}", part1(input)), expected);
     }
     #[rstest]
-    #[case::example(EXAMPLE, "0")]
-    // #[case::actual(ACTUAL, "0")]
-    #[ignore]
+    #[case::example(EXAMPLE, "54")]
+    #[case::actual(ACTUAL, "877")]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
