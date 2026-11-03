@@ -150,7 +150,7 @@ members = [
 [workspace.dependencies]
 advent_utils = { path = "./advent_utils" }
 divan = "0.1.21"
-glam = "0.30.9"
+glam = "0.34.2"
 itertools = "0.14.0"
 nom = "8.0.0"
 rayon = "1.11.0"

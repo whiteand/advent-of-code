@@ -9,7 +9,7 @@ dependencies = [
  "array-init",
  "derive_more",
  "fixed-slice-vec",
- "glam 0.30.9",
+ "glam 0.34.2",
  "itertools 0.14.0",
  "mockalloc",
  "nom 8.0.0",
@@ -683,9 +683,9 @@ checksum = "151665d9be52f9bb40fc7966565d39666f2d1e69233571b71b87791c7e0528b3"
 
 [[package]]
 name = "glam"
-version = "0.30.9"
+version = "0.34.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd47b05dddf0005d850e5644cae7f2b14ac3df487979dbfff3b56f20b1a6ae46"
+checksum = "54af5066834d6c2d404eb26ea036a15b15d9ff80db510b9a73ff95ab07f30831"
 
 [[package]]
 name = "glob"
@@ -3274,7 +3274,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "glam 0.30.9",
+ "glam 0.34.2",
  "itertools 0.14.0",
  "tracing",
  "tracing-subscriber",
@@ -3318,7 +3318,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "glam 0.30.9",
+ "glam 0.34.2",
  "itertools 0.14.0",
  "tracing",
  "tracing-subscriber",
