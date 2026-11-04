@@ -6,9 +6,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 ## Replace
 
-- [ ] **Replace `fxhash` with `rustc-hash`.** [RUSTSEC-2025-0057](https://rustsec.org/advisories/RUSTSEC-2025-0057) marks `fxhash` unmaintained. Last release is `0.2.1` from 2017. `rustc-hash` 2.1 is already used in `y22/d23`, `y22/d24`, `y25/d11`, and `y25/d12`. Add `rustc-hash = "2.1"` to `[workspace.dependencies]` and switch the call sites from `fxhash::FxHashMap` / `FxHashSet` to `rustc_hash::`. The 2.x hasher is a different function than `fxhash`; that only matters if a solution depends on map iteration order.
-  - In use: `y16/d24`, `y17/d03`, `y17/d04`, `y17/d06`, `y17/d07`, `y22/d21`, `y24/d21`, `y24/d23`, `y24/d24`
-  - Declared and unused, so delete the dependency: `y24/d22`, `y25/d07`, `y25/d08`, `y25/d09`
+- [x] **Replace `fxhash` with `rustc-hash`.** `rustc-hash` 2.1.3 is a workspace dependency. Call sites use `rustc_hash::FxHashMap` / `FxHashSet`. Unused `fxhash` pins were removed from `y24/d22`, `y25/d07`, `y25/d08`, and `y25/d09`.
 
 - [ ] **Use `md-5` everywhere instead of `md5`.** Both crates are maintained. `md-5` (RustCrypto) is the one the rest of the ecosystem uses, and `y15/d04` already depends on it. Bump that pin from `0.10.5` to `0.11`. Rewrite `y16/d14` (`md5::Context`, `md5::Digest`) and `y16/d17` (`md5::compute`) onto `Md5` + the `Digest` trait (`Md5::new` / `update` / `finalize`, or `Md5::digest`).
 

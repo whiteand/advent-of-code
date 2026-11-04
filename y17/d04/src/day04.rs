@@ -1,4 +1,4 @@
-use fxhash::FxHashSet;
+use rustc_hash::FxHashSet;
 use itertools::Itertools;
 
 #[tracing::instrument(skip(file_content))]

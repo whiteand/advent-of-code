@@ -13,7 +13,6 @@ tracing-chrome.workspace = true
 rayon = "1.11.0"
 tracing-subscriber.workspace = true
 tracing.workspace = true
-fxhash = "0.1.2"
 derive_more = { version = "2.0", default-features = false, features = [
     "constructor",
 ] }

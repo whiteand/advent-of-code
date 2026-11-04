@@ -265,7 +265,7 @@ fn move_from_to(a: IVec2, b: IVec2) -> RobotTask {
     }
 }
 
-type Cache = fxhash::FxHashMap<(usize, usize), usize>;
+type Cache = rustc_hash::FxHashMap<(usize, usize), usize>;
 
 fn min_steps_for_code<const ROBOTS: usize>(code: &str, cache: &mut Cache) -> usize {
     get_possible_trajectories(code)

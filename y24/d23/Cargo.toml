@@ -12,7 +12,7 @@ tracing-subscriber.workspace = true
 tracing.workspace = true
 tracing-chrome.workspace = true
 petgraph = "0.6.5"
-fxhash = "0.2.1"
+rustc-hash.workspace = true
 disjoint = "0.8.0"
 pathfinding = "4.12.0"
 

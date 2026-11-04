@@ -16,7 +16,6 @@ derive_more = { version = "2.1.0", features = [
     "is_variant",
     "as_ref",
 ], default-features = false }
-fxhash = "0.1.2"
 tracing.workspace = true
 
 [dev-dependencies]

@@ -11,7 +11,7 @@ itertools.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 tracing-chrome.workspace = true
-fxhash = "0.2.1"
+rustc-hash.workspace = true
 petgraph = "0.6.5"
 
 [dev-dependencies]

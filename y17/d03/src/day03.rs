@@ -1,5 +1,5 @@
 use advent_utils::{glam::IVec2, grid::N8};
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {

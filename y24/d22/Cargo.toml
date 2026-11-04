@@ -11,7 +11,6 @@ itertools.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 tracing-chrome.workspace = true
-fxhash = "0.2.1"
 
 [dev-dependencies]
 divan.workspace = true

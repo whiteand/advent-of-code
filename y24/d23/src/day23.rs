@@ -56,7 +56,7 @@ pub fn part1(file_content: &str) -> usize {
     let computers = connections
         .iter()
         .flat_map(|(a, b)| [*a, *b])
-        .collect::<fxhash::FxHashSet<_>>();
+        .collect::<rustc_hash::FxHashSet<_>>();
 
     let graph: UnGraph<NodeIndex<usize>, (), usize> =
         UnGraph::from_edges(connections.iter().copied());
@@ -94,7 +94,7 @@ pub fn part2(file_content: &str) -> String {
     let computers = connections
         .iter()
         .flat_map(|(a, b)| [*a, *b])
-        .collect::<fxhash::FxHashSet<_>>();
+        .collect::<rustc_hash::FxHashSet<_>>();
 
     let graph: UnGraph<Computer, (), usize> = UnGraph::from_edges(connections.iter().copied());
 

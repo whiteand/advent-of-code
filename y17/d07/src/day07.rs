@@ -10,7 +10,7 @@ use advent_utils::nom::{
     sequence::{delimited, preceded},
     Parser,
 };
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, prelude::DiGraph, visit::EdgeRef};
 

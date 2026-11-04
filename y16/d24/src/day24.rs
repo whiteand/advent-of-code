@@ -1,5 +1,5 @@
 use advent_utils::{glam::IVec2, grid::NonDiagonal, parse};
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use tracing::info;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

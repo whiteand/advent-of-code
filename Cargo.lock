@@ -150,12 +150,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "572f695136211188308f16ad2ca5c851a712c464060ae6974944458eb83880ba"
 
 [[package]]
-name = "byteorder"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -622,24 +616,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "fxhash"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbaa85082d0b5db04eee920246bb37313153ec6aeb10374ab5d031b99812ea75"
-dependencies = [
- "byteorder",
-]
-
-[[package]]
-name = "fxhash"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
-dependencies = [
- "byteorder",
 ]
 
 [[package]]
@@ -1384,9 +1360,9 @@ dependencies = [
 
 [[package]]
 name = "rustc-hash"
-version = "2.1.1"
+version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+checksum = "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d"
 
 [[package]]
 name = "rustc_version"
@@ -2543,10 +2519,10 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "pathfinding",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2597,9 +2573,9 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2611,9 +2587,9 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2638,9 +2614,9 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2652,10 +2628,10 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "petgraph 0.6.5",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2979,10 +2955,10 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.1.2",
  "itertools 0.15.0",
  "petgraph 0.8.3",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3542,9 +3518,9 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "rstest 0.28.0",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3556,7 +3532,6 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
@@ -3570,10 +3545,10 @@ dependencies = [
  "advent_utils",
  "disjoint",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "pathfinding",
  "petgraph 0.6.5",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3585,9 +3560,9 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.2.1",
  "itertools 0.15.0",
  "petgraph 0.6.5",
+ "rustc-hash",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3690,7 +3665,6 @@ dependencies = [
  "advent_utils",
  "derive_more",
  "divan",
- "fxhash 0.1.2",
  "itertools 0.15.0",
  "rstest 0.28.0",
  "tracing",
@@ -3705,7 +3679,6 @@ dependencies = [
  "advent_utils",
  "derive_more",
  "divan",
- "fxhash 0.1.2",
  "itertools 0.15.0",
  "rayon",
  "rstest 0.28.0",
@@ -3720,7 +3693,6 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "fxhash 0.1.2",
  "itertools 0.15.0",
  "rstest 0.28.0",
  "tracing",

@@ -14,7 +14,7 @@ tracing-subscriber.workspace = true
 tracing.workspace = true
 
 petgraph = "0.6.5"
-fxhash = "0.2.1"
+rustc-hash.workspace = true
 
 [dev-dependencies]
 divan.workspace = true

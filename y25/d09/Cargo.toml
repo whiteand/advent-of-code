@@ -12,7 +12,6 @@ rstest.workspace = true
 tracing-chrome.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
-fxhash = "0.1.2"
 
 [dev-dependencies]
 divan.workspace = true

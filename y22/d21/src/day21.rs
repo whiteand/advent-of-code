@@ -1,5 +1,5 @@
 use advent_utils::nom::{self, Parser};
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use itertools::Itertools;
 use petgraph::{
     graph::DiGraph,
@@ -195,7 +195,7 @@ fn parse_graph_and_nodes(file_content: &str) -> (Vec<Node<'_>>, DiGraph<&'_ str,
     let nodes = parse_nodes(file_content).map(|x| x.1).unwrap();
     let mut graph = DiGraph::new();
     let graph_nodes =
-        fxhash::FxHashMap::from_iter(nodes.iter().map(|n| (n.name, graph.add_node(n.name))));
+        rustc_hash::FxHashMap::from_iter(nodes.iter().map(|n| (n.name, graph.add_node(n.name))));
 
     for n in nodes.iter() {
         let n_node = graph_nodes.get(n.name).copied().unwrap();
@@ -211,7 +211,7 @@ fn parse_graph_and_nodes(file_content: &str) -> (Vec<Node<'_>>, DiGraph<&'_ str,
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> isize {
-    let mut values = fxhash::FxHashMap::default();
+    let mut values = rustc_hash::FxHashMap::default();
 
     let (nodes, graph) = parse_graph_and_nodes(file_content);
 
@@ -227,7 +227,7 @@ pub fn part2(file_content: &str) -> isize {
     let (left_node, right_node) = root_node.value.dependencies().collect_tuple().unwrap();
     let left_calculator = ValueCalculator::build(left_node, &nodes, &graph);
     let right_calculator = ValueCalculator::build(right_node, &nodes, &graph);
-    let mut values = fxhash::FxHashMap::default();
+    let mut values = rustc_hash::FxHashMap::default();
     for i in 0isize.. {
         // tracing::info!(?i, "setting humn");
         values.clear();
