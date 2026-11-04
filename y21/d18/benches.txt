@@ -9,3 +9,10 @@ y21d18    fastest       │ slowest       │ median        │ mean          �
 21d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  973.7 µs      │ 1.363 ms      │ 990.3 µs      │ 1.004 ms      │ 100     │ 100
 ╰─ part2  16.2 ms       │ 20.7 ms       │ 16.32 ms      │ 16.45 ms      │ 100     │ 100
+
+# After Box::leak usage
+
+Timer precision: 41 ns
+y21d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  2.725 ms      │ 2.958 ms      │ 2.781 ms      │ 2.789 ms      │ 100     │ 100
+╰─ part2  36.87 ms      │ 39.7 ms       │ 37.86 ms      │ 37.83 ms      │ 100     │ 100
