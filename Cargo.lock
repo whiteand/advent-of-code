@@ -7,7 +7,6 @@ name = "advent_utils"
 version = "0.1.0"
 dependencies = [
  "derive_more",
- "fixed-slice-vec",
  "glam 0.34.2",
  "itertools 0.15.0",
  "mockalloc",
@@ -76,6 +75,12 @@ name = "arbitrary"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dde20b3d026af13f561bdd0f15edf01fc734f0dafcedbaf42bba506a9517f223"
+
+[[package]]
+name = "arrayvec"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56"
 
 [[package]]
 name = "autocfg"
@@ -491,12 +496,6 @@ name = "find-msvc-tools"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a3076410a55c90011c298b04d0cfa770b00fa04e1e3c97d3f6c9de105a03844"
-
-[[package]]
-name = "fixed-slice-vec"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bb23c599a9ff5b981529099902fe5de8d55ecc8c1f451542da17b8d2d65326e"
 
 [[package]]
 name = "fixedbitset"
@@ -3442,6 +3441,7 @@ name = "y24d15"
 version = "0.1.0"
 dependencies = [
  "advent_utils",
+ "arrayvec",
  "divan",
  "itertools 0.15.0",
  "rstest 0.28.0",

@@ -12,7 +12,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **Drop `array-init`.** `solve_system` builds `[&mut [Rat]; EQS]` with `[T; N]::each_mut()`.
 
-- [ ] **Replace `fixed-slice-vec` with `arrayvec` when `vec_on_stack!` is next touched.** `fixed-slice-vec` `0.10.0` (August 2022) backs that macro, which is used only in `y24/d15/src/lib.rs`. `arrayvec` is the usual stack-allocated vec. Leave it until that code changes.
+- [x] **Replace `fixed-slice-vec` with `arrayvec`.** `y24/d15` stores the horizontal box chain in `ArrayVec<usize, 5>`. The `vec_on_stack!` macro is gone.
 
 ## Bump
 

@@ -4,7 +4,6 @@ mod binary_search;
 pub mod bitfield;
 pub mod disjoint_set;
 pub mod doubly_linked_list;
-pub mod fixed_slice_vec;
 pub mod genetic;
 pub mod grid;
 pub mod immutable_lists;

@@ -1,4 +1,5 @@
-use advent_utils::{glam::IVec2, grid::Grid, parse, vec_on_stack};
+use advent_utils::{glam::IVec2, grid::Grid, parse};
+use arrayvec::ArrayVec;
 use itertools::Itertools;
 use std::collections::{HashMap, VecDeque};
 
@@ -103,9 +104,7 @@ impl LargeGrid {
         if m.y == 0 {
             let mut p = self.player + m;
 
-            vec_on_stack! {
-                let (mut boxes_to_move: Vec<usize>, mut slice) = Vec::with_capacity(5);
-            }
+            let mut boxes_to_move = ArrayVec::<usize, 5>::new();
 
             while let Some(e) = self.get(p) {
                 if let Entity::Box(id) = e {
