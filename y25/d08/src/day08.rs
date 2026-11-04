@@ -50,8 +50,8 @@ fn parse_and_prepare(input: &str) -> (Vec<I64Vec3>, DisjointSets, BinaryHeap<Pos
 
     let mut possible_connections = BinaryHeap::with_capacity(points.len() * (points.len() - 1) / 2);
 
-    possible_connections.extend(points.iter().copied().enumerate().tuple_combinations().map(
-        |((i, p1), (j, p2))| PossibleConnection {
+    possible_connections.extend(points.iter().copied().enumerate().array_combinations().map(
+        |[(i, p1), (j, p2)]| PossibleConnection {
             i,
             j,
             distance_squared: p1.distance_squared(p2),

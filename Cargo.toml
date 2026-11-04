@@ -153,13 +153,13 @@ divan = "0.1.21"
 glam = "0.34.2"
 itertools = "0.15.0"
 nom = "8.0.0"
-rayon = "1.11.0"
-regex = "1.12.2"
-rstest = "0.26.1"
-smallvec = "1.15.1"
-tracing = "0.1.43"
+rayon = "1.12.0"
+regex = "1.13.1"
+rstest = "0.28.0"
+smallvec = "1.16.4"
+tracing = "0.1.44"
 tracing-chrome = "0.7.2"
-tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
 [profile.ci]
 inherits = "test"

@@ -14,7 +14,7 @@ dependencies = [
  "mockalloc",
  "nom 8.0.0",
  "rand",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "thiserror",
  "tracing",
 ]
@@ -731,6 +731,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.17.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+
+[[package]]
 name = "hermit-abi"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -788,12 +794,12 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.6.0"
+version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "707907fe3c25f5424cce2cb7e1cbcafee6bdbe735ca90ef77c29e84591e5b9da"
+checksum = "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855"
 dependencies = [
  "equivalent",
- "hashbrown",
+ "hashbrown 0.17.1",
 ]
 
 [[package]]
@@ -1127,7 +1133,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
 dependencies = [
  "fixedbitset 0.5.7",
- "hashbrown",
+ "hashbrown 0.15.1",
  "indexmap",
  "serde",
 ]
@@ -1190,18 +1196,18 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-crate"
-version = "3.2.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ecf48c7ca261d60b74ab1a7b20da18bede46776b2e55535cb958eb595c5fa7b"
+checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
 dependencies = [
  "toml_edit",
 ]
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.89"
+version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f139b0662de085916d1fb67d2b4169d1addddda1919e696f3252b740b629986e"
+checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
 ]
@@ -1259,9 +1265,9 @@ checksum = "60a357793950651c4ed0f3f52338f53b2f809f32d83a07f72909fa13e4c6c1e3"
 
 [[package]]
 name = "rayon"
-version = "1.11.0"
+version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f"
+checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
 dependencies = [
  "either",
  "rayon-core",
@@ -1279,9 +1285,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.2"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
+checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1291,9 +1297,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.13"
+version = "0.4.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5276caf25ac86c8d810222b3dbb938e512c55c6831a10f3e6ed1c93b84041f1c"
+checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1308,9 +1314,9 @@ checksum = "53a49587ad06b26609c52e423de037e7f57f20d53535d66e08c695f347df952a"
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.5"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "relative-path"
@@ -1332,13 +1338,13 @@ dependencies = [
 
 [[package]]
 name = "rstest"
-version = "0.26.1"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5a3193c063baaa2a95a33f03035c8a72b83d97a54916055ba22d35ed3839d49"
+checksum = "b376e512f30a7686a8dbc6aeaace99b3ade1c26c1c63473473a817ade226dafc"
 dependencies = [
  "futures-timer",
  "futures-util",
- "rstest_macros 0.26.1",
+ "rstest_macros 0.28.0",
 ]
 
 [[package]]
@@ -1360,9 +1366,9 @@ dependencies = [
 
 [[package]]
 name = "rstest_macros"
-version = "0.26.1"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c845311f0ff7951c5506121a9ad75aec44d083c31583b2ea5a30bcb0b0abba0"
+checksum = "88512dbfb5b73a0dfa38aef7bc73b5657035fce477b923faf12d332dd83051ea"
 dependencies = [
  "cfg-if",
  "glob",
@@ -1483,22 +1489,32 @@ checksum = "836fa6a3e1e547f9a2c4040802ec865b5d85f4014efe00555d7090a3dcaa1090"
 
 [[package]]
 name = "serde"
-version = "1.0.215"
+version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6513c1ad0b11a9376da888e3e0baa0077f1aed55c17f50e7b2397136129fb88f"
+checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
+dependencies = [
+ "serde_core",
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_core"
+version = "1.0.229"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67dca2c9c51e58a4791a4b1ed58308b39c64224d349a935ab5039aa360942a48"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.215"
+version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad1e866f866923f252f05c889987993144fb74e722403468a4ebd70c3cd756c0"
+checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.87",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -1551,9 +1567,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.15.1"
+version = "1.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+checksum = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8"
 
 [[package]]
 name = "syn"
@@ -1571,6 +1587,17 @@ name = "syn"
 version = "2.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25aa4ce346d03a6dcd68dd8b4010bcb74e54e62c90c573f394c46eae99aba32d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
+version = "3.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1642,26 +1669,39 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.8"
+version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
+checksum = "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+dependencies = [
+ "serde_core",
+]
 
 [[package]]
 name = "toml_edit"
-version = "0.22.22"
+version = "0.25.17+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ae48d6208a266e853d946088ed816055e556cc6028c5e8e2b84d9fa5dd7c7f5"
+checksum = "e3641d5bbb5349a79e1020a242d251efbc546ad8048d133958323ce9c40a9c9c"
 dependencies = [
  "indexmap",
  "toml_datetime",
+ "toml_parser",
+ "winnow",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.1.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
+dependencies = [
  "winnow",
 ]
 
 [[package]]
 name = "tracing"
-version = "0.1.43"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d15d90a0b5c19378952d479dc858407149d7bb45a14de0142f6c534b16fc647"
+checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
  "pin-project-lite",
  "tracing-attributes",
@@ -1692,9 +1732,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.35"
+version = "0.1.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a04e24fab5c89c6a36eb8558c9656f30d81de51dfa4d3b45f26b21d61fa0a6c"
+checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
  "valuable",
@@ -1713,9 +1753,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.22"
+version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f30143827ddab0d256fd843b7a66d164e9f271cfa0dde49142c5ca0ca291f1e"
+checksum = "cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319"
 dependencies = [
  "matchers",
  "nu-ansi-term",
@@ -2024,9 +2064,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "0.6.20"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36c1fec1a2bb5866f07c25f68c26e565c4c200aebb96d7e55710c19d3e8ac49b"
+checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 dependencies = [
  "memchr",
 ]
@@ -2110,7 +2150,7 @@ dependencies = [
  "criterion",
  "itertools 0.15.0",
  "nom 8.0.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
 ]
 
 [[package]]
@@ -2232,7 +2272,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "smallvec",
  "tracing",
  "tracing-subscriber",
@@ -2281,7 +2321,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2306,7 +2346,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2319,7 +2359,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "smallvec",
  "tracing",
  "tracing-chrome",
@@ -2397,7 +2437,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2412,7 +2452,7 @@ dependencies = [
  "itertools 0.15.0",
  "md5",
  "pathfinding",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2425,7 +2465,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2438,7 +2478,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2451,7 +2491,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2464,7 +2504,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2478,7 +2518,7 @@ dependencies = [
  "divan",
  "itertools 0.15.0",
  "pathfinding",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2491,7 +2531,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2506,7 +2546,7 @@ dependencies = [
  "fxhash 0.2.1",
  "itertools 0.15.0",
  "pathfinding",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2519,7 +2559,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2532,7 +2572,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2545,7 +2585,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2559,7 +2599,7 @@ dependencies = [
  "divan",
  "fxhash 0.2.1",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2573,7 +2613,7 @@ dependencies = [
  "divan",
  "fxhash 0.2.1",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2586,7 +2626,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2600,7 +2640,7 @@ dependencies = [
  "divan",
  "fxhash 0.2.1",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2615,7 +2655,7 @@ dependencies = [
  "fxhash 0.2.1",
  "itertools 0.15.0",
  "petgraph 0.6.5",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2673,7 +2713,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2914,7 +2954,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2929,7 +2969,7 @@ dependencies = [
  "fxhash 0.1.2",
  "itertools 0.15.0",
  "petgraph 0.8.3",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2942,7 +2982,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2955,7 +2995,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "rustc-hash",
  "tracing",
  "tracing-chrome",
@@ -2969,7 +3009,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "rustc-hash",
  "tracing",
  "tracing-chrome",
@@ -3193,7 +3233,7 @@ dependencies = [
  "criterion",
  "itertools 0.15.0",
  "nom 8.0.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
 ]
 
 [[package]]
@@ -3210,7 +3250,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
 ]
 
 [[package]]
@@ -3239,7 +3279,7 @@ dependencies = [
  "criterion",
  "itertools 0.15.0",
  "rand",
- "rstest 0.26.1",
+ "rstest 0.28.0",
 ]
 
 [[package]]
@@ -3413,7 +3453,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3439,7 +3479,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3491,7 +3531,7 @@ dependencies = [
  "divan",
  "fxhash 0.2.1",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3559,7 +3599,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3572,7 +3612,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3585,7 +3625,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3598,7 +3638,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3611,7 +3651,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3624,7 +3664,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3639,7 +3679,7 @@ dependencies = [
  "divan",
  "fxhash 0.1.2",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3655,7 +3695,7 @@ dependencies = [
  "fxhash 0.1.2",
  "itertools 0.15.0",
  "rayon",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3669,7 +3709,7 @@ dependencies = [
  "divan",
  "fxhash 0.1.2",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3685,7 +3725,7 @@ dependencies = [
  "good_lp",
  "itertools 0.15.0",
  "log",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3699,7 +3739,7 @@ dependencies = [
  "divan",
  "itertools 0.15.0",
  "petgraph 0.8.3",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "rustc-hash",
  "tracing",
  "tracing-chrome",
@@ -3713,7 +3753,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "rstest 0.26.1",
+ "rstest 0.28.0",
  "rustc-hash",
  "rustsat",
  "rustsat-kissat",
