@@ -40,7 +40,6 @@ impl PairValue {
     }
 }
 
-#[derive(Default)]
 pub struct Pairs {
     pairs: Vec<Pair>,
 }
@@ -58,6 +57,11 @@ struct SplitEffect {
 }
 
 impl Pairs {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            pairs: Vec::with_capacity(capacity),
+        }
+    }
     pub fn len(&self) -> usize {
         self.pairs.len()
     }
@@ -405,7 +409,7 @@ mod tests {
 
     #[test]
     fn test_format() {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
         let b = snailfish_number!(numbers, [1, 2]);
         let c = snailfish_number!(numbers, [[1, 2], [3, 4]]);
 
@@ -415,7 +419,7 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
         let a = snailfish_number!(numbers, [1, 1]);
         let b = snailfish_number!(numbers, [2, 2]);
         let c = snailfish_number!(numbers, [3, 3]);
@@ -445,7 +449,7 @@ mod tests {
         "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]"
     )]
     fn test_sums(#[case] lines: &str, #[case] expected: &str) {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
 
         let nums = lines
             .trim()
@@ -462,7 +466,7 @@ mod tests {
 
     #[test]
     fn test_add_2() {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
         let a = snailfish_number!(numbers, [1, 1]);
         let b = snailfish_number!(numbers, [2, 2]);
         let c = snailfish_number!(numbers, [3, 3]);
@@ -491,7 +495,7 @@ mod tests {
         "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]"
     )]
     fn test_reduce(#[case] input: &str, #[case] expected_output: &str) {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
         let input = numbers.parse_number(input).unwrap();
         let actual = numbers.reduce(input);
         let expected = numbers.parse_number(expected_output).unwrap();
@@ -501,7 +505,7 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let mut numbers = Pairs::default();
+        let mut numbers = Pairs::with_capacity(0);
         let (remaining, actual) = numbers.parse("[  1,   2   ], 1").unwrap();
         let expected = snailfish_number!(numbers, [1, 2]);
         assert_eq!(remaining, ", 1");
@@ -518,7 +522,7 @@ mod tests {
     #[case("[[[[3,0],[5,3]],[4,4]],[5,5]]", 791)]
     #[case("[[[[5,0],[7,4]],[5,5]],[6,6]]", 1137)]
     fn test_magnitude(#[case] input_str: &str, #[case] expected: RegularType) {
-        let mut pairs = Pairs::default();
+        let mut pairs = Pairs::with_capacity(1);
 
         let pair = pairs.parse_number(input_str).unwrap();
 

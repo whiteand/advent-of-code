@@ -3,3 +3,9 @@
 y21d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
 ├─ part1  1.012 ms      │ 1.508 ms      │ 1.036 ms      │ 1.051 ms      │ 100     │ 100
 ╰─ part2  19.12 ms      │ 61.36 ms      │ 20.68 ms      │ 21.89 ms      │ 100     │ 100
+
+# After capacity setup
+
+21d18    fastest       │ slowest       │ median        │ mean          │ samples │ iters
+├─ part1  973.7 µs      │ 1.363 ms      │ 990.3 µs      │ 1.004 ms      │ 100     │ 100
+╰─ part2  16.2 ms       │ 20.7 ms       │ 16.32 ms      │ 16.45 ms      │ 100     │ 100

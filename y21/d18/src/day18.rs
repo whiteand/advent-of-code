@@ -4,7 +4,7 @@ use super::numbers::Pairs;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> i32 {
-    let mut numbers = Pairs::default();
+    let mut numbers = Pairs::with_capacity(98857);
 
     let nums = file_content
         .trim()
@@ -19,7 +19,7 @@ pub fn part1(file_content: &str) -> i32 {
 
 #[tracing::instrument(skip(file_content))]
 pub fn part2(file_content: &str) -> i32 {
-    let mut numbers = Pairs::default();
+    let mut numbers = Pairs::with_capacity(1238194);
 
     let nums = file_content
         .trim()
