@@ -138,7 +138,7 @@ impl std::fmt::Display for NodeValue<'_> {
 }
 impl std::fmt::Display for Node<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.name, &self.value)
+        write!(f, "{}: {}", self.name, self.value)
     }
 }
 impl std::fmt::Debug for Node<'_> {

@@ -108,10 +108,7 @@ impl Cpu {
             })
             .unwrap();
 
-        loop {
-            let Some(instruction) = program.get(self.ip) else {
-                break;
-            };
+        while let Some(instruction) = program.get(self.ip) {
             if self.execute_instruction(instruction).is_err() {
                 break;
             }

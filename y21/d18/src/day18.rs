@@ -33,13 +33,11 @@ pub fn part2(file_content: &str) -> i32 {
         .map(|elements| numbers.add(elements[0], elements[1]))
         .collect_vec();
 
-    let max = possible_sums
+    possible_sums
         .into_iter()
         .map(|i| numbers.get(i).magnitude())
         .max()
-        .unwrap_or_default();
-
-    max
+        .unwrap_or_default()
 }
 
 #[cfg(test)]

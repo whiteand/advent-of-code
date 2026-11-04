@@ -6,15 +6,15 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-advent_utils.workspace = true
-itertools.workspace = true
-rstest.workspace = true
-tracing-chrome.workspace = true
-tracing-subscriber.workspace = true
-tracing.workspace = true
+advent_utils = { workspace = true }
+itertools = { workspace = true }
+rstest = { workspace = true }
+tracing-chrome = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
-divan.workspace = true
+divan = { workspace = true }
 
 [[bench]]
 name = "y21d17"

@@ -16,7 +16,7 @@ fn solve(file_content: &str, skip: usize) -> String {
 }
 
 const PASSWORD_SIZE: usize = 8;
-const FORBIDDEN: [u8; 3] = [b'i', b'o', b'l'];
+const FORBIDDEN: [u8; 3] = *b"iol";
 
 #[derive(Clone, Eq, PartialEq)]
 struct Password {

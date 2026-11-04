@@ -38,14 +38,14 @@ fn parse_area(input: &str) -> nom::IResult<&str, Area> {
 }
 
 fn get_vx(px: i32, t: i32) -> impl Iterator<Item = i32> {
-    return ((2 * px + t * (t - 1)) % (2 * t) == 0)
+    ((2 * px + t * (t - 1)) % (2 * t) == 0)
         .then(move || (2 * px + t * (t - 1)) / (2 * t))
         .filter(|vx| t < *vx)
         .into_iter()
         .chain(
             divisors(px * 2)
                 .filter(move |pvx| t >= *pvx && 2 * px == *pvx * (2 * *pvx - (*pvx - 1))),
-        );
+        )
 }
 
 fn divisors(n: i32) -> impl Iterator<Item = i32> {
@@ -70,7 +70,7 @@ pub fn part1(file_content: &str) -> i32 {
     let area = parse_area(file_content.trim()).map(|x| x.1).unwrap();
 
     area.positions()
-        .flat_map(|p| get_initial_velocities(p))
+        .flat_map(get_initial_velocities)
         .map(|v| v.y * (v.y + 1) / 2)
         .max()
         .unwrap_or_default()
@@ -81,7 +81,7 @@ pub fn part2(file_content: &str) -> usize {
     let area = parse_area(file_content.trim()).map(|x| x.1).unwrap();
 
     area.positions()
-        .flat_map(|p| get_initial_velocities(p))
+        .flat_map(get_initial_velocities)
         .unique()
         .count()
 }

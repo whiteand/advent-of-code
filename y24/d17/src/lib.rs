@@ -93,7 +93,7 @@ pub fn solve_part_2(file_content: &str) -> usize {
     while let Some((next_a, output_ptr)) = tasks.pop() {
         for i in 0..=0b111 {
             let new_a = next_a << 3 | i;
-            output.truncate(0);
+            output.clear();
             execute(&program, new_a, b, c, &mut output);
             let expected_res = &program[output_ptr..];
             if output.len() != expected_res.len() {

@@ -20,8 +20,8 @@ pub fn solve<const MIN_WIN: usize, const CHEAT_LEN: usize>(file_content: &str) -
     restore_path(&distance_to_finish_without_cheat, start)
         .collect_vec()
         .into_iter()
-        .tuple_combinations()
-        .filter(|((start, without_cheat), (e, c))| {
+        .array_combinations()
+        .filter(|[(start, without_cheat), (e, c)]| {
             let d = dist(*e, *start);
             if d > CHEAT_LEN {
                 return false;

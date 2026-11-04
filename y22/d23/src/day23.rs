@@ -74,7 +74,7 @@ impl StepMaker {
         for p in elves_positions.iter().copied() {
             if !N8::neighbours_of(p)
                 .iter()
-                .any(|x| elves_positions.contains(&x))
+                .any(|x| elves_positions.contains(x))
             {
                 continue;
             }

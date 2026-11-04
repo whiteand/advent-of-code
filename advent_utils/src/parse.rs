@@ -176,12 +176,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "Failed to parse: 256 as u8")]
     fn test_fails_on_large_numbers() {
-        super::nums::<u8>("256").collect_vec();
+        _ = super::nums::<u8>("256").collect_vec();
     }
     #[test]
     #[should_panic(expected = "Failed to parse: 128 as i8")]
     fn test_fails_on_signed_overflow() {
-        super::nums::<i8>("128").collect_vec();
+        _ = super::nums::<i8>("128").collect_vec();
     }
     #[test]
     #[should_panic(expected = "Failed to parse: -129 as i8")]

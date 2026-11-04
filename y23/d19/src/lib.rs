@@ -379,27 +379,27 @@ fn get_accepted_combinations_from_workflow(
     id: WorkflowId,
     mut space: Space,
 ) -> usize {
-    println!("Workflow {:?} for {:?}", id, &space);
+    // println!("Workflow {:?} for {:?}", id, space);
     let workflow = workflows.get(&id).unwrap();
     let mut total = 0usize;
     for rule in &workflow.rules {
-        println!("{:?}  Rule {:?}", id, rule);
+        // println!("{:?}  Rule {:?}", id, rule);
         let applied_space = space.choose(&rule.condition);
-        println!(
-            "    {:?} | {:?} = {:?}",
-            &space, &rule.condition, &applied_space
-        );
+        // println!(
+        //     "    {:?} | {:?} = {:?}",
+        //     space, rule.condition, applied_space
+        // );
         if applied_space.is_empty() {
-            println!("  There is no combinations which satisfies this rule");
+            // println!("  There is no combinations which satisfies this rule");
             space = space.choose(&rule.condition.negation());
             continue;
         }
         total += get_accepted_combinations_from_outcome(workflows, rule.outcome, applied_space);
         space = space.choose(&rule.condition.negation());
-        println!(
-            "{:?}  {:?} |! {:?} = {:?}",
-            id, &space, &rule.condition, &space
-        );
+        // println!(
+        //     "{:?}  {:?} |! {:?} = {:?}",
+        //     id, space, rule.condition, space
+        // );
         if space.is_empty() {
             break;
         }

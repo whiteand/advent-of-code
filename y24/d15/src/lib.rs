@@ -107,10 +107,7 @@ impl LargeGrid {
                 let (mut boxes_to_move: Vec<usize>, mut slice) = Vec::with_capacity(5);
             }
 
-            loop {
-                let Some(e) = self.get(p) else {
-                    break;
-                };
+            while let Some(e) = self.get(p) {
                 if let Entity::Box(id) = e {
                     if boxes_to_move.last().is_none_or(|x| *x != id) {
                         boxes_to_move.push(id);

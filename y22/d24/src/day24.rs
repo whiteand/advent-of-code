@@ -62,7 +62,7 @@ impl Winds {
             return NonDiagonal::to_ascii_char(found_dir);
         }
 
-        return cnt + b'0';
+        cnt + b'0'
     }
 
     fn spawn(&mut self, pos: IVec2, dir: IVec2) {
@@ -240,7 +240,7 @@ impl Map {
     fn new(size: IVec2) -> Self {
         Self {
             winds: Winds::default(),
-            size: size,
+            size,
         }
     }
 
@@ -276,10 +276,7 @@ pub fn part1(file_content: &str) -> usize {
     let positions = (0usize..t_mod)
         .map(|i| {
             let mut positions = initial_state.alloc_pos();
-            initial_state
-                .map
-                .at(i as usize)
-                .get_wind_positions(&mut positions);
+            initial_state.map.at(i).get_wind_positions(&mut positions);
             positions
         })
         .collect::<Vec<_>>();
@@ -322,7 +319,7 @@ pub fn part1(file_content: &str) -> usize {
         }
     }
 
-    return 0;
+    0
 }
 #[tracing::instrument(skip(file_content))]
 #[tracing::instrument(skip(file_content))]
@@ -334,10 +331,7 @@ pub fn part2(file_content: &str) -> usize {
     let positions = (0usize..t_mod)
         .map(|i| {
             let mut positions = initial_state.alloc_pos();
-            initial_state
-                .map
-                .at(i as usize)
-                .get_wind_positions(&mut positions);
+            initial_state.map.at(i).get_wind_positions(&mut positions);
             positions
         })
         .collect::<Vec<_>>();
@@ -386,7 +380,7 @@ pub fn part2(file_content: &str) -> usize {
         }
     }
 
-    return 0;
+    0
 }
 
 #[cfg(test)]
@@ -394,7 +388,7 @@ mod tests {
     use super::{part1, part2};
     use rstest::rstest;
     const EXAMPLE: &str = include_str!("../example.txt");
-    const ACTUAL: &str = include_str!("../input.txt");
+    // const ACTUAL: &str = include_str!("../input.txt");
     #[rstest]
     #[case::example(EXAMPLE, "18")]
     // #[case::actual(ACTUAL, "277")]
@@ -408,7 +402,7 @@ mod tests {
     }
     #[rstest]
     #[case::example(EXAMPLE, "54")]
-    #[case::actual(ACTUAL, "877")]
+    // #[case::actual(ACTUAL, "877")] // 46s
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

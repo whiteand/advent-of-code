@@ -30,7 +30,7 @@ fn expand_many(seq: &mut Vec<u64>, buf: &mut Vec<u64>, n: usize) {
 }
 fn expand(src: &[u64], dest: &mut Vec<u64>) {
     if src.is_empty() {
-        dest.truncate(0);
+        dest.clear();
         return;
     }
 

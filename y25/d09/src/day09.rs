@@ -8,8 +8,8 @@ use itertools::Itertools;
 #[tracing::instrument(skip(input))]
 pub fn part1(input: &str) -> usize {
     parse_points(input)
-        .tuple_combinations()
-        .map(|(a, b)| rect_area(a, b))
+        .array_combinations()
+        .map(|[a, b]| rect_area(a, b))
         .max()
         .unwrap_or_default()
 }
@@ -35,12 +35,12 @@ pub fn part2(input: &str) -> usize {
     vertices
         .iter()
         .copied()
-        .tuple_combinations()
-        .filter(|(corner1, corner2)| {
+        .array_combinations()
+        .filter(|[corner1, corner2]| {
             cut_rect_with(&xs, &ys, corner1.min(*corner2), corner1.max(*corner2))
                 .all(|r| contains_fully(&rects, &r))
         })
-        .map(|(a, b)| rect_area(a, b))
+        .map(|[a, b]| rect_area(a, b))
         .max()
         .unwrap_or_default()
 }

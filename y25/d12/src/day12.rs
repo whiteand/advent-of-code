@@ -26,13 +26,13 @@ pub fn part1(file_content: &str) -> usize {
         .into_iter()
         .filter(|t| {
             let area = t.area();
-            let all_shapes_area = get_all_shapes_area(&t, &shapes);
+            let all_shapes_area = get_all_shapes_area(t, &shapes);
             area >= all_shapes_area
         })
         .filter(|t| {
             let places = (t.width / 3) * (t.height / 3);
             let total_shapes_to_place = t.shapes_number.iter().copied().sum::<usize>();
-            places >= total_shapes_to_place || can_pack(&shapes, &t)
+            places >= total_shapes_to_place || can_pack(&shapes, t)
         })
         .count()
 }
@@ -189,7 +189,7 @@ fn can_pack(shapes: &Grid<Shape>, task: &Task) -> bool {
 
     let mut instance: SatInstance = SatInstance::new();
 
-    let mut vars_holder = VarsHolder::new(&shapes, task);
+    let mut vars_holder = VarsHolder::new(shapes, task);
 
     tracing::info!("building cell vars");
     vars_holder.build_cell_vars(&mut instance);
@@ -332,7 +332,7 @@ impl std::fmt::Debug for Shape {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for i in 0..3 {
             if i > 0 {
-                writeln!(f, "")?;
+                writeln!(f)?;
             }
             for j in 0..3 {
                 let bit = (self.bitmask & (1 << (i * 3 + j))) != 0;

@@ -62,9 +62,7 @@ impl Pairs {
             pairs: Vec::with_capacity(capacity),
         }
     }
-    pub fn len(&self) -> usize {
-        self.pairs.len()
-    }
+
     pub fn get<'t>(&'t self, ind: PairIndex) -> PairRef<'t> {
         assert!(self.pairs.len() >= ind.0);
         PairRef {
@@ -139,7 +137,7 @@ impl Pairs {
             });
         }
 
-        return None;
+        None
     }
 
     fn split_left_most(&mut self, root: PairIndex) -> Option<SplitEffect> {
@@ -191,9 +189,8 @@ impl Pairs {
 
     pub fn reductions(&mut self, root: PairIndex) -> impl Iterator<Item = PairIndex> + '_ {
         let mut res = Some(root);
-        return std::iter::from_fn(move || {
+        std::iter::from_fn(move || {
             let taken = res.take()?;
-            // println!("Reduction: {}", self.get(taken));
             let response = Some(taken);
 
             if let Some(explosion) = self.explode_left_most_nested(taken, 4) {
@@ -202,8 +199,8 @@ impl Pairs {
                 _ = res.insert(split.replace_with);
             }
 
-            return response;
-        });
+            response
+        })
     }
     pub fn reduce(&mut self, root: PairIndex) -> PairIndex {
         self.reductions(root).last().unwrap()
@@ -226,7 +223,7 @@ impl Pairs {
                 let new_left = self.add_left_most_regular(pair.left(), increment);
 
                 let new_pair_index = self.alloc_pair(new_left, pair.right());
-                return PairValue::Pair(new_pair_index);
+                PairValue::Pair(new_pair_index)
             }
         }
     }
@@ -241,12 +238,12 @@ impl Pairs {
                 let new_right = self.add_right_most_regular(pair.right(), increment);
 
                 let new_pair_index = self.alloc_pair(pair.left(), new_right);
-                return PairValue::Pair(new_pair_index);
+                PairValue::Pair(new_pair_index)
             }
         }
     }
 
-    pub fn parse<'t, 'i>(&mut self, input: &'i str) -> nom::IResult<&'i str, PairValue> {
+    pub fn parse<'i>(&mut self, input: &'i str) -> nom::IResult<&'i str, PairValue> {
         if let Some(remaining) = input.strip_prefix(' ') {
             return self.parse(remaining);
         }
@@ -271,7 +268,7 @@ impl Pairs {
         Ok((input.trim_start(), result))
     }
 
-    pub fn parse_number<'i>(&mut self, input: &'i str) -> Option<PairIndex> {
+    pub fn parse_number(&mut self, input: &str) -> Option<PairIndex> {
         let (_, v) = self.parse(input).ok()?;
         if let PairValue::Pair(v) = v {
             return Some(v);

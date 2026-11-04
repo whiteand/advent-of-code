@@ -53,10 +53,7 @@ impl Disc {
 fn parse_discs(file_content: &str) -> Vec<Disc> {
     let mut nums = parse::nums::<usize>(file_content);
     let mut res = Vec::with_capacity(6);
-    loop {
-        let Some(_) = nums.next() else {
-            break;
-        };
+    while let Some(_) = nums.next() {
         let positions = nums.next().unwrap();
         let start_position = nums.nth(1).unwrap();
         res.push(Disc {
