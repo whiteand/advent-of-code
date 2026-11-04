@@ -6,7 +6,6 @@ version = 4
 name = "advent_utils"
 version = "0.1.0"
 dependencies = [
- "array-init",
  "derive_more",
  "fixed-slice-vec",
  "glam 0.34.2",
@@ -77,12 +76,6 @@ name = "arbitrary"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dde20b3d026af13f561bdd0f15edf01fc734f0dafcedbaf42bba506a9517f223"
-
-[[package]]
-name = "array-init"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d62b7694a562cdf5a74227903507c56ab2cc8bdd1f781ed5cb4cf9c9f810bfc"
 
 [[package]]
 name = "autocfg"

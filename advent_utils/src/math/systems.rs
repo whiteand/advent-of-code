@@ -99,8 +99,7 @@ pub fn solve_system<const VARS: usize, const EQS: usize>(
     mut lefts: [[Rat; VARS]; EQS],
     mut rights: [Rat; EQS],
 ) -> Option<[Rat; EQS]> {
-    let mut lefts: [&mut [Rat]; EQS] =
-        array_init::from_iter(lefts.iter_mut().map(|x| x.as_mut())).unwrap();
+    let mut lefts: [&mut [Rat]; EQS] = lefts.each_mut().map(|row| row.as_mut());
     let rights_mut = rights.as_mut();
     Equations {
         lefts: &mut lefts,

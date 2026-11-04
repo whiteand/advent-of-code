@@ -10,7 +10,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **Use `md-5` everywhere instead of `md5`.** `md-5` 0.11.0 is a workspace dependency. `y15/d04`, `y16/d14`, and `y16/d17` hash through `Md5` and the `Digest` trait.
 
-- [ ] **Drop `array-init`.** `2.1.0` (December 2022) is the last release, and the only call is `array_init::from_iter` in `advent_utils/src/math/systems.rs`. Build the `[&mut [Rat]; EQS]` with `[T; N]::each_mut()` instead, then remove the dependency from `advent_utils/Cargo.toml`.
+- [x] **Drop `array-init`.** `solve_system` builds `[&mut [Rat]; EQS]` with `[T; N]::each_mut()`.
 
 - [ ] **Replace `fixed-slice-vec` with `arrayvec` when `vec_on_stack!` is next touched.** `fixed-slice-vec` `0.10.0` (August 2022) backs that macro, which is used only in `y24/d15/src/lib.rs`. `arrayvec` is the usual stack-allocated vec. Leave it until that code changes.
 
