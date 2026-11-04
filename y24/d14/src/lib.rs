@@ -55,8 +55,8 @@ pub fn solve_part_2(file_content: &str, print: bool) -> usize {
     loop {
         let m = robots
             .iter()
-            .tuple_combinations()
-            .filter(|(r, r2)| r.p.x.abs_diff(r2.p.x) + r.p.y.abs_diff(r2.p.y) <= 1)
+            .array_combinations()
+            .filter(|[r, r2]| r.p.x.abs_diff(r2.p.x) + r.p.y.abs_diff(r2.p.y) <= 1)
             .count();
         if m >= robots.len() {
             if print {
@@ -150,7 +150,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // runs 25s
+    #[ignore] // runs 64s
     fn test_part2_actual() {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()

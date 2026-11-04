@@ -10,7 +10,7 @@ dependencies = [
  "derive_more",
  "fixed-slice-vec",
  "glam 0.34.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "mockalloc",
  "nom 8.0.0",
  "rand",
@@ -830,6 +830,15 @@ name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
 dependencies = [
  "either",
 ]
@@ -2034,7 +2043,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2046,7 +2055,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2058,7 +2067,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2070,7 +2079,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "md-5",
  "tracing",
  "tracing-chrome",
@@ -2082,7 +2091,7 @@ name = "y15d05"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2090,7 +2099,7 @@ name = "y15d06"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2099,7 +2108,7 @@ name = "y15d07"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
  "rstest 0.26.1",
 ]
@@ -2109,7 +2118,7 @@ name = "y15d08"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2117,7 +2126,7 @@ name = "y15d09"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2126,7 +2135,7 @@ name = "y15d10"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2134,7 +2143,7 @@ name = "y15d11"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2142,7 +2151,7 @@ name = "y15d13"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2151,7 +2160,7 @@ name = "y15d14"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2160,7 +2169,7 @@ name = "y15d15"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2169,7 +2178,7 @@ name = "y15d16"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2178,7 +2187,7 @@ name = "y15d17"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2186,7 +2195,7 @@ name = "y15d18"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2196,7 +2205,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "edit-distance",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2204,7 +2213,7 @@ name = "y15d20"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2212,7 +2221,7 @@ name = "y15d21"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
 ]
 
@@ -2222,7 +2231,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "smallvec",
  "tracing",
@@ -2235,7 +2244,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2247,7 +2256,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2259,7 +2268,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2271,7 +2280,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2284,7 +2293,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2296,7 +2305,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2309,7 +2318,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "smallvec",
  "tracing",
@@ -2323,7 +2332,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "tracing",
  "tracing-chrome",
@@ -2336,7 +2345,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2348,7 +2357,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "tracing",
  "tracing-chrome",
@@ -2362,7 +2371,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "hex",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "md5",
  "tracing",
  "tracing-chrome",
@@ -2375,7 +2384,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2387,7 +2396,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2400,7 +2409,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "md5",
  "pathfinding",
  "rstest 0.26.1",
@@ -2415,7 +2424,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2428,7 +2437,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2441,7 +2450,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2454,7 +2463,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2467,7 +2476,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "rstest 0.26.1",
  "tracing",
@@ -2481,7 +2490,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2495,7 +2504,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "rstest 0.26.1",
  "tracing",
@@ -2509,7 +2518,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2522,7 +2531,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2535,7 +2544,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2549,7 +2558,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2563,7 +2572,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2576,7 +2585,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2590,7 +2599,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2604,7 +2613,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "petgraph 0.6.5",
  "rstest 0.26.1",
  "tracing",
@@ -2617,7 +2626,7 @@ name = "y18d01"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -2626,7 +2635,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
  "petgraph 0.6.5",
  "tracing",
@@ -2639,7 +2648,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2651,7 +2660,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2663,7 +2672,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2676,7 +2685,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2688,7 +2697,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2700,7 +2709,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2712,7 +2721,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2724,7 +2733,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2736,7 +2745,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2748,7 +2757,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2760,7 +2769,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2772,7 +2781,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2784,7 +2793,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2796,7 +2805,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2808,7 +2817,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2820,7 +2829,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2832,7 +2841,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2844,7 +2853,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2856,7 +2865,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2868,7 +2877,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2880,7 +2889,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2892,7 +2901,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2904,7 +2913,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2918,7 +2927,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.1.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "petgraph 0.8.3",
  "rstest 0.26.1",
  "tracing",
@@ -2932,7 +2941,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -2945,7 +2954,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "rustc-hash",
  "tracing",
@@ -2959,7 +2968,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "rustc-hash",
  "tracing",
@@ -2973,7 +2982,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2985,7 +2994,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2997,7 +3006,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3009,7 +3018,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3021,7 +3030,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3033,7 +3042,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3045,7 +3054,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3057,7 +3066,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3069,7 +3078,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3081,7 +3090,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3093,7 +3102,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3105,7 +3114,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3117,7 +3126,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3129,7 +3138,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3141,7 +3150,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3153,7 +3162,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3164,7 +3173,7 @@ name = "y23d17"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
 ]
 
@@ -3173,7 +3182,7 @@ name = "y23d18"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.18.2",
 ]
 
@@ -3182,7 +3191,7 @@ name = "y23d19"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
  "rstest 0.26.1",
 ]
@@ -3192,7 +3201,7 @@ name = "y23d20"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -3200,7 +3209,7 @@ name = "y23d21"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
 ]
 
@@ -3209,7 +3218,7 @@ name = "y23d22"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -3218,7 +3227,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "glam 0.25.0",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
 ]
 
@@ -3228,7 +3237,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rand",
  "rstest 0.26.1",
 ]
@@ -3239,7 +3248,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "graphalgs",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "petgraph 0.6.5",
 ]
 
@@ -3248,7 +3257,7 @@ name = "y24d01"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -3256,7 +3265,7 @@ name = "y24d02"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
 ]
 
 [[package]]
@@ -3264,7 +3273,7 @@ name = "y24d03"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "regex",
 ]
 
@@ -3275,7 +3284,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "glam 0.34.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3285,7 +3294,7 @@ name = "y24d05"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "nom 8.0.0",
  "tracing",
  "tracing-subscriber",
@@ -3297,7 +3306,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3307,7 +3316,7 @@ name = "y24d07"
 version = "0.1.0"
 dependencies = [
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3319,7 +3328,7 @@ dependencies = [
  "advent_utils",
  "criterion",
  "glam 0.34.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3330,7 +3339,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3342,7 +3351,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3354,7 +3363,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rayon",
  "tracing",
  "tracing-chrome",
@@ -3367,7 +3376,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3379,7 +3388,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "criterion",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3391,7 +3400,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3403,7 +3412,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3416,7 +3425,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "tracing",
  "tracing-chrome",
@@ -3429,7 +3438,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3442,7 +3451,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "tracing",
  "tracing-chrome",
@@ -3455,7 +3464,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3467,7 +3476,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "tracing",
  "tracing-chrome",
@@ -3481,7 +3490,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3495,7 +3504,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3509,7 +3518,7 @@ dependencies = [
  "disjoint",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "pathfinding",
  "petgraph 0.6.5",
  "tracing",
@@ -3524,7 +3533,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.2.1",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "petgraph 0.6.5",
  "tracing",
  "tracing-chrome",
@@ -3537,7 +3546,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -3549,7 +3558,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3562,7 +3571,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3575,7 +3584,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3588,7 +3597,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3601,7 +3610,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3614,7 +3623,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3629,7 +3638,7 @@ dependencies = [
  "derive_more",
  "divan",
  "fxhash 0.1.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3644,7 +3653,7 @@ dependencies = [
  "derive_more",
  "divan",
  "fxhash 0.1.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rayon",
  "rstest 0.26.1",
  "tracing",
@@ -3659,7 +3668,7 @@ dependencies = [
  "advent_utils",
  "divan",
  "fxhash 0.1.2",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "tracing",
  "tracing-chrome",
@@ -3674,7 +3683,7 @@ dependencies = [
  "derive_more",
  "divan",
  "good_lp",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "log",
  "rstest 0.26.1",
  "tracing",
@@ -3688,7 +3697,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "petgraph 0.8.3",
  "rstest 0.26.1",
  "rustc-hash",
@@ -3703,7 +3712,7 @@ version = "0.1.0"
 dependencies = [
  "advent_utils",
  "divan",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "rstest 0.26.1",
  "rustc-hash",
  "rustsat",
