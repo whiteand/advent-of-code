@@ -8,7 +8,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **Replace `fxhash` with `rustc-hash`.** `rustc-hash` 2.1.3 is a workspace dependency. Call sites use `rustc_hash::FxHashMap` / `FxHashSet`. Unused `fxhash` pins were removed from `y24/d22`, `y25/d07`, `y25/d08`, and `y25/d09`.
 
-- [ ] **Use `md-5` everywhere instead of `md5`.** Both crates are maintained. `md-5` (RustCrypto) is the one the rest of the ecosystem uses, and `y15/d04` already depends on it. Bump that pin from `0.10.5` to `0.11`. Rewrite `y16/d14` (`md5::Context`, `md5::Digest`) and `y16/d17` (`md5::compute`) onto `Md5` + the `Digest` trait (`Md5::new` / `update` / `finalize`, or `Md5::digest`).
+- [x] **Use `md-5` everywhere instead of `md5`.** `md-5` 0.11.0 is a workspace dependency. `y15/d04`, `y16/d14`, and `y16/d17` hash through `Md5` and the `Digest` trait.
 
 - [ ] **Drop `array-init`.** `2.1.0` (December 2022) is the last release, and the only call is `array_init::from_iter` in `advent_utils/src/math/systems.rs`. Build the `[&mut [Rat]; EQS]` with `[T; N]::each_mut()` instead, then remove the dependency from `advent_utils/Cargo.toml`.
 

@@ -153,6 +153,7 @@ advent_utils = { path = "./advent_utils" }
 divan = "0.1.21"
 glam = "0.34.2"
 itertools = "0.15.0"
+md-5 = "0.11.0"
 nom = "8.0.0"
 rayon = "1.12.0"
 regex = "1.13.1"

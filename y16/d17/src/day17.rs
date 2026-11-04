@@ -1,7 +1,8 @@
 use std::fmt::Write;
 
-use advent_utils::{declare_field, glam::IVec2, nom::AsBytes};
+use advent_utils::{declare_field, glam::IVec2};
 use itertools::Itertools;
+use md5::{Digest, Md5};
 use tracing::info;
 
 #[tracing::instrument(ret)]
@@ -165,9 +166,8 @@ impl Map<'_> {
         for x in it {
             payload.push(x.to_letter());
         }
-        let hash = md5::compute(payload.as_slice());
+        let hash = Md5::digest(&payload);
         let (up, down, left, right) = hash
-            .as_bytes()
             .iter()
             .flat_map(|x| [x >> 4, x & 0b1111])
             .take(4)
@@ -213,7 +213,6 @@ mod tests {
     #[rstest]
     #[case::example("ihgpwlah", "370")]
     #[case::actual(ACTUAL, "526")]
-    #[ignore]
     fn test_part2(#[case] input: &str, #[case] expected: &str) {
         use crate::part2;
         assert_eq!(format!("{}", part2(input)), expected);

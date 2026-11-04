@@ -1,7 +1,6 @@
 use itertools::Itertools;
-use std::fmt::Write;
-use std::io::Write as IOWrite;
-use std::ops::{Deref, RangeFrom};
+use md5::{Digest, Md5};
+use std::ops::RangeFrom;
 
 #[tracing::instrument]
 pub fn solve_part_1<const I: usize>(salt: &str) -> usize {
@@ -30,44 +29,31 @@ struct Keys<'t, H: HashAlgo> {
 struct Part1HashAlgo;
 
 impl HashAlgo for Part1HashAlgo {
-    type Out = md5::Digest;
+    type Out = [u8; 16];
 
     fn digest(salt: &str, i: usize) -> Self::Out {
-        let mut ctx = md5::Context::new();
-        write!(ctx, "{}{}", salt, i).unwrap();
-        ctx.compute()
+        Md5::digest(format!("{salt}{i}")).into()
     }
 }
 
 struct Part2HashAlgo;
 
 impl HashAlgo for Part2HashAlgo {
-    type Out = md5::Digest;
+    type Out = [u8; 16];
 
     fn digest(salt: &str, i: usize) -> Self::Out {
-        let mut buf = String::with_capacity(32);
-        let mut ctx = md5::Context::new();
-        write!(ctx, "{}{}", salt, i).unwrap();
-        let dig = ctx.compute();
-
-        write!(buf, "{:x}", dig).unwrap();
+        let mut buf = hex::encode(Md5::digest(format!("{salt}{i}")));
 
         for _ in 0..2015 {
-            let mut ctx = md5::Context::new();
-            let _ = ctx.write(buf.as_bytes()).unwrap();
-            let dig = ctx.compute();
-            buf.clear();
-            write!(buf, "{:x}", dig).unwrap();
+            buf = hex::encode(Md5::digest(buf.as_bytes()));
         }
-        let mut ctx = md5::Context::new();
-        let _ = ctx.write(buf.as_bytes()).unwrap();
-        ctx.compute()
+        Md5::digest(buf.as_bytes()).into()
     }
 }
 
 impl<'t, H: HashAlgo> Keys<'t, H>
 where
-    H::Out: core::ops::Deref<Target = [u8; 16]>,
+    H::Out: AsRef<[u8]>,
 {
     fn new(salt: &'t str) -> Self {
         Self {
@@ -133,7 +119,7 @@ where
 
 impl<H: HashAlgo> Iterator for Keys<'_, H>
 where
-    H::Out: core::ops::Deref<Target = [u8; 16]>,
+    H::Out: AsRef<[u8]>,
 {
     type Item = usize;
 
@@ -163,7 +149,7 @@ where
 fn solve<const I: usize, H>(salt: &str) -> usize
 where
     H: HashAlgo,
-    H::Out: Deref<Target = [u8; 16]>,
+    H::Out: AsRef<[u8]>,
 {
     Keys::<H>::new(salt.trim()).nth(I).unwrap()
 }
@@ -202,7 +188,7 @@ mod tests {
                 .without_time()
                 .finish(),
         );
-        assert_eq!(format!("{}", solve_part_2::<64>(EXAMPLE)), "22551");
+        assert_eq!(format!("{}", solve_part_2::<63>(EXAMPLE)), "22551");
     }
 
     #[test]
