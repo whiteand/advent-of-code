@@ -25,7 +25,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 ## Remove unused dependencies
 
 - [x] **`graphalgs` `0.1.1` in `y23/d25`.** Never imported, and it depended on `petgraph` 0.6. Removed with the `petgraph` 0.8 bump.
-- [ ] **`edit-distance` `2.1.3` in `y15/d19`.** Never imported. The maintained, widely used string-distance crate is `strsim`, if a later solution needs it.
+- [x] **`edit-distance` `2.1.3` in `y15/d19`.** Never imported. Removed. The maintained, widely used string-distance crate is `strsim`, if a later solution needs it.
 - [ ] **`disjoint` `0.8.0` in `y24/d23`.** Never imported. Union-find in this repo lives in `advent_utils::disjoint_set` (`y25/d08` uses it).
 
 ## Later

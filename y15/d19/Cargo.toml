@@ -9,7 +9,6 @@ edition = "2021"
 advent_utils.workspace = true
 itertools.workspace = true
 criterion = "0.5.1"
-edit-distance = "2.1.3"
 
 
 [[bench]]
