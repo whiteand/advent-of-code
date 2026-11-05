@@ -1,4 +1,6 @@
 pub mod area;
+pub mod imat2;
+pub mod imat3;
 mod per_non_diagonal;
 mod rat;
 mod rat_vec2;
