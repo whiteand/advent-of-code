@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 itertools.workspace = true
 criterion = "0.5.1"
-pathfinding = "4.6.0"
+pathfinding.workspace = true
 
 
 [[bench]]

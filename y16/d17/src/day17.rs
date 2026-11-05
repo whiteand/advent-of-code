@@ -11,7 +11,7 @@ pub fn part1(passcode: &str) -> String {
         passcode: passcode.trim(),
     };
     for x in
-        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path), _| {
+        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
             let pos = *pos;
             let doors = map.get_doors(path.iter().copied());
             let prev_path = path.clone();
@@ -44,7 +44,7 @@ pub fn part2(passcode: &str) -> usize {
     };
     let mut max_path_len = 0;
     for x in
-        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path), _| {
+        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
             let pos = *pos;
             let doors = map.get_doors(path.iter().copied());
             let prev_path = path.clone();

@@ -394,9 +394,9 @@ dependencies = [
 
 [[package]]
 name = "deprecate-until"
-version = "0.1.1"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a3767f826efbbe5a5ae093920b58b43b01734202be697e1354914e862e8e704"
+checksum = "9d0795c0c5b2cab72b80d75b5cb08bde679e616c67e954669a2476668319ac3a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1002,9 +1002,9 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 
 [[package]]
 name = "pathfinding"
-version = "4.12.0"
+version = "4.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0699ae2f1524f028d52ff9de21e06c000118731572ef9c2da81c4b6d573f9b79"
+checksum = "dbb041402cdb260d46c836e67bd1193d2258cac438d2638db97ada0ef712d6c7"
 dependencies = [
  "deprecate-until",
  "indexmap",
@@ -1352,9 +1352,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "semver"
-version = "1.0.20"
+version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "836fa6a3e1e547f9a2c4040802ec865b5d85f4014efe00555d7090a3dcaa1090"
+checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
 
 [[package]]
 name = "serde"
@@ -2218,7 +2218,6 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "pathfinding",
  "tracing",
  "tracing-chrome",
  "tracing-subscriber",
@@ -2362,7 +2361,6 @@ dependencies = [
  "advent_utils",
  "divan",
  "itertools 0.15.0",
- "pathfinding",
  "rstest 0.28.0",
  "tracing",
  "tracing-chrome",
@@ -3126,7 +3124,6 @@ dependencies = [
  "criterion",
  "glam 0.25.0",
  "itertools 0.15.0",
- "pathfinding",
 ]
 
 [[package]]
@@ -3414,7 +3411,6 @@ dependencies = [
  "disjoint",
  "divan",
  "itertools 0.15.0",
- "pathfinding",
  "petgraph",
  "rustc-hash",
  "tracing",

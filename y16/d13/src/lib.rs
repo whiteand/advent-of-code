@@ -1,4 +1,3 @@
-use itertools::Either;
 use pathfinding::num_traits::CheckedSub;
 
 fn get_cell(favorite_num: usize, x: usize, y: usize) -> Cell {
@@ -44,27 +43,22 @@ pub fn solve_part_1(file_content: &str) -> usize {
 #[tracing::instrument(skip(file_content))]
 pub fn solve_part_2(file_content: &str) -> usize {
     let favorite = file_content.trim().parse::<usize>().unwrap();
-    let x = pathfinding::prelude::dijkstra_reach(&(1, 1), |(x, y), c| {
-        if c >= 50 {
-            return Either::Left(std::iter::empty());
-        }
+    let x = pathfinding::prelude::dijkstra_reach(&(1, 1), |(x, y)| {
         let x = *x;
         let y = *y;
-        Either::Right(
-            [
-                Some((x + 1, y)),
-                x.checked_sub(&1).map(|x| (x, y)),
-                Some((x, y + 1)),
-                y.checked_sub(&1).map(|y| (x, y)),
-            ]
-            .into_iter()
-            .flatten()
-            .filter(|(x, y)| matches!(get_cell(favorite, *x, *y), Cell::Open))
-            .map(|p| (p, 1usize)),
-        )
+        [
+            Some((x + 1, y)),
+            x.checked_sub(&1).map(|x| (x, y)),
+            Some((x, y + 1)),
+            y.checked_sub(&1).map(|y| (x, y)),
+        ]
+        .into_iter()
+        .flatten()
+        .filter(|(x, y)| matches!(get_cell(favorite, *x, *y), Cell::Open))
+        .map(|p| (p, 1usize))
     });
 
-    x.count()
+    x.take_while(|item| item.total_cost <= 50).count()
 }
 
 #[cfg(test)]

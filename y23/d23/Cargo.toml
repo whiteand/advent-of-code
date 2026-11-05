@@ -9,7 +9,6 @@ edition = "2021"
 itertools.workspace = true
 criterion = "0.5.1"
 glam = "0.25.0"
-pathfinding = "4.6.0"
 
 [[bench]]
 name = "y23d23"

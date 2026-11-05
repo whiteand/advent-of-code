@@ -20,7 +20,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **Put every `petgraph` dependency on `0.8.3`.** It is a workspace dependency. `y19/d06` now builds `NodeIndex<usize>` explicitly for Dijkstra. Unused `graphalgs`, which was keeping `petgraph` 0.6 in `y23/d25`, was removed.
 
-- [ ] **Bump `pathfinding` to `4.16`.** Latest is `4.16.0` (September 2026). In use at `4.12.0`: `y16/d13`, `y16/d17`, `y16/d24`, `y24/d16`, `y24/d18`, `y24/d20`. In use at `4.6.0`: `y23/d17`. Declared and unused, so delete instead of bumping: `y16/d11`, `y16/d22`, `y23/d23`, `y24/d23`.
+- [x] **Bump `pathfinding` to `4.16.0`.** It is a workspace dependency. Unused pins were removed from `y16/d11`, `y16/d22`, `y23/d23`, and `y24/d23`.
 
 ## Remove unused dependencies
 

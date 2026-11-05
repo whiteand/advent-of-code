@@ -13,7 +13,7 @@ tracing-chrome.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 rustc-hash.workspace = true
-pathfinding = "4.12.0"
+pathfinding.workspace = true
 
 [dev-dependencies]
 divan.workspace = true

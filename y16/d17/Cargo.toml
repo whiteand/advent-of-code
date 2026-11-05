@@ -13,7 +13,7 @@ tracing.workspace = true
 tracing-chrome.workspace = true
 rstest.workspace = true
 md-5.workspace = true
-pathfinding = "4.12.0"
+pathfinding.workspace = true
 
 [dev-dependencies]
 divan.workspace = true

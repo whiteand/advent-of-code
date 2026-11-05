@@ -10,7 +10,7 @@ pub fn solve<const MIN_WIN: usize, const CHEAT_LEN: usize>(file_content: &str) -
     let (grid, start, end) = parse_input(file_content);
     let mut distance_to_finish_without_cheat = Grid::<Option<usize>>::new(grid.size(), None);
 
-    for x in pathfinding::prelude::dijkstra_reach(&end, |pos, _| {
+    for x in pathfinding::prelude::dijkstra_reach(&end, |pos| {
         grid.neighbours(*pos, NonDiagonal)
             .filter_map(|(p, &v)| (v != b'#').then_some((p, 1)))
     }) {
