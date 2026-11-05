@@ -17,6 +17,7 @@ pub use binary_search::binary_search;
 pub use glam;
 pub use immutable_lists::*;
 pub use rand;
+pub use winnow;
 pub mod nom {
     pub use nom::*;
     pub fn parse_usize(input: &str) -> nom::IResult<&str, usize> {

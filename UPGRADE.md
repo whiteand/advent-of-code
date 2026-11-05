@@ -26,11 +26,11 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **`graphalgs` `0.1.1` in `y23/d25`.** Never imported, and it depended on `petgraph` 0.6. Removed with the `petgraph` 0.8 bump.
 - [x] **`edit-distance` `2.1.3` in `y15/d19`.** Never imported. Removed. The maintained, widely used string-distance crate is `strsim`, if a later solution needs it.
-- [ ] **`disjoint` `0.8.0` in `y24/d23`.** Never imported. Union-find in this repo lives in `advent_utils::disjoint_set` (`y25/d08` uses it).
+- [x] **`disjoint` `0.8.0` in `y24/d23`.** Never imported. Removed. Union-find in this repo lives in `advent_utils::disjoint_set` (`y25/d08` uses it).
 
 ## Later
 
-- [ ] **New parsers go in `winnow`, not `nom`.** `nom` `8.0.0` (January 2025) still works and `advent_utils` re-exports it. `winnow` now has the higher download count and the newer releases (`1.0.4`, July 2026). Rewriting the existing re-export is a separate migration, not part of a version bump.
+- [x] **New parsers go in `winnow`, not `nom`.** `winnow` `1.0.5` is a workspace dependency and `advent_utils` re-exports it. `nom` `8.0.0` still works and stays re-exported. Rewriting existing parsers is a separate migration.
 
 - [ ] **Revisit `mockalloc` `0.1.2` if the grid allocation tests break.** Last release is November 2020. It is a dev-dependency of `advent_utils`, used only by `record_allocs` in `advent_utils/src/grid.rs`. There is no drop-in replacement.
 

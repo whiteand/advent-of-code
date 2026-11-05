@@ -15,6 +15,7 @@ dependencies = [
  "rstest 0.28.0",
  "thiserror",
  "tracing",
+ "winnow",
 ]
 
 [[package]]
@@ -436,12 +437,6 @@ dependencies = [
  "const-oid",
  "crypto-common",
 ]
-
-[[package]]
-name = "disjoint"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c37b399c91d093763e38c7a57a740e0005e30e5aff7132e791aada5eef3fed99"
 
 [[package]]
 name = "divan"
@@ -1903,9 +1898,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
+checksum = "8c3b93199df0ab874cdf0c6a94f0a0dc3423fe41f1cafb62b8bd7b1deb277aef"
 dependencies = [
  "memchr",
 ]
@@ -3401,7 +3396,6 @@ name = "y24d23"
 version = "0.1.0"
 dependencies = [
  "advent_utils",
- "disjoint",
  "divan",
  "itertools 0.15.0",
  "petgraph",

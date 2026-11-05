@@ -8,6 +8,7 @@ itertools = { workspace = true }
 tracing = { workspace = true }
 glam = { workspace = true }
 nom = { workspace = true }
+winnow = { workspace = true }
 thiserror = "2.0.6"
 derive_more = { version = "2.1.0", features = ["from", "is_variant"] }
 rand = "0.10.3"
