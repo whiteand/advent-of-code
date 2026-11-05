@@ -18,13 +18,13 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 - [x] **Bump `rand` to `0.10.3`.** `thread_rng()` is `rng()`, `gen_range` is `random_range`, and `distributions::Slice` is `distr::slice::Choose`. The unused `rand` pin was removed from `y23/d24`. The `small_rng` feature no longer exists; `SmallRng` is always available.
 
-- [ ] **Put every `petgraph` dependency on `0.8`.** `0.8.3` is current and already used by `y22/d21` and `y25/d11`. Still on `0.6`: `y17/d07`, `y19/d06`, `y23/d25` (`0.6.4`), `y24/d23`, `y24/d24`.
+- [x] **Put every `petgraph` dependency on `0.8.3`.** It is a workspace dependency. `y19/d06` now builds `NodeIndex<usize>` explicitly for Dijkstra. Unused `graphalgs`, which was keeping `petgraph` 0.6 in `y23/d25`, was removed.
 
 - [ ] **Bump `pathfinding` to `4.16`.** Latest is `4.16.0` (September 2026). In use at `4.12.0`: `y16/d13`, `y16/d17`, `y16/d24`, `y24/d16`, `y24/d18`, `y24/d20`. In use at `4.6.0`: `y23/d17`. Declared and unused, so delete instead of bumping: `y16/d11`, `y16/d22`, `y23/d23`, `y24/d23`.
 
 ## Remove unused dependencies
 
-- [ ] **`graphalgs` `0.1.1` in `y23/d25`.** Never imported. Removing it also unblocks that day's `petgraph` bump. The crate itself is barely used upstream (about 400 downloads in 90 days).
+- [x] **`graphalgs` `0.1.1` in `y23/d25`.** Never imported, and it depended on `petgraph` 0.6. Removed with the `petgraph` 0.8 bump.
 - [ ] **`edit-distance` `2.1.3` in `y15/d19`.** Never imported. The maintained, widely used string-distance crate is `strsim`, if a later solution needs it.
 - [ ] **`disjoint` `0.8.0` in `y24/d23`.** Never imported. Union-find in this repo lives in `advent_utils::disjoint_set` (`y25/d08` uses it).
 

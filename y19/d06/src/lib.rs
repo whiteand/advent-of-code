@@ -9,7 +9,7 @@ use nom::{
     IResult, Parser,
 };
 use petgraph::{
-    graph::{DiGraph, UnGraph},
+    graph::{DiGraph, NodeIndex, UnGraph},
     visit::IntoNodeIdentifiers,
 };
 
@@ -76,17 +76,16 @@ pub fn solve_part_2(file_content: &str) -> usize {
     let you_parent_idx = planets_idx.get(you_parent).copied().unwrap();
     let san_parent_idx = planets_idx.get(san_parent).copied().unwrap();
 
+    let san_node = NodeIndex::new(san_parent_idx);
+
     let distances = petgraph::algo::dijkstra::dijkstra(
         &graph,
-        you_parent_idx.into(),
-        Some(san_parent_idx.into()),
+        NodeIndex::new(you_parent_idx),
+        Some(san_node),
         |_| 1,
     );
 
-    distances
-        .get(&san_parent_idx.into())
-        .copied()
-        .unwrap_or(usize::MAX)
+    distances.get(&san_node).copied().unwrap_or(usize::MAX)
 }
 
 fn parse(input: &str) -> IResult<&str, Vec<(&str, &str)>> {

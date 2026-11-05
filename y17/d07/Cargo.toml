@@ -13,7 +13,7 @@ tracing-chrome.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 
-petgraph = "0.6.5"
+petgraph.workspace = true
 rustc-hash.workspace = true
 
 [dev-dependencies]
