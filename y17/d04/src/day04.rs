@@ -1,5 +1,5 @@
-use rustc_hash::FxHashSet;
 use itertools::Itertools;
+use rustc_hash::FxHashSet;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> usize {

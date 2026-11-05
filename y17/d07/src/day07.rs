@@ -10,9 +10,9 @@ use advent_utils::nom::{
     sequence::{delimited, preceded},
     Parser,
 };
-use rustc_hash::FxHashMap;
 use itertools::Itertools;
 use petgraph::{graph::NodeIndex, prelude::DiGraph, visit::EdgeRef};
+use rustc_hash::FxHashMap;
 
 #[tracing::instrument(skip(file_content))]
 pub fn part1(file_content: &str) -> String {

@@ -10,26 +10,24 @@ pub fn part1(passcode: &str) -> String {
     let map = Map {
         passcode: passcode.trim(),
     };
-    for x in
-        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
-            let pos = *pos;
-            let doors = map.get_doors(path.iter().copied());
-            let prev_path = path.clone();
-            info!(?pos, ?path, %doors);
-            doors
-                .filter_map(move |t| {
-                    let next_pos = pos + t.to_vec();
+    for x in pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
+        let pos = *pos;
+        let doors = map.get_doors(path.iter().copied());
+        let prev_path = path.clone();
+        info!(?pos, ?path, %doors);
+        doors
+            .filter_map(move |t| {
+                let next_pos = pos + t.to_vec();
 
-                    (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
-                        .then_some((next_pos, t))
-                })
-                .map(move |(next_pos, t)| {
-                    let mut new_path = prev_path.clone();
-                    new_path.push(t);
-                    ((next_pos, new_path), 1)
-                })
-        })
-    {
+                (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
+                    .then_some((next_pos, t))
+            })
+            .map(move |(next_pos, t)| {
+                let mut new_path = prev_path.clone();
+                new_path.push(t);
+                ((next_pos, new_path), 1)
+            })
+    }) {
         if x.node.0 == IVec2::new(3, 3) {
             return x.node.1.into_iter().map(|x| x.to_letter() as char).join("");
         }
@@ -43,27 +41,25 @@ pub fn part2(passcode: &str) -> usize {
         passcode: passcode.trim(),
     };
     let mut max_path_len = 0;
-    for x in
-        pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
-            let pos = *pos;
-            let doors = map.get_doors(path.iter().copied());
-            let prev_path = path.clone();
-            info!(?pos, ?path, %doors);
-            doors
-                .filter(move |_| pos != IVec2::new(3, 3))
-                .filter_map(move |t| {
-                    let next_pos = pos + t.to_vec();
+    for x in pathfinding::prelude::dijkstra_reach(&(IVec2::new(0, 0), Vec::new()), |(pos, path)| {
+        let pos = *pos;
+        let doors = map.get_doors(path.iter().copied());
+        let prev_path = path.clone();
+        info!(?pos, ?path, %doors);
+        doors
+            .filter(move |_| pos != IVec2::new(3, 3))
+            .filter_map(move |t| {
+                let next_pos = pos + t.to_vec();
 
-                    (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
-                        .then_some((next_pos, t))
-                })
-                .map(move |(next_pos, t)| {
-                    let mut new_path = prev_path.clone();
-                    new_path.push(t);
-                    ((next_pos, new_path), 1)
-                })
-        })
-    {
+                (((0..=3i32).contains(&next_pos.y)) && (0..=3i32).contains(&next_pos.x))
+                    .then_some((next_pos, t))
+            })
+            .map(move |(next_pos, t)| {
+                let mut new_path = prev_path.clone();
+                new_path.push(t);
+                ((next_pos, new_path), 1)
+            })
+    }) {
         if x.node.0 == IVec2::new(3, 3) {
             max_path_len = x.total_cost;
         }

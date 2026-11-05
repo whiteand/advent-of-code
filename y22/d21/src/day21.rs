@@ -1,10 +1,10 @@
 use advent_utils::nom::{self, Parser};
-use rustc_hash::FxHashMap;
 use itertools::Itertools;
 use petgraph::{
     graph::DiGraph,
     visit::{IntoNodeReferences, Walker},
 };
+use rustc_hash::FxHashMap;
 
 #[derive(Copy, Clone, Debug)]
 enum Operation {

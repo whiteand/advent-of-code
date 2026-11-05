@@ -10,9 +10,9 @@ use advent_utils::nom::{
     parse_usize,
     sequence::{preceded, separated_pair},
 };
-use rustc_hash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use petgraph::dot::Dot;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 struct Schema<'t> {
     rules: FxHashMap<&'t str, Rule<'t>>,

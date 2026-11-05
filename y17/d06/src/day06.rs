@@ -1,6 +1,6 @@
 use advent_utils::{declare_array, declare_field, parse};
-use rustc_hash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 struct State(u128);
