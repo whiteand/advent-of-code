@@ -296,7 +296,7 @@ fn parse_steps(input: &str) -> nom::IResult<&str, usize> {
 #[cfg(test)]
 mod tests {
     use super::{part1, part2, Instruction};
-    use advent_utils::rand::{self, Rng};
+    use advent_utils::rand::{self, RngExt};
     use rstest::rstest;
     const EXAMPLE: &str = include_str!("../example.txt");
     const ACTUAL: &str = include_str!("../input.txt");
@@ -325,38 +325,38 @@ mod tests {
     }
 
     fn random_instruction(r: &mut rand::rngs::ThreadRng) -> Instruction {
-        let t = r.gen_range(0..7);
+        let t = r.random_range(0..7);
         match t {
             0 => {
-                let a = r.gen_range(b'a'..=b'h');
-                let b = r.gen_range(b'a'..=b'h');
+                let a = r.random_range(b'a'..=b'h');
+                let b = r.random_range(b'a'..=b'h');
                 Instruction::SwapLetter(a, b)
             }
             1 => {
-                let a = r.gen_range(0..8);
-                let b = r.gen_range(0..8);
+                let a = r.random_range(0..8);
+                let b = r.random_range(0..8);
                 Instruction::SwapPosition(a, b)
             }
             2 => {
-                let a = r.gen_range(0..16);
+                let a = r.random_range(0..16);
                 Instruction::RotateLeft(a)
             }
             3 => {
-                let a = r.gen_range(0..16);
+                let a = r.random_range(0..16);
                 Instruction::RotateRight(a)
             }
             4 => {
-                let a = r.gen_range(b'a'..=b'h');
+                let a = r.random_range(b'a'..=b'h');
                 Instruction::RotateBasedOnPositionOfLetter(a)
             }
             5 => {
-                let a = r.gen_range(0..8);
-                let b = r.gen_range(0..8);
+                let a = r.random_range(0..8);
+                let b = r.random_range(0..8);
                 Instruction::ReversePositions(a, b)
             }
             6 => {
-                let a = r.gen_range(0..8);
-                let b = r.gen_range(0..8);
+                let a = r.random_range(0..8);
+                let b = r.random_range(0..8);
                 Instruction::MovePosition(a, b)
             }
             x => {
@@ -368,9 +368,9 @@ mod tests {
     #[test]
     fn test_unscramble() {
         use itertools::Itertools;
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         for _ in 0..100 {
-            let instructions = (0usize..r.gen_range(1..101))
+            let instructions = (0usize..r.random_range(1..101))
                 .map(|_| random_instruction(&mut r))
                 .collect_vec();
             let seq = "fbgdceah";

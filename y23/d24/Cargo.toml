@@ -9,7 +9,6 @@ edition = "2021"
 itertools.workspace = true
 rstest.workspace = true
 advent_utils.workspace = true
-rand = "0.8.4"
 criterion = "0.5.1"
 
 

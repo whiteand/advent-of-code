@@ -10,7 +10,7 @@ glam = { workspace = true }
 nom = { workspace = true }
 thiserror = "2.0.6"
 derive_more = { version = "2.1.0", features = ["from", "is_variant"] }
-rand = { version = "0.8.5", features = ["small_rng"] }
+rand = "0.10.3"
 rstest = { workspace = true }
 
 [dev-dependencies]

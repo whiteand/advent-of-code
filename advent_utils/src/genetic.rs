@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use derive_more::From;
 use rand::prelude::Distribution;
+use rand::RngExt;
 
 /// Each bps is 0.01%. Total BPS is 10000
 #[derive(Copy, Clone, PartialEq, Eq, Ord, PartialOrd, From)]
@@ -126,7 +127,7 @@ where
         self.population.truncate(preserved);
 
         while self.population.len() < self.target_population_size {
-            let Ok(distribution) = rand::distributions::Slice::new(&self.population[0..preserved])
+            let Ok(distribution) = rand::distr::slice::Choose::new(&self.population[0..preserved])
             else {
                 break;
             };
@@ -134,7 +135,7 @@ where
             let mother = distribution.sample(rng);
 
             for mut child in (self.sex)(&father.1, &mother.1, rng).take(self.children) {
-                let bps: Bps = rng.gen_range(0..=10000u16).into();
+                let bps: Bps = rng.random_range(0..=10000u16).into();
                 if bps < self.mutation_rate_bps {
                     (self.mutate)(&mut child, rng);
                 }

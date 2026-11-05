@@ -16,7 +16,7 @@ Crates that are already the usual choice and current (`glam`, `itertools`, `rayo
 
 ## Bump
 
-- [ ] **Bump `rand` off `0.8.5`.** [RUSTSEC-2026-0097](https://rustsec.org/advisories/RUSTSEC-2026-0097) affects `0.8.5` (`thread_rng` is unsound if a custom logger also draws from it). The `0.8` fix is `>= 0.8.6`. Current is `0.10.3`. `advent_utils` re-exports `rand`, and real uses are `thread_rng()` in `y16/d21`, `SmallRng` in `y24/d17`, and `rand::distributions::Slice` in `advent_utils/src/genetic.rs`. On `0.10`, `thread_rng()` is `rng()` and `rand::distributions` is `rand::distr`. Delete the unused `rand = "0.8.4"` from `y23/d24`.
+- [x] **Bump `rand` to `0.10.3`.** `thread_rng()` is `rng()`, `gen_range` is `random_range`, and `distributions::Slice` is `distr::slice::Choose`. The unused `rand` pin was removed from `y23/d24`. The `small_rng` feature no longer exists; `SmallRng` is always available.
 
 - [ ] **Put every `petgraph` dependency on `0.8`.** `0.8.3` is current and already used by `y22/d21` and `y25/d11`. Still on `0.6`: `y17/d07`, `y19/d06`, `y23/d25` (`0.6.4`), `y24/d23`, `y24/d24`.
 

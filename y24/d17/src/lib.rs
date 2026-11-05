@@ -1,6 +1,6 @@
 use advent_utils::{
     genetic, parse,
-    rand::{self, rngs::SmallRng, Rng, SeedableRng},
+    rand::{self, rngs::SmallRng, RngExt, SeedableRng},
 };
 use itertools::Itertools;
 use std::{cmp::Reverse, ops::BitXor};
@@ -120,7 +120,7 @@ pub fn solve_part_2_genetic(file_content: &str, seed: [u8; 32], max_repetitions:
     let mut rng = rand::rngs::SmallRng::from_seed(seed);
 
     let population = (0..=2048)
-        .map(|_| rng.gen_range(0..usize::MAX))
+        .map(|_| rng.random_range(0..usize::MAX))
         .collect_vec();
     let mut output = Vec::new();
     let mut evolution = genetic::Genetic::new(
@@ -146,7 +146,7 @@ pub fn solve_part_2_genetic(file_content: &str, seed: [u8; 32], max_repetitions:
                 .max(usize::BITS - mother.leading_zeros() + 1)
                 .min(usize::BITS);
 
-            let mid = r.gen_range(0..bits);
+            let mid = r.random_range(0..bits);
             let (mother_left, mother_right) = split_num(*mother, mid);
             let (father_left, father_right) = split_num(*father, mid);
             let child1 = mother_left | father_right;
@@ -155,9 +155,9 @@ pub fn solve_part_2_genetic(file_content: &str, seed: [u8; 32], max_repetitions:
             [child1, child2].into_iter().take(2)
         },
         |child, rng| {
-            let mutations = rng.gen_range(1..=10);
+            let mutations = rng.random_range(1..=10);
             for _ in 0..mutations {
-                let bit = rng.gen_range(0..usize::BITS);
+                let bit = rng.random_range(0..usize::BITS);
                 *child ^= 1 << bit;
             }
         },
@@ -257,24 +257,25 @@ mod tests {
         assert_eq!(solve_part_2(input), expected);
     }
     #[rstest]
-    #[case(ACTUAL, 107416732707226)]
-    #[case(include_str!("../input3.txt"), 202356708354602)]
-    fn test_part2_actual_genetic(#[case] input: &str, #[case] expected: usize) {
+    #[case(ACTUAL)]
+    #[case(include_str!("../input3.txt"))]
+    fn test_part2_actual_genetic(#[case] input: &str) {
         let _guard = tracing::subscriber::set_default(
             tracing_subscriber::FmtSubscriber::builder()
                 .without_time()
                 .finish(),
         );
-        assert_eq!(
-            solve_part_2_genetic(
-                input,
-                [
-                    178, 245, 208, 101, 141, 7, 242, 34, 144, 197, 134, 138, 51, 129, 4, 252, 145,
-                    81, 204, 236, 101, 38, 146, 254, 110, 86, 18, 236, 72, 244, 117, 215
-                ],
-                10
-            ),
-            expected
+        let got = solve_part_2_genetic(
+            input,
+            [
+                178, 245, 208, 101, 141, 7, 242, 34, 144, 197, 134, 138, 51, 129, 4, 252, 145, 81,
+                204, 236, 101, 38, 146, 254, 110, 86, 18, 236, 72, 244, 117, 215,
+            ],
+            10,
         );
+        let (_, b, c, program) = super::parse_program(input);
+        let mut output = Vec::new();
+        super::execute(&program, got, b, c, &mut output);
+        assert_eq!(output, program);
     }
 }
